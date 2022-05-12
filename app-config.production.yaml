@@ -47,3 +47,11 @@ configAsData:
     #   'current-context' uses the same user as set by kubeconfig current context
     #   'google' uses the current user's Google auth token
     authProvider: google
+
+auth:
+  # see https://backstage.io/docs/auth/ to learn about auth providers
+  providers:
+    google:
+      development:
+        clientId: ${AUTH_GOOGLE_CLIENT_ID}
+        clientSecret: ${AUTH_GOOGLE_CLIENT_SECRET}
