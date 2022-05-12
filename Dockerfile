@@ -1,0 +1,91 @@
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Stage 1 - Create yarn install skeleton layer
+FROM node:16-bullseye-slim AS packages
+
+WORKDIR /app
+COPY package.json yarn.lock ./
+
+COPY packages packages
+
+RUN find packages \! -name "package.json" -mindepth 2 -maxdepth 2 -exec rm -rf {} \+
+
+
+# Stage 2 - Install dependencies and build packages
+FROM node:16-bullseye-slim AS build
+
+WORKDIR /app
+COPY --from=packages /app .
+
+# Install sqlite3 dependencies (required for the Backstage application)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libsqlite3-dev python3 build-essential && \
+    yarn config set python /usr/bin/python3
+
+RUN yarn install --frozen-lockfile --network-timeout 600000 && rm -rf "$(yarn cache dir)"
+
+COPY . .
+
+RUN yarn tsc
+RUN yarn --cwd packages/backend build
+
+
+# Stage 3 - Build the base image
+FROM node:16-bullseye-slim as base-backstage-app
+
+WORKDIR /app
+
+# Install sqlite3 dependencies (required for the Backstage application)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libsqlite3-dev python3 build-essential && \
+    rm -rf /var/lib/apt/lists/* && \
+    yarn config set python /usr/bin/python3
+
+# Copy the install dependencies from the build stage and context
+COPY --from=build /app/yarn.lock /app/package.json /app/packages/backend/dist/skeleton.tar.gz ./
+RUN tar xzf skeleton.tar.gz && rm skeleton.tar.gz
+
+RUN yarn install --frozen-lockfile --production --network-timeout 600000 && rm -rf "$(yarn cache dir)"
+
+# Copy the built packages from the build stage
+COPY --from=build /app/packages/backend/dist/bundle.tar.gz .
+RUN tar xzf bundle.tar.gz && rm bundle.tar.gz
+
+
+# backstage-app-local: Build the actual image with gke-gcloud-auth-plugin to allow the image to be ran locally
+FROM base-backstage-app as backstage-app-local
+
+# Copy configuration file
+COPY app-config.yaml ./
+
+# Install gcloud and gke-gcloud-auth-plugin
+# https://cloud.google.com/sdk/docs/install#deb
+RUN apt-get update && \
+    apt-get install -y apt-transport-https ca-certificates gnupg curl && \
+    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | tee /usr/share/keyrings/cloud.google.gpg && \
+    apt-get update && \
+    apt-get install -y google-cloud-sdk google-cloud-sdk-gke-gcloud-auth-plugin
+
+CMD ["node", "packages/backend", "--config", "app-config.yaml"]
+
+
+# backstage-app: Build the actual image that can be deployed to GKE
+FROM base-backstage-app as backstage-app
+
+# Copy any other files that we need at runtime
+COPY app-config.yaml app-config.production.yaml ./
+
+CMD ["node", "packages/backend", "--config", "app-config.yaml", "--config", "app-config.production.yaml"]
