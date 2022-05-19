@@ -81,8 +81,13 @@ type PackageRevisionPageProps = {
 
 const useStyles = makeStyles({
   packageRevisionOptions: {
-    marginTop: 'auto',
-    marginLeft: '10px',
+    display: 'inherit',
+    '& > *': {
+      marginTop: 'auto',
+      '&:not(:first-child)': {
+        marginLeft: '10px',
+      },
+    },
   },
   syncStatusBanner: {
     padding: '2px 16px',
@@ -356,7 +361,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
           to={packageRef({ repositoryName, packageName })}
           variant="outlined"
           disabled={userInitiatedApiRequest}
-          className={classes.packageRevisionOptions}
         >
           Cancel
         </Button>,
@@ -369,7 +373,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
           variant="contained"
           color="primary"
           disabled={userInitiatedApiRequest}
-          className={classes.packageRevisionOptions}
         >
           Save
         </MaterialButton>,
@@ -387,7 +390,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
       if (isDraft || isProposed) {
         options.push(
-          <div className={classes.packageRevisionOptions}>
+          <div>
             {packageRevision.spec.lifecycle} {packageDescriptor}
           </div>,
         );
@@ -401,7 +404,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
             color="primary"
             variant="outlined"
             disabled={userInitiatedApiRequest}
-            className={classes.packageRevisionOptions}
           >
             Edit
           </Button>,
@@ -414,7 +416,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
             variant="contained"
             onClick={moveToProposed}
             disabled={userInitiatedApiRequest}
-            className={classes.packageRevisionOptions}
           >
             Propose
           </MaterialButton>,
@@ -429,7 +430,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
             variant="outlined"
             onClick={moveToDraft}
             disabled={userInitiatedApiRequest}
-            className={classes.packageRevisionOptions}
           >
             Move to Draft
           </MaterialButton>,
@@ -442,7 +442,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
             variant="contained"
             onClick={approvePackage}
             disabled={userInitiatedApiRequest}
-            className={classes.packageRevisionOptions}
           >
             Approve
           </MaterialButton>,
@@ -460,7 +459,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
               variant="contained"
               onClick={createSync}
               disabled={userInitiatedApiRequest}
-              className={classes.packageRevisionOptions}
             >
               Create Sync
             </MaterialButton>,
@@ -479,7 +477,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
             color="primary"
             variant="contained"
             disabled={userInitiatedApiRequest}
-            className={classes.packageRevisionOptions}
           >
             Deploy
           </Button>,
@@ -520,7 +517,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       </Breadcrumbs>
 
       <ContentHeader title={packageRevisionTitle}>
-        {renderOptions()}
+        <div className={classes.packageRevisionOptions}>{renderOptions()}</div>
       </ContentHeader>
 
       <Fragment>
