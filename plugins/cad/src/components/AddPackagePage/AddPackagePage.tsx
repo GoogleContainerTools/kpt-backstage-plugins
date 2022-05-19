@@ -79,7 +79,7 @@ export const AddPackagePage = () => {
     useState<PackageRevision>();
 
   const [newPackageName, setNewPackageName] = useState<string>('');
-  const [newPackageRevision, _] = useState<string>('v0');
+  const [newPackageRevision, _] = useState<string>('v1');
   const [kptFileDescription, setKptFileDescription] = useState<string>('');
   const [kptFileKeywords, setKptFileKeywords] = useState<string>('');
   const [kptFileSite, setKptFileSite] = useState<string>('');
