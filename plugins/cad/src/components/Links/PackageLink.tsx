@@ -20,7 +20,7 @@ import React from 'react';
 import { packageRouteRef } from '../../routes';
 import { PackageRevision } from '../../types/PackageRevision';
 import { Repository } from '../../types/Repository';
-import { getPackageDescriptor } from '../../utils/repository';
+import { getPackageRevisionTitle } from '../../utils/packageRevision';
 import { useLinkStyles } from './styles';
 
 type PackageLinkProps = {
@@ -42,15 +42,12 @@ export const PackageLink = ({
   const repositoryName = repository.metadata.name;
   const packageName = packageRevision.metadata.name;
 
-  const packageDisplayName = packageRevision.spec.packageName;
-  const packageDescriptor = getPackageDescriptor(repository);
-
   return (
     <Link
       className={className}
       to={packageRef({ repositoryName, packageName })}
     >
-      {packageDisplayName} {packageDescriptor}
+      {getPackageRevisionTitle(packageRevision)}
     </Link>
   );
 };

@@ -20,6 +20,14 @@ import {
   PackageRevisionTask,
 } from '../types/PackageRevision';
 
+export const getPackageRevisionTitle = (
+  packageRevision: PackageRevision,
+): string => {
+  const { packageName, revision } = packageRevision.spec;
+
+  return `${packageName} ${revision}`;
+};
+
 export const isLatestPublishedRevision = (
   packageRevision: PackageRevision,
 ): boolean => {
