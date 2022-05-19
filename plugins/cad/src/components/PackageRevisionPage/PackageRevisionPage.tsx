@@ -24,7 +24,6 @@ import {
 import { useApi, useRouteRef } from '@backstage/core-plugin-api';
 import {
   Button as MaterialButton,
-  Chip,
   makeStyles,
   Typography,
 } from '@material-ui/core';
@@ -54,7 +53,10 @@ import {
   SyncStatus,
   SyncStatusState,
 } from '../../utils/configSync';
-import { canCloneOrDeploy } from '../../utils/packageRevision';
+import {
+  canCloneOrDeploy,
+  getPackageRevisionTitle,
+} from '../../utils/packageRevision';
 import { getPackageRevisionResourcesResource } from '../../utils/packageRevisionResources';
 import {
   getPackageDescriptor,
@@ -79,6 +81,7 @@ type PackageRevisionPageProps = {
 
 const useStyles = makeStyles({
   packageRevisionOptions: {
+    marginTop: 'auto',
     marginLeft: '10px',
   },
   syncStatusBanner: {
@@ -194,7 +197,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     return <Alert severity="error">Unexpected undefined value</Alert>;
   }
 
-  const packageDisplayName = packageRevision.spec.packageName;
+  const packageRevisionTitle = getPackageRevisionTitle(packageRevision);
 
   const moveToDraft = async (): Promise<void> => {
     setUserInitiatedApiRequest(true);
@@ -341,6 +344,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   };
 
   const repository = repositorySummary.repository;
+  const packageDescriptor = getPackageDescriptor(repository);
 
   const renderOptions = (): JSX.Element[] => {
     const options: JSX.Element[] = [];
@@ -383,12 +387,9 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
       if (isDraft || isProposed) {
         options.push(
-          <Chip
-            key="package-lifecycle"
-            label={`${packageRevision.spec.lifecycle} Package`}
-            variant="outlined"
-            style={{ margin: 0 }}
-          />,
+          <div className={classes.packageRevisionOptions}>
+            {packageRevision.spec.lifecycle} {packageDescriptor}
+          </div>,
         );
       }
 
@@ -489,8 +490,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     return options;
   };
 
-  const packageDescriptor = getPackageDescriptor(repository);
-
   const resourcesTableMode =
     mode === PackageRevisionPageMode.EDIT
       ? ResourcesTableMode.EDIT
@@ -509,11 +508,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       <Breadcrumbs>
         <RepositoriesLink breadcrumb />
         <RepositoryLink repository={repository} breadcrumb />
-        {isViewMode && (
-          <Typography>
-            {packageDisplayName} {packageDescriptor}
-          </Typography>
-        )}
+        {isViewMode && <Typography>{packageRevisionTitle}</Typography>}
         {!isViewMode && (
           <PackageLink
             repository={repository}
@@ -524,7 +519,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
         {!isViewMode && <Typography>Edit</Typography>}
       </Breadcrumbs>
 
-      <ContentHeader title={`${packageDisplayName} ${packageDescriptor}`}>
+      <ContentHeader title={packageRevisionTitle}>
         {renderOptions()}
       </ContentHeader>
 

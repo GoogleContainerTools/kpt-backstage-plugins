@@ -29,8 +29,6 @@ import { configAsDataApiRef } from '../../../apis';
 import { repositoryRouteRef } from '../../../routes';
 import { Repository } from '../../../types/Repository';
 import { RootSync } from '../../../types/RootSync';
-import { getPackageDescriptor } from '../../../utils/repository';
-import { toLowerCase } from '../../../utils/string';
 
 type AdvancedPackageRevisionOptionsProps = {
   repository: Repository;
@@ -52,7 +50,6 @@ export const AdvancedPackageRevisionOptions = ({
   const repositoryRef = useRouteRef(repositoryRouteRef);
 
   const repositoryName = repository.metadata.name;
-  const packageDescriptor = getPackageDescriptor(repository);
 
   const openDeletePackageRevisionDialog = (): void => {
     setOpenPackageDialog(true);
@@ -101,11 +98,10 @@ export const AdvancedPackageRevisionOptions = ({
         open={openPackageDialog}
         onClose={closeDeletePackageRevisionDialog}
       >
-        <DialogTitle>Delete {toLowerCase(packageDescriptor)}</DialogTitle>
+        <DialogTitle>Delete revision</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this{' '}
-            {toLowerCase(packageDescriptor)}?
+            Are you sure you want to delete this revision?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -124,7 +120,7 @@ export const AdvancedPackageRevisionOptions = ({
           variant="contained"
           onClick={openDeletePackageRevisionDialog}
         >
-          Delete {packageDescriptor}
+          Delete revision
         </Button>
       </div>
 
