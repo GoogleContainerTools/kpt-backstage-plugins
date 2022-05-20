@@ -16,7 +16,10 @@
 
 import { Table, TableColumn } from '@backstage/core-components';
 import { useRouteRef } from '@backstage/core-plugin-api';
-import React from 'react';
+import { IconButton, makeStyles } from '@material-ui/core';
+import { ClassNameMap } from '@material-ui/core/styles/withStyles';
+import { groupBy } from 'lodash';
+import React, { Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { packageRouteRef } from '../../../routes';
 import {
@@ -31,7 +34,12 @@ import {
   SyncStatus,
 } from '../../../utils/configSync';
 import { formatCreationTimestamp } from '../../../utils/formatDate';
-import { sortByPackageNameAndRevisionComparison } from '../../../utils/packageRevision';
+import {
+  findLatestPublishedRevision,
+  isNotAPublishedRevision,
+  sortByPackageNameAndRevisionComparison,
+} from '../../../utils/packageRevision';
+import { PackageIcon } from '../../Controls';
 import { SyncStatusVisual } from './SyncStatusVisual';
 
 type PackageRevisionsTableProps = {
@@ -47,14 +55,59 @@ type PackageRevisionRow = {
   revision: string;
   packageName: string;
   syncStatus?: SyncStatus | null;
-  lifecycle: string;
+  lifecycle: PackageRevisionLifecycle;
   created: string;
+  navigate: () => void;
+  unpublished?: PackageRevisionRow;
+};
+
+type NavigateToPackageRevision = (name: string) => void;
+type FindSync = (thisPackage: PackageRevision) => RootSync | undefined;
+
+const useStyles = makeStyles({
+  iconButton: {
+    position: 'absolute',
+    transform: 'translateY(-50%)',
+  },
+});
+
+const renderStatusColumn = (
+  thisPackageRevisionRow: PackageRevisionRow,
+  classes: ClassNameMap,
+): JSX.Element => {
+  const unpublishedRevision = thisPackageRevisionRow.unpublished;
+
+  if (unpublishedRevision) {
+    return (
+      <IconButton
+        size="small"
+        className={classes.iconButton}
+        onClick={e => {
+          e.stopPropagation();
+          unpublishedRevision.navigate();
+        }}
+      >
+        <PackageIcon lifecycle={unpublishedRevision.lifecycle} />
+      </IconButton>
+    );
+  }
+
+  return <Fragment />;
 };
 
 const getTableColumns = (
+  classes: ClassNameMap,
   syncs?: RootSync[],
 ): TableColumn<PackageRevisionRow>[] => {
+  const renderStatus = (row: PackageRevisionRow): JSX.Element =>
+    renderStatusColumn(row, classes);
+
   const columns: TableColumn<PackageRevisionRow>[] = [
+    {
+      title: 'Status',
+      width: '80px',
+      render: renderStatus,
+    },
     { title: 'Name', field: 'packageName' },
     { title: 'Revision', field: 'revision' },
     { title: 'Lifecycle', field: 'lifecycle' },
@@ -74,15 +127,11 @@ const getTableColumns = (
 };
 
 const getRootSyncStatus = (
-  repository: Repository,
-  syncs: RootSync[],
   onePackage: PackageRevision,
+  findSync: FindSync,
 ): SyncStatus | null | undefined => {
-  if (
-    syncs &&
-    onePackage.spec.lifecycle === PackageRevisionLifecycle.PUBLISHED
-  ) {
-    const rootSync = findRootSyncForPackage(syncs, onePackage, repository);
+  if (onePackage.spec.lifecycle === PackageRevisionLifecycle.PUBLISHED) {
+    const rootSync = findSync(onePackage);
 
     if (rootSync?.status) {
       return getSyncStatus(rootSync.status);
@@ -96,17 +145,68 @@ const getRootSyncStatus = (
 
 const mapToPackageRevisionRow = (
   onePackage: PackageRevision,
-  repository: Repository,
-  syncs: RootSync[],
+  navigateToPackageRevision: NavigateToPackageRevision,
+  findSync: FindSync,
+  unpublishedRevision: PackageRevision | undefined,
 ): PackageRevisionRow => ({
   id: onePackage.metadata.name,
   name: onePackage.metadata.name,
   packageName: onePackage.spec.packageName,
   revision: onePackage.spec.revision,
   lifecycle: onePackage.spec.lifecycle,
-  syncStatus: getRootSyncStatus(repository, syncs, onePackage),
+  syncStatus: getRootSyncStatus(onePackage, findSync),
   created: formatCreationTimestamp(onePackage.metadata.creationTimestamp),
+  navigate: () => navigateToPackageRevision(onePackage.metadata.name),
+  unpublished: unpublishedRevision
+    ? mapToPackageRevisionRow(
+        unpublishedRevision,
+        navigateToPackageRevision,
+        findSync,
+        undefined,
+      )
+    : undefined,
 });
+
+const mapPackageRevisionsToRows = (
+  packageRevisions: PackageRevision[],
+  navigateToPackageRevision: NavigateToPackageRevision,
+  findSync: FindSync,
+): PackageRevisionRow[] => {
+  packageRevisions.sort(sortByPackageNameAndRevisionComparison);
+
+  const groupByPackage = groupBy(
+    packageRevisions,
+    revision => revision.spec.packageName,
+  );
+
+  const rows: PackageRevisionRow[] = Object.keys(groupByPackage).map(
+    packageName => {
+      const allRevisions = groupByPackage[packageName];
+
+      const latestRevision = allRevisions[0];
+      const latestPublishedRevision = findLatestPublishedRevision(allRevisions);
+
+      const useForRowRevision = latestPublishedRevision || latestRevision;
+      const isLatestRevisionNotPublished =
+        isNotAPublishedRevision(latestRevision);
+
+      const unpublishedRevision = isLatestRevisionNotPublished
+        ? latestRevision
+        : undefined;
+
+      const row = mapToPackageRevisionRow(
+        useForRowRevision,
+        navigateToPackageRevision,
+        findSync,
+        unpublishedRevision,
+      );
+
+      return row;
+    },
+  );
+
+  return rows;
+};
 
 export const PackageRevisionsTable = ({
   title,
@@ -114,18 +214,31 @@ export const PackageRevisionsTable = ({
   packages,
   syncs,
 }: PackageRevisionsTableProps) => {
+  const classes = useStyles();
   const navigate = useNavigate();
 
   const packageRef = useRouteRef(packageRouteRef);
 
-  packages.sort(sortByPackageNameAndRevisionComparison);
+  const navigateToPackageRevision: NavigateToPackageRevision = (
+    packageName: string,
+  ): void => {
+    const repositoryName = repository.metadata.name;
 
-  const columns = getTableColumns(syncs);
-  const data = packages.map(onePackage =>
-    mapToPackageRevisionRow(onePackage, repository, syncs || []),
+    navigate(packageRef({ repositoryName, packageName }));
+  };
+
+  const findSync: FindSync = (
+    thisPackage: PackageRevision,
+  ): RootSync | undefined => {
+    return findRootSyncForPackage(syncs ?? [], thisPackage, repository);
+  };
+
+  const columns = getTableColumns(classes, syncs);
+  const data = mapPackageRevisionsToRows(
+    packages,
+    navigateToPackageRevision,
+    findSync,
   );
-
-  const repositoryName = repository.metadata.name;
 
   return (
     <Table
@@ -133,13 +246,7 @@ export const PackageRevisionsTable = ({
       options={{ search: false, paging: false }}
       columns={columns}
       data={data}
-      onRowClick={(_, thisPackage) => {
-        if (thisPackage) {
-          const packageName = thisPackage.name;
-
-          navigate(packageRef({ repositoryName, packageName }));
-        }
-      }}
+      onRowClick={(_, thisPackage) => thisPackage?.navigate()}
     />
   );
 };
