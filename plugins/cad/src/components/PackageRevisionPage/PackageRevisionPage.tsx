@@ -55,7 +55,14 @@ import {
 } from '../../utils/configSync';
 import {
   canCloneOrDeploy,
+  filterPackageRevisions,
+  findLatestPublishedRevision,
+  getEditTask,
+  getNextRevision,
+  getPackageRevision,
   getPackageRevisionTitle,
+  isLatestPublishedRevision,
+  sortByPackageNameAndRevisionComparison,
 } from '../../utils/packageRevision';
 import { getPackageRevisionResourcesResource } from '../../utils/packageRevisionResources';
 import {
@@ -111,6 +118,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const [repositorySummary, setRepositorySummary] =
     useState<RepositorySummary>();
   const [packageRevision, setPackageRevision] = useState<PackageRevision>();
+  const [packageRevisions, setPackageRevisions] = useState<PackageRevision[]>();
   const [resourcesMap, setResourcesMap] = useState<PackageRevisionResourcesMap>(
     {},
   );
@@ -119,34 +127,51 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const [userInitiatedApiRequest, setUserInitiatedApiRequest] =
     useState<boolean>(false);
 
-  const loadPackageRevision = async (): Promise<void> => {
-    const asyncRepositorySummary = getRepositorySummary(api, repositoryName);
-    const asyncPackageRevision = api.getPackageRevision(packageName);
-    const asyncResources = api.getPackageRevisionResources(packageName);
-
-    const [repositoryResponse, packageRevisionResponse, resourcesResponse] =
-      await Promise.all([
-        asyncRepositorySummary,
-        asyncPackageRevision,
-        asyncResources,
-      ]);
-
-    setRepositorySummary(repositoryResponse);
-    setPackageRevision(packageRevisionResponse);
-    setResourcesMap(resourcesResponse.spec.resources);
+  const loadRepositorySummary = async (): Promise<void> => {
+    const thisRepositorySummary = await getRepositorySummary(
+      api,
+      repositoryName,
+    );
+    setRepositorySummary(thisRepositorySummary);
   };
 
-  const { loading, error } = useAsync(loadPackageRevision, [
-    repositoryName,
-    packageName,
-    mode,
-  ]);
+  const loadPackageRevision = async (): Promise<void> => {
+    const asyncPackageRevisions = api.listPackageRevisions();
+    const asyncResources = api.getPackageRevisionResources(packageName);
+
+    const [thisPackageRevisions, thisResources] = await Promise.all([
+      asyncPackageRevisions,
+      asyncResources,
+    ]);
+
+    const thisPackageRevision = getPackageRevision(
+      thisPackageRevisions,
+      packageName,
+    );
+
+    const thisSortedRevisions = filterPackageRevisions(
+      thisPackageRevisions,
+      thisPackageRevision.spec.packageName,
+    ).sort(sortByPackageNameAndRevisionComparison);
+
+    setPackageRevisions(thisSortedRevisions);
+    setPackageRevision(thisPackageRevision);
+    setResourcesMap(thisResources.spec.resources);
+  };
+
+  const { loading, error } = useAsync(
+    async () => Promise.all([loadRepositorySummary(), loadPackageRevision()]),
+    [repositoryName, packageName, mode],
+  );
+
+  const isLatestPublishedPackageRevision =
+    packageRevision && isLatestPublishedRevision(packageRevision);
+  const isDeploymentPackage =
+    repositorySummary && isDeploymentRepository(repositorySummary.repository);
 
   useAsync(async () => {
-    if (packageRevision && repositorySummary) {
-      if (
-        packageRevision.spec.lifecycle === PackageRevisionLifecycle.PUBLISHED
-      ) {
+    if (!loading && packageRevision && repositorySummary) {
+      if (isLatestPublishedPackageRevision && isDeploymentPackage) {
         const { items: allRootSyncs } = await api.listRootSyncs();
 
         const thisRootSync = findRootSyncForPackage(
@@ -160,7 +185,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
         setRootSync(undefined);
       }
     }
-  }, [packageRevision, repositorySummary]);
+  }, [loading, packageRevision, repositorySummary]);
 
   useEffect(() => {
     if (rootSync) {
@@ -202,6 +227,8 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     return <Alert severity="error">Unexpected undefined value</Alert>;
   }
 
+  const repository = repositorySummary.repository;
+  const packageDescriptor = getPackageDescriptor(repository);
   const packageRevisionTitle = getPackageRevisionTitle(packageRevision);
 
   const moveToDraft = async (): Promise<void> => {
@@ -211,11 +238,9 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       const targetPackageRevision = cloneDeep(packageRevision);
       targetPackageRevision.spec.lifecycle = PackageRevisionLifecycle.DRAFT;
 
-      const updatedPackageRevision = await api.replacePackageRevision(
-        targetPackageRevision,
-      );
+      await api.replacePackageRevision(targetPackageRevision);
 
-      setPackageRevision(updatedPackageRevision);
+      await loadPackageRevision();
     } finally {
       setUserInitiatedApiRequest(false);
     }
@@ -228,13 +253,35 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       const targetPackageRevision = cloneDeep(packageRevision);
       targetPackageRevision.spec.lifecycle = PackageRevisionLifecycle.PROPOSED;
 
-      const updatedPackageRevision = await api.replacePackageRevision(
-        targetPackageRevision,
-      );
+      await api.replacePackageRevision(targetPackageRevision);
 
-      setPackageRevision(updatedPackageRevision);
+      await loadPackageRevision();
     } finally {
       setUserInitiatedApiRequest(false);
+    }
+  };
+
+  const updateRootSyncToLatestPackage = async (
+    thisPackageRevision: PackageRevision,
+  ): Promise<void> => {
+    const { items: allRootSyncs } = await api.listRootSyncs();
+
+    const previousRootSync = findRootSyncForPackage(
+      allRootSyncs,
+      packageRevision,
+      repositorySummary.repository,
+      false,
+    );
+
+    if (previousRootSync) {
+      const newRootSync = getRootSync(
+        repository,
+        thisPackageRevision,
+        previousRootSync.spec.git?.secretRef?.name,
+      );
+
+      await api.deleteRootSync(previousRootSync.metadata.name);
+      await api.createRootSync(newRootSync);
     }
   };
 
@@ -242,14 +289,16 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     setUserInitiatedApiRequest(true);
 
     try {
-      const patchResource = cloneDeep(packageRevision);
-      patchResource.spec.lifecycle = PackageRevisionLifecycle.PUBLISHED;
+      const targetRevision = cloneDeep(packageRevision);
+      targetRevision.spec.lifecycle = PackageRevisionLifecycle.PUBLISHED;
 
-      const approvePackageRevision = await api.approvePackageRevision(
-        patchResource,
-      );
+      await api.approvePackageRevision(targetRevision);
 
-      setPackageRevision(approvePackageRevision);
+      if (isDeploymentPackage) {
+        await updateRootSyncToLatestPackage(targetRevision);
+      }
+
+      await loadPackageRevision();
     } finally {
       setUserInitiatedApiRequest(false);
     }
@@ -263,7 +312,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
         repositorySummary.repository.spec.git?.secretRef?.name;
 
       if (repoSecretName) {
-        const baseName = packageRevision.metadata.name.replaceAll(':', '-');
+        const baseName = packageRevision.spec.packageName;
         const newSecretName = `${baseName}-sync`;
 
         const repoSecret = await api.getSecret(repoSecretName);
@@ -281,6 +330,30 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
         setRootSync(newRootSync);
       }
+    } finally {
+      setUserInitiatedApiRequest(false);
+    }
+  };
+
+  const createNewRevision = async (): Promise<void> => {
+    setUserInitiatedApiRequest(true);
+
+    try {
+      const requestPackageRevision = cloneDeep(packageRevision);
+      requestPackageRevision.spec.revision = getNextRevision(
+        packageRevision.spec.revision,
+      );
+      requestPackageRevision.spec.tasks = [
+        getEditTask(packageRevision.metadata.name),
+      ];
+      requestPackageRevision.spec.lifecycle = PackageRevisionLifecycle.DRAFT;
+
+      const newPackageRevision = await api.createPackageRevision(
+        requestPackageRevision,
+      );
+      const newPackageName = newPackageRevision.metadata.name;
+
+      navigate(packageRef({ repositoryName, packageName: newPackageName }));
     } finally {
       setUserInitiatedApiRequest(false);
     }
@@ -348,9 +421,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     }
   };
 
-  const repository = repositorySummary.repository;
-  const packageDescriptor = getPackageDescriptor(repository);
-
   const renderOptions = (): JSX.Element[] => {
     const options: JSX.Element[] = [];
 
@@ -386,11 +456,10 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
         packageRevision.spec.lifecycle === PackageRevisionLifecycle.PROPOSED;
       const isPublished =
         packageRevision.spec.lifecycle === PackageRevisionLifecycle.PUBLISHED;
-      const isDeployment = isDeploymentRepository(repositorySummary.repository);
 
       if (isDraft || isProposed) {
         options.push(
-          <div>
+          <div key="package-lifecycle">
             {packageRevision.spec.lifecycle} {packageDescriptor}
           </div>,
         );
@@ -448,21 +517,79 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
         );
       }
 
-      if (isPublished && isDeployment && rootSync !== undefined) {
-        if (rootSync) {
-          options.push(getCurrentSyncStatus());
-        } else {
+      if (isPublished) {
+        if (!packageRevisions || packageRevisions.length === 0) {
+          throw new Error('No package revisions');
+        }
+
+        const latestRevision = packageRevisions[0];
+        const latestPublishedRevision =
+          findLatestPublishedRevision(packageRevisions);
+
+        if (isLatestPublishedPackageRevision) {
+          if (latestRevision === latestPublishedRevision) {
+            options.push(
+              <MaterialButton
+                key="create-new-revision"
+                variant="outlined"
+                color="primary"
+                onClick={createNewRevision}
+                disabled={userInitiatedApiRequest}
+              >
+                Create New Revision
+              </MaterialButton>,
+            );
+          } else {
+            options.push(
+              <Button
+                key="view-latest-revision"
+                to={packageRef({
+                  repositoryName,
+                  packageName: latestRevision.metadata.name,
+                })}
+                color="primary"
+                variant="outlined"
+              >
+                View {latestRevision.spec.lifecycle} Revision
+              </Button>,
+            );
+          }
+        } else if (latestPublishedRevision) {
           options.push(
-            <MaterialButton
-              key="create-sync"
+            <Button
+              key="view-latest-published-revision"
+              to={packageRef({
+                repositoryName,
+                packageName: latestPublishedRevision.metadata.name,
+              })}
               color="primary"
-              variant="contained"
-              onClick={createSync}
-              disabled={userInitiatedApiRequest}
+              variant="outlined"
             >
-              Create Sync
-            </MaterialButton>,
+              View Latest Published Revision
+            </Button>,
           );
+        }
+
+        if (
+          isDeploymentPackage &&
+          isLatestPublishedPackageRevision &&
+          rootSync !== undefined
+        ) {
+          if (rootSync) {
+            options.push(getCurrentSyncStatus());
+          } else {
+            options.push(
+              <MaterialButton
+                key="create-sync"
+                color="primary"
+                variant="contained"
+                onClick={createSync}
+                disabled={userInitiatedApiRequest}
+              >
+                Create Sync
+              </MaterialButton>,
+            );
+          }
         }
       }
 

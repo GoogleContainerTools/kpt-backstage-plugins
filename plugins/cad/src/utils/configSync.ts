@@ -99,6 +99,7 @@ export const findRootSyncForPackage = (
   syncs: RootSync[],
   packageRevision: PackageRevision,
   repository: Repository,
+  exactRevision: boolean = true,
 ): RootSync | undefined => {
   const gitRepository = repository.spec.git;
 
@@ -112,7 +113,7 @@ export const findRootSyncForPackage = (
   };
 
   const hashSyncGitSpec = (git: RootSyncGit): string =>
-    `${git.repo}|${git.revision}|${git.dir}|${git.branch}`;
+    `${git.repo}|${exactRevision ? git.revision : ''}|${git.dir}|${git.branch}`;
 
   return syncs.find(
     sync =>
