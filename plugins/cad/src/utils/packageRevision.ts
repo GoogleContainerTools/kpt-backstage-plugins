@@ -20,6 +20,21 @@ import {
   PackageRevisionTask,
 } from '../types/PackageRevision';
 
+const getRevisionNumber = (
+  revision: string,
+  defaultNumber: number = NaN,
+): number => {
+  if (revision && revision.startsWith('v')) {
+    const revisionNumber = parseInt(revision.substring(1), 10);
+
+    if (Number.isInteger(revisionNumber)) {
+      return revisionNumber;
+    }
+  }
+
+  return defaultNumber;
+};
+
 export const getPackageRevisionTitle = (
   packageRevision: PackageRevision,
 ): string => {
@@ -35,6 +50,43 @@ export const isLatestPublishedRevision = (
     packageRevision.spec.lifecycle === PackageRevisionLifecycle.PUBLISHED &&
     !!packageRevision.metadata.labels?.['kpt.dev/latest-revision']
   );
+};
+
+export const findLatestPublishedRevision = (
+  packageRevisions: PackageRevision[],
+): PackageRevision | undefined => {
+  const latestPublishedRevision = packageRevisions.find(
+    isLatestPublishedRevision,
+  );
+
+  return latestPublishedRevision;
+};
+
+export const filterPackageRevisions = (
+  packageRevisions: PackageRevision[],
+  packageName: string,
+): PackageRevision[] => {
+  return packageRevisions.filter(
+    packageRevision =>
+      packageRevision.spec.packageName === packageName &&
+      Number.isFinite(getRevisionNumber(packageRevision.spec.revision)),
+  );
+};
+
+export const getPackageRevision = (
+  packageRevisions: PackageRevision[],
+  fullPackageName: string,
+): PackageRevision => {
+  const packageRevision = packageRevisions.find(
+    thisPackageRevision =>
+      thisPackageRevision.metadata.name === fullPackageName,
+  );
+
+  if (!packageRevision) {
+    throw new Error(`Package revision ${name} does not exist`);
+  }
+
+  return packageRevision;
 };
 
 export const canCloneOrDeploy = (packageRevision: PackageRevision): boolean => {
@@ -81,6 +133,19 @@ export const getCloneTask = (fullPackageName: string): PackageRevisionTask => {
   return cloneTask;
 };
 
+export const getEditTask = (fullPackageName: string): PackageRevisionTask => {
+  const editTask: PackageRevisionTask = {
+    type: 'edit',
+    edit: {
+      sourceRef: {
+        name: fullPackageName,
+      },
+    },
+  };
+
+  return editTask;
+};
+
 export const getPackageRevisionResource = (
   repositoryName: string,
   packageName: string,
@@ -115,8 +180,17 @@ export const sortByPackageNameAndRevisionComparison = (
   const packageSpec2 = packageRevision2.spec;
 
   if (packageSpec1.packageName === packageSpec2.packageName) {
-    return packageSpec1.revision > packageSpec2.revision ? -1 : 1;
+    return (
+      getRevisionNumber(packageSpec2.revision, -1) -
+      getRevisionNumber(packageSpec1.revision, -1)
+    );
   }
 
   return packageSpec1.packageName > packageSpec2.packageName ? 1 : -1;
+};
+
+export const getNextRevision = (revision: string): string => {
+  const revisionNumber = getRevisionNumber(revision, 0);
+
+  return `v${revisionNumber + 1}`;
 };

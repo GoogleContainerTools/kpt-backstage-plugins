@@ -48,6 +48,7 @@ export type PackageRevisionTask = {
   type: string;
   init?: PackageRevisionTaskInit;
   clone?: PackageRevisionTaskClone;
+  edit?: PackageRevisionTaskEdit;
   eval?: PackageRevisionTaskEval;
 };
 
@@ -62,10 +63,14 @@ export type PackageRevisionTaskClone = {
 };
 
 export type PackageRevisionTaskCloneUpstreamRef = {
-  upstreamRef: PackageRevisionTaskCloneUpstreamRefNamedRepository;
+  upstreamRef: PackageRevisionTaskNamedRepository;
 };
 
-export type PackageRevisionTaskCloneUpstreamRefNamedRepository = {
+export type PackageRevisionTaskEdit = {
+  sourceRef: PackageRevisionTaskNamedRepository;
+};
+
+export type PackageRevisionTaskNamedRepository = {
   name: string;
 };
 
