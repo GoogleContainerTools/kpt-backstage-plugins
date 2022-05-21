@@ -16,5 +16,6 @@
 
 export { Autocomplete } from './Autocomplete';
 export { MultiSelect } from './MultiSelect';
+export { PackageIcon } from './PackageIcon';
 export { Select } from './Select';
 export { YamlViewer } from './YamlViewer';
