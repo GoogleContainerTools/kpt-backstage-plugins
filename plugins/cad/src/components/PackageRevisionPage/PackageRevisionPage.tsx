@@ -232,7 +232,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const packageDescriptor = getPackageDescriptor(repository);
   const packageRevisionTitle = getPackageRevisionTitle(packageRevision);
 
-  const moveToDraft = async (): Promise<void> => {
+  const rejectProposedPackage = async (): Promise<void> => {
     setUserInitiatedApiRequest(true);
 
     try {
@@ -286,7 +286,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     }
   };
 
-  const approvePackage = async (): Promise<void> => {
+  const approveProposedPackage = async (): Promise<void> => {
     setUserInitiatedApiRequest(true);
 
     try {
@@ -495,22 +495,22 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       if (isProposed) {
         options.push(
           <MaterialButton
-            key="draft-package"
+            key="reject-proposed-package"
             color="primary"
             variant="outlined"
-            onClick={moveToDraft}
+            onClick={rejectProposedPackage}
             disabled={userInitiatedApiRequest}
           >
-            Move to Draft
+            Reject
           </MaterialButton>,
         );
 
         options.push(
           <MaterialButton
-            key="approve-package"
+            key="approve-proposed-package"
             color="primary"
             variant="contained"
-            onClick={approvePackage}
+            onClick={approveProposedPackage}
             disabled={userInitiatedApiRequest}
           >
             Approve
