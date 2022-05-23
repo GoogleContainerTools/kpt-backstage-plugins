@@ -76,6 +76,7 @@ import {
   PackageRevisionResourcesTable,
   ResourcesTableMode,
 } from './components/PackageRevisionResourcesTable';
+import { PackageRevisionsTable } from './components/PackageRevisionsTable';
 
 export enum PackageRevisionPageMode {
   EDIT = 'edit',
@@ -664,6 +665,15 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
                 resourcesMap={resourcesMap}
                 mode={resourcesTableMode}
                 onUpdatedResourcesMap={handleUpdatedResourcesMap}
+              />
+            ),
+          },
+          {
+            label: 'Revisions',
+            content: (
+              <PackageRevisionsTable
+                repository={repositorySummary.repository}
+                revisions={packageRevisions ?? []}
               />
             ),
           },

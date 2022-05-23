@@ -16,8 +16,16 @@
 
 import moment from 'moment';
 
-export const formatCreationTimestamp = (timestamp?: string): string => {
+const DATE_FORMAT = `MMMM D, YYYY`;
+const DATE_TIME_FORMAT = `MMMM D, YYYY h:mm A`;
+
+export const formatCreationTimestamp = (
+  timestamp?: string,
+  includeTime: boolean = false,
+): string => {
   if (!timestamp) return '';
 
-  return moment(timestamp).format('MMMM D, YYYY');
+  const timeFormat = includeTime ? DATE_TIME_FORMAT : DATE_FORMAT;
+
+  return moment(timestamp).format(timeFormat);
 };
