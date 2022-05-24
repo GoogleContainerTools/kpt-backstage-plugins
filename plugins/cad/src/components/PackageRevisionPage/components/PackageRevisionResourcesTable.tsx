@@ -161,6 +161,10 @@ export const PackageRevisionResourcesTable = ({
             key="delete"
             size="small"
             title="Delete"
+            style={{
+              position: 'absolute',
+              transform: 'translateY(-50%)',
+            }}
             onClick={event => {
               event.stopPropagation();
               deleteResource(resourceRow.filename, resourceRow.resourceIndex);
