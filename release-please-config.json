@@ -1,0 +1,6 @@
+{
+  "packages": {
+    "plugins/cad": {},
+    "plugins/cad-backend": {}
+  }
+}
