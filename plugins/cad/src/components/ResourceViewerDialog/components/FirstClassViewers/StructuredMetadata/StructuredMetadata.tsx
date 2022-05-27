@@ -28,10 +28,26 @@ type StructuredMetadataProps = {
   getCustomMetadata?: (resource: KubernetesResource) => Metadata;
 };
 
-export const StructuredMetadata = ({
-  yaml,
-  getCustomMetadata,
-}: StructuredMetadataProps) => {
+const normalizeMetadata = (metadata: Metadata) => {
+  Object.keys(metadata).forEach(key => {
+    if (metadata[key] === undefined || metadata[key] === '') {
+      delete metadata[key];
+    }
+
+    const isObject =
+      !Array.isArray(metadata[key]) && typeof metadata[key] === 'object';
+    if (isObject) {
+      metadata[key] = Object.entries(metadata[key]).map(
+        ([thisKey, value]) => `${thisKey} = ${value}`,
+      );
+    }
+  });
+};
+
+const getMetadataForResource = (
+  yaml: string,
+  getCustomMetadata?: (resource: KubernetesResource) => Metadata,
+): Metadata => {
   const resource = load(yaml) as KubernetesResource;
 
   const baseMetadata = {
@@ -44,24 +60,21 @@ export const StructuredMetadata = ({
 
   const customMetadata = getCustomMetadata ? getCustomMetadata(resource) : {};
 
-  const completeMetadata: Metadata = {
+  const metadata: Metadata = {
     ...baseMetadata,
     ...customMetadata,
   };
 
-  Object.keys(completeMetadata).forEach(key => {
-    if (completeMetadata[key] === undefined || completeMetadata[key] === '') {
-      delete completeMetadata[key];
-    }
-    if (
-      !Array.isArray(completeMetadata[key]) &&
-      typeof completeMetadata[key] === 'object'
-    ) {
-      completeMetadata[key] = Object.entries(completeMetadata[key]).map(
-        ([thisKey, value]) => `${thisKey} = ${value}`,
-      );
-    }
-  });
+  normalizeMetadata(metadata);
 
-  return <StructuredMetadataTable metadata={completeMetadata} />;
+  return metadata;
+};
+
+export const StructuredMetadata = ({
+  yaml,
+  getCustomMetadata,
+}: StructuredMetadataProps) => {
+  const metadata = getMetadataForResource(yaml, getCustomMetadata);
+
+  return <StructuredMetadataTable metadata={metadata} />;
 };
