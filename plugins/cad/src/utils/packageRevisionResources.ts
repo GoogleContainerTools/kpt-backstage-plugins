@@ -15,12 +15,16 @@
  */
 
 import { load } from 'js-yaml';
+import { cloneDeep, kebabCase } from 'lodash';
 import { KubernetesResource } from '../types/KubernetesResource';
 import {
   PackageRevisionResources,
   PackageRevisionResourcesMap,
 } from '../types/PackageRevisionResource';
-import { getResourcesFromMultiResourceYaml } from './yaml';
+import {
+  createMultiResourceYaml,
+  getResourcesFromMultiResourceYaml,
+} from './yaml';
 
 export type PackageResource = {
   id: string;
@@ -81,4 +85,75 @@ export const getPackageResourcesFromResourcesMap = (
   });
 
   return resources.flat();
+};
+
+const getResourcesForFile = (
+  resourcesMap: PackageRevisionResourcesMap,
+  filename: string,
+): string[] => {
+  const allResources = getPackageResourcesFromResourcesMap(resourcesMap);
+
+  return allResources.filter(f => f.filename === filename).map(r => r.yaml);
+};
+
+export const addResourceToResourcesMap = (
+  resourcesMap: PackageRevisionResourcesMap,
+  newResourceYaml: string,
+): PackageRevisionResourcesMap => {
+  const resourceYaml = load(newResourceYaml) as KubernetesResource;
+  const resourceKind = resourceYaml.kind;
+
+  const filename = `${kebabCase(resourceKind)}.yaml`;
+
+  const fileResourcesYaml = getResourcesForFile(resourcesMap, filename);
+  fileResourcesYaml.push(newResourceYaml);
+
+  const fullYaml = createMultiResourceYaml(fileResourcesYaml);
+
+  const updatedResourcesMap = {
+    ...cloneDeep(resourcesMap),
+    [filename]: fullYaml,
+  };
+
+  return updatedResourcesMap;
+};
+
+export const updateResourceInResourcesMap = (
+  resourcesMap: PackageRevisionResourcesMap,
+  originalResource: PackageResource,
+  updatedYaml: string,
+): PackageRevisionResourcesMap => {
+  const filename = originalResource.filename as string;
+
+  const fileResourcesYaml = getResourcesForFile(resourcesMap, filename);
+  fileResourcesYaml[originalResource.resourceIndex ?? 0] = updatedYaml;
+
+  const fullYaml = createMultiResourceYaml(fileResourcesYaml);
+
+  const updatedResourcesMap = {
+    ...cloneDeep(resourcesMap),
+    [filename]: fullYaml,
+  };
+
+  return updatedResourcesMap;
+};
+
+export const removeResourceFromResourcesMap = (
+  resourcesMap: PackageRevisionResourcesMap,
+  resourceToRemove: PackageResource,
+): PackageRevisionResourcesMap => {
+  const updatedResourcesMap = cloneDeep(resourcesMap);
+
+  const { filename, resourceIndex } = resourceToRemove;
+
+  const resourcesInFile = getResourcesForFile(resourcesMap, filename);
+
+  if (resourceIndex === 0 && resourcesInFile.length === 1) {
+    delete updatedResourcesMap[filename];
+  } else {
+    resourcesInFile.splice(resourceIndex, 1);
+    updatedResourcesMap[filename] = createMultiResourceYaml(resourcesInFile);
+  }
+
+  return updatedResourcesMap;
 };

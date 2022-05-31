@@ -18,8 +18,8 @@ import { Table, TableColumn } from '@backstage/core-components';
 import { Button, Divider, IconButton, Menu, MenuItem } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
-import { dump, load } from 'js-yaml';
-import { kebabCase, startCase } from 'lodash';
+import { dump } from 'js-yaml';
+import { startCase } from 'lodash';
 import React, { Fragment, useState } from 'react';
 import {
   KubernetesKeyValueObject,
@@ -27,13 +27,12 @@ import {
 } from '../../../types/KubernetesResource';
 import { PackageRevisionResourcesMap } from '../../../types/PackageRevisionResource';
 import {
+  addResourceToResourcesMap,
   getPackageResourcesFromResourcesMap,
   PackageResource,
+  removeResourceFromResourcesMap,
+  updateResourceInResourcesMap,
 } from '../../../utils/packageRevisionResources';
-import {
-  createMultiResourceYaml,
-  getResourcesFromMultiResourceYaml,
-} from '../../../utils/yaml';
 import { ResourceEditorDialog } from '../../ResourceEditorDialog';
 import { ResourceViewerDialog } from '../../ResourceViewerDialog';
 
@@ -123,30 +122,15 @@ export const PackageRevisionResourcesTable = ({
     setIsOpenDialog(false);
   };
 
-  const yamlFileEntries = Object.entries(resourcesMap).filter(
-    file => file[0].endsWith('.yaml') || file[0] === 'Kptfile',
-  );
-
-  const getResourcesForFile = (filename: string): string[] => {
-    const yamlFile = yamlFileEntries.find(yaml => yaml[0] === filename);
-
-    return yamlFile ? getResourcesFromMultiResourceYaml(yamlFile[1]) : [];
-  };
-
-  const deleteResource = (filename: string, resourceIndex: number): void => {
+  const deleteResource = (resource: ResourceRow): void => {
     if (!onUpdatedResourcesMap) {
       throw new Error('onUpdatedResourcesMap is not defined');
     }
 
-    const latestResourcesMap = { ...resourcesMap };
-    const resourcesInFile = getResourcesForFile(filename);
-
-    if (resourceIndex === 0 && resourcesInFile.length === 1) {
-      delete latestResourcesMap[filename];
-    } else {
-      resourcesInFile.splice(resourceIndex, 1);
-      latestResourcesMap[filename] = createMultiResourceYaml(resourcesInFile);
-    }
+    const latestResourcesMap = removeResourceFromResourcesMap(
+      resourcesMap,
+      resource,
+    );
 
     onUpdatedResourcesMap(latestResourcesMap);
   };
@@ -167,7 +151,7 @@ export const PackageRevisionResourcesTable = ({
             }}
             onClick={event => {
               event.stopPropagation();
-              deleteResource(resourceRow.filename, resourceRow.resourceIndex);
+              deleteResource(resourceRow);
             }}
           >
             <DeleteIcon />
@@ -222,34 +206,15 @@ export const PackageRevisionResourcesTable = ({
     const isExistingResource: boolean = !!selectedDialogResource.filename;
 
     if (isExistingResource) {
-      const filename = selectedDialogResource.filename as string;
-
-      const fileResourcesYaml = getResourcesForFile(filename);
-      fileResourcesYaml[selectedDialogResource.resourceIndex ?? 0] = yaml;
-
-      const fullYaml = createMultiResourceYaml(fileResourcesYaml);
-
-      const latestResourcesMap = {
-        ...resourcesMap,
-        [filename]: fullYaml,
-      };
+      const latestResourcesMap = updateResourceInResourcesMap(
+        resourcesMap,
+        selectedDialogResource as ResourceRow,
+        yaml,
+      );
 
       onUpdatedResourcesMap(latestResourcesMap);
     } else {
-      const resourceYaml = load(yaml) as KubernetesResource;
-      const resourceKind = resourceYaml.kind;
-
-      const filename = `${kebabCase(resourceKind)}.yaml`;
-
-      const fileResourcesYaml = getResourcesForFile(filename);
-      fileResourcesYaml.push(yaml);
-
-      const fullYaml = createMultiResourceYaml(fileResourcesYaml);
-
-      const latestResourcesMap = {
-        ...resourcesMap,
-        [filename]: fullYaml,
-      };
+      const latestResourcesMap = addResourceToResourcesMap(resourcesMap, yaml);
 
       onUpdatedResourcesMap(latestResourcesMap);
     }
