@@ -15,18 +15,12 @@
  */
 
 import { useApi, useRouteRef } from '@backstage/core-plugin-api';
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-} from '@material-ui/core';
+import { Button } from '@material-ui/core';
 import React, { Fragment, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { configAsDataApiRef } from '../../../apis';
 import { rootRouteRef } from '../../../routes';
+import { ConfirmationDialog } from '../../Controls/ConfirmationDialog';
 
 export const AdvancedRepositoryOptions = () => {
   const { repositoryName } = useParams();
@@ -53,22 +47,14 @@ export const AdvancedRepositoryOptions = () => {
 
   return (
     <Fragment>
-      <Dialog open={open} onClose={closeUnregisterRepositoryDialog}>
-        <DialogTitle>Unregister repository</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to unregister this repository?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button color="primary" onClick={closeUnregisterRepositoryDialog}>
-            Cancel
-          </Button>
-          <Button color="primary" onClick={executeUnregisterRepository}>
-            Unregister
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmationDialog
+        open={open}
+        onClose={closeUnregisterRepositoryDialog}
+        title="Unregister repository"
+        contentText="Are you sure you want to unregister this repository?"
+        actionText="Unregister"
+        onAction={executeUnregisterRepository}
+      />
 
       <Button
         color="secondary"
