@@ -15,20 +15,14 @@
  */
 
 import { useApi, useRouteRef } from '@backstage/core-plugin-api';
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-} from '@material-ui/core';
+import { Button } from '@material-ui/core';
 import React, { Fragment, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { configAsDataApiRef } from '../../../apis';
 import { repositoryRouteRef } from '../../../routes';
 import { Repository } from '../../../types/Repository';
 import { RootSync } from '../../../types/RootSync';
+import { ConfirmationDialog } from '../../Controls/ConfirmationDialog';
 
 type AdvancedPackageRevisionOptionsProps = {
   repository: Repository;
@@ -94,25 +88,14 @@ export const AdvancedPackageRevisionOptions = ({
 
   return (
     <Fragment>
-      <Dialog
+      <ConfirmationDialog
         open={openPackageDialog}
         onClose={closeDeletePackageRevisionDialog}
-      >
-        <DialogTitle>Delete revision</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this revision?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button color="primary" onClick={closeDeletePackageRevisionDialog}>
-            Cancel
-          </Button>
-          <Button color="primary" onClick={executeDeletePackageRevision}>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+        title="Delete revision"
+        contentText="Are you sure you want to delete this revision?"
+        actionText="Delete"
+        onAction={executeDeletePackageRevision}
+      />
 
       <div>
         <Button
@@ -126,22 +109,14 @@ export const AdvancedPackageRevisionOptions = ({
 
       {rootSync && (
         <div style={{ marginTop: '12px' }}>
-          <Dialog open={openSyncDialog} onClose={closeDeleteSyncDialog}>
-            <DialogTitle>Delete sync</DialogTitle>
-            <DialogContent>
-              <DialogContentText>
-                Are you sure you want to delete the sync?
-              </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-              <Button color="primary" onClick={closeDeleteSyncDialog}>
-                Cancel
-              </Button>
-              <Button color="primary" onClick={executeDeleteSync}>
-                Delete
-              </Button>
-            </DialogActions>
-          </Dialog>
+          <ConfirmationDialog
+            open={openSyncDialog}
+            onClose={closeDeleteSyncDialog}
+            title="Delete sync"
+            contentText="Are you sure you want to delete the sync?"
+            actionText="Delete"
+            onAction={executeDeleteSync}
+          />
 
           <Button
             color="secondary"
