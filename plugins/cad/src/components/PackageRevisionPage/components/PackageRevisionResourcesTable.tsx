@@ -20,7 +20,7 @@ import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
 import { dump } from 'js-yaml';
 import { startCase } from 'lodash';
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useRef, useState } from 'react';
 import {
   KubernetesKeyValueObject,
   KubernetesResource,
@@ -39,6 +39,12 @@ import { ResourceViewerDialog } from '../../ResourceViewerDialog';
 export enum ResourcesTableMode {
   VIEW = 'view',
   EDIT = 'edit',
+}
+
+enum Dialog {
+  VIEWER = 'viewer',
+  EDITOR = 'editor',
+  NONE = 'none',
 }
 
 type PackageRevisionResourcesTableProps = {
@@ -68,10 +74,9 @@ export const PackageRevisionResourcesTable = ({
   mode,
   onUpdatedResourcesMap,
 }: PackageRevisionResourcesTableProps) => {
-  const [isDialogOpen, setIsOpenDialog] = useState<boolean>(false);
-  const [selectedDialogResource, setSelectedDialogResource] = useState<
-    DialogResource | undefined
-  >(undefined);
+  const [openDialog, setOpenDialog] = useState<Dialog>(Dialog.NONE);
+  const selectedDialogResource = useRef<DialogResource>();
+
   const [addResourceAnchorEl, setAddResourceAnchorEl] =
     React.useState<null | HTMLElement>(null);
   const addResourceMenuOpen = Boolean(addResourceAnchorEl);
@@ -114,12 +119,18 @@ export const PackageRevisionResourcesTable = ({
     },
   ].sort((gvk1, gvk2) => (gvk1.kind > gvk2.kind ? 1 : -1));
 
-  const openDialog = () => {
-    setIsOpenDialog(true);
+  const isEditMode = mode === ResourcesTableMode.EDIT;
+
+  const openResourceDialog = (
+    dialog: Dialog,
+    resource: DialogResource,
+  ): void => {
+    selectedDialogResource.current = resource;
+    setOpenDialog(dialog);
   };
 
-  const closeDialog = () => {
-    setIsOpenDialog(false);
+  const closeDialog = (): void => {
+    setOpenDialog(Dialog.NONE);
   };
 
   const deleteResource = (resource: ResourceRow): void => {
@@ -138,7 +149,7 @@ export const PackageRevisionResourcesTable = ({
   const rowOptions = (resourceRow: ResourceRow): JSX.Element[] => {
     const options: JSX.Element[] = [];
 
-    if (mode === ResourcesTableMode.EDIT) {
+    if (isEditMode) {
       if (resourceRow.filename !== 'Kptfile') {
         options.push(
           <IconButton
@@ -199,16 +210,19 @@ export const PackageRevisionResourcesTable = ({
       throw new Error('onUpdatedResourcesMap is not defined');
     }
 
-    if (!selectedDialogResource) {
+    if (!selectedDialogResource.current) {
       throw new Error('selectedDialogResource is not defined');
     }
 
-    const isExistingResource: boolean = !!selectedDialogResource.filename;
+    const isExistingResource: boolean =
+      !!selectedDialogResource.current.filename;
 
     if (isExistingResource) {
+      const originalResource = selectedDialogResource.current as ResourceRow;
+
       const latestResourcesMap = updateResourceInResourcesMap(
         resourcesMap,
-        selectedDialogResource as ResourceRow,
+        originalResource,
         yaml,
       );
 
@@ -270,8 +284,7 @@ export const PackageRevisionResourcesTable = ({
 
     const thisSelectedResource = { yaml };
 
-    setSelectedDialogResource(thisSelectedResource);
-    setIsOpenDialog(true);
+    openResourceDialog(Dialog.EDITOR, thisSelectedResource);
   };
 
   const onAddResourceMenuItemClick = (gvk?: KubernetesGKV): void => {
@@ -280,7 +293,7 @@ export const PackageRevisionResourcesTable = ({
   };
 
   const renderAddResourceButtonGroup = (): JSX.Element => {
-    if (mode === ResourcesTableMode.EDIT) {
+    if (isEditMode) {
       return (
         <div style={{ marginTop: '16px' }}>
           <Button
@@ -318,21 +331,19 @@ export const PackageRevisionResourcesTable = ({
 
   return (
     <Fragment>
-      {mode === ResourcesTableMode.EDIT ? (
-        <ResourceEditorDialog
-          open={isDialogOpen}
-          onClose={closeDialog}
-          yaml={selectedDialogResource?.yaml ?? ''}
-          onSaveYaml={saveUpdatedYaml}
-          packageResources={allResources}
-        />
-      ) : (
-        <ResourceViewerDialog
-          open={isDialogOpen}
-          onClose={closeDialog}
-          yaml={selectedDialogResource?.yaml ?? ''}
-        />
-      )}
+      <ResourceEditorDialog
+        open={openDialog === Dialog.EDITOR}
+        onClose={closeDialog}
+        yaml={selectedDialogResource.current?.yaml ?? ''}
+        onSaveYaml={saveUpdatedYaml}
+        packageResources={allResources}
+      />
+
+      <ResourceViewerDialog
+        open={openDialog === Dialog.VIEWER}
+        onClose={closeDialog}
+        yaml={selectedDialogResource.current?.yaml ?? ''}
+      />
 
       <Table<ResourceRow>
         title="Resources"
@@ -341,8 +352,8 @@ export const PackageRevisionResourcesTable = ({
         data={allResources}
         onRowClick={(_, resource) => {
           if (resource) {
-            setSelectedDialogResource(resource);
-            openDialog();
+            const dialog = isEditMode ? Dialog.EDITOR : Dialog.VIEWER;
+            openResourceDialog(dialog, resource);
           }
         }}
       />
