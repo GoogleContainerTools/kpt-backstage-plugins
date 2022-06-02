@@ -70,7 +70,7 @@ import {
   isDeploymentRepository,
 } from '../../utils/repository';
 import { getRepositorySummary } from '../../utils/repositorySummary';
-import { ConfirmationDialog } from '../Controls/ConfirmationDialog';
+import { ConfirmationDialog } from '../Controls';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
 import { AdvancedPackageRevisionOptions } from './components/AdvancedPackageRevisionOptions';
 import {
