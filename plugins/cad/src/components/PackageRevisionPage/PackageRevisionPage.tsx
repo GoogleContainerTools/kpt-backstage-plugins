@@ -70,6 +70,7 @@ import {
   isDeploymentRepository,
 } from '../../utils/repository';
 import { getRepositorySummary } from '../../utils/repositorySummary';
+import { ConfirmationDialog } from '../Controls';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
 import { AdvancedPackageRevisionOptions } from './components/AdvancedPackageRevisionOptions';
 import {
@@ -127,6 +128,8 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>();
   const [userInitiatedApiRequest, setUserInitiatedApiRequest] =
     useState<boolean>(false);
+
+  const [openRestoreDialog, setOpenRestoreDialog] = useState<boolean>(false);
 
   const loadRepositorySummary = async (): Promise<void> => {
     const thisRepositorySummary = await getRepositorySummary(
@@ -224,7 +227,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     return <Alert severity="error">{error.message}</Alert>;
   }
 
-  if (!repositorySummary || !packageRevision) {
+  if (!repositorySummary || !packageRevision || !packageRevisions) {
     return <Alert severity="error">Unexpected undefined value</Alert>;
   }
 
@@ -357,6 +360,57 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       navigate(packageRef({ repositoryName, packageName: newPackageName }));
     } finally {
       setUserInitiatedApiRequest(false);
+    }
+  };
+
+  const createRestoreRevision = async (): Promise<void> => {
+    setUserInitiatedApiRequest(true);
+
+    try {
+      const latestPublishedRevision = findLatestPublishedRevision(
+        packageRevisions,
+      ) as PackageRevision;
+      const latestRevision = packageRevisions[0];
+
+      if (latestPublishedRevision !== latestRevision) {
+        throw new Error(
+          'Unable to create a new revision since an unpublished revision already exists for this package.',
+        );
+      }
+
+      const createNextRevision = async (): Promise<string> => {
+        const requestPackageRevision = cloneDeep(latestPublishedRevision);
+
+        requestPackageRevision.spec.revision = getNextRevision(
+          latestPublishedRevision.spec.revision,
+        );
+        requestPackageRevision.spec.lifecycle = PackageRevisionLifecycle.DRAFT;
+
+        const newPackageRevision = await api.createPackageRevision(
+          requestPackageRevision,
+        );
+
+        return newPackageRevision.metadata.name;
+      };
+
+      const replaceRevisionsResources = async (
+        thisPackageName: string,
+      ): Promise<void> => {
+        const packageRevisionResources = getPackageRevisionResourcesResource(
+          thisPackageName,
+          resourcesMap,
+        );
+
+        await api.replacePackageRevisionResources(packageRevisionResources);
+      };
+
+      const newPackageName = await createNextRevision();
+      await replaceRevisionsResources(newPackageName);
+
+      navigate(packageRef({ repositoryName, packageName: newPackageName }));
+    } finally {
+      setUserInitiatedApiRequest(false);
+      setOpenRestoreDialog(false);
     }
   };
 
@@ -557,6 +611,17 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
           }
         } else if (latestPublishedRevision) {
           options.push(
+            <MaterialButton
+              key="restore-revision"
+              onClick={() => setOpenRestoreDialog(true)}
+              color="primary"
+              variant="outlined"
+            >
+              Restore Revision
+            </MaterialButton>,
+          );
+
+          options.push(
             <Button
               key="view-latest-published-revision"
               to={packageRef({
@@ -655,6 +720,15 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
           </Alert>
         ))}
       </Fragment>
+
+      <ConfirmationDialog
+        open={openRestoreDialog}
+        onClose={() => setOpenRestoreDialog(false)}
+        title="Restore Revision"
+        contentText={`Create new revision to restore ${packageRevision.spec.packageName} to revision ${packageRevision.spec.revision}?`}
+        actionText="Create Revision"
+        onAction={createRestoreRevision}
+      />
 
       <Tabs
         tabs={[
