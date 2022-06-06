@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+export type ListPackageRevisionResources = {
+  kind: string;
+  apiVersion: string;
+  items: PackageRevisionResources[];
+};
+
 export type PackageRevisionResources = {
   apiVersion: string;
   kind: string;

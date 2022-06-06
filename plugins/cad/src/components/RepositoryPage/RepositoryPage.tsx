@@ -82,12 +82,25 @@ export const RepositoryPage = () => {
         }
 
         if (isPackageRepository(thisRepository)) {
-          const thisPackageRevisions = await api.listPackageRevisions(
-            repositoryName,
+          const allPackageRevisions = await api.listPackageRevisions();
+          const { items: allPackageRevisionResources } =
+            await api.listPackageRevisionResources();
+
+          const thisPackageRevisions = allPackageRevisions.filter(
+            revision => revision.spec.repository === repositoryName,
           );
+          const upstreamPackageRevisions = repositorySummary.upstreamRepository
+            ? allPackageRevisions.filter(
+                revision =>
+                  revision.spec.repository ===
+                  repositorySummary.upstreamRepository?.metadata.name,
+              )
+            : [];
 
           const thisPackageSummaries = getPackageSummaries(
             thisPackageRevisions,
+            allPackageRevisionResources,
+            upstreamPackageRevisions,
             thisRepository,
           );
           setPackageSummaries(thisPackageSummaries);
