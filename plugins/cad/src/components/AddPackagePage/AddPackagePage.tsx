@@ -271,7 +271,6 @@ export const AddPackagePage = () => {
               breadcrumb
             />
             <PackageLink
-              repository={baseRepository as Repository}
               packageRevision={basePackageRevision as PackageRevision}
               breadcrumb
             />

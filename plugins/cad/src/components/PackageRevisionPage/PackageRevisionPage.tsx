@@ -701,7 +701,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
         {isViewMode && <Typography>{packageRevisionTitle}</Typography>}
         {!isViewMode && (
           <PackageLink
-            repository={repository}
             packageRevision={packageRevision}
             breadcrumb
           />
