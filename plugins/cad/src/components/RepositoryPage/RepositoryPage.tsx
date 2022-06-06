@@ -30,13 +30,12 @@ import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../apis';
 import { addPackageRouteRef } from '../../routes';
 import { Function } from '../../types/Function';
-import { PackageRevision } from '../../types/PackageRevision';
 import { RepositorySummary } from '../../types/RepositorySummary';
-import { RootSync } from '../../types/RootSync';
 import {
-  isLatestPublishedRevision,
-  isNotAPublishedRevision,
-} from '../../utils/packageRevision';
+  getPackageSummaries,
+  PackageSummary,
+  updatePackageSummariesSyncStatus,
+} from '../../utils/packageSummary';
 import {
   getPackageDescriptor,
   getRepositoryTitle,
@@ -48,7 +47,7 @@ import { getRepositorySummary } from '../../utils/repositorySummary';
 import { RepositoriesLink } from '../Links';
 import { AdvancedRepositoryOptions } from './components/AdvancedRepositoryOptions';
 import { FunctionsTable } from './components/FunctionsTable';
-import { PackageRevisionsTable } from './components/PackageRevisionsTable';
+import { PackageRevisionsTable } from './components/PackageSummaryTable';
 import { RelatedRepositoryContent } from './components/RelatedRepositoryContent';
 
 export const RepositoryPage = () => {
@@ -59,10 +58,9 @@ export const RepositoryPage = () => {
 
   const [repositorySummary, setRepositorySummary] =
     useState<RepositorySummary>();
-  const [packageRevisions, setPackageRevisions] = useState<PackageRevision[]>(
+  const [packageSummaries, setPackageSummaries] = useState<PackageSummary[]>(
     [],
   );
-  const [rootSyncs, setRootSyncs] = useState<RootSync[]>();
   const [functions, setFunctions] = useState<Function[]>([]);
 
   const { loading: repositoryLoading, error: repositoryError } =
@@ -88,20 +86,21 @@ export const RepositoryPage = () => {
             repositoryName,
           );
 
-          const thisLatestPackageRevisions = thisPackageRevisions.filter(
-            packageRevision =>
-              isNotAPublishedRevision(packageRevision) ||
-              isLatestPublishedRevision(packageRevision),
+          const thisPackageSummaries = getPackageSummaries(
+            thisPackageRevisions,
+            thisRepository,
           );
+          setPackageSummaries(thisPackageSummaries);
 
-          setPackageRevisions(thisLatestPackageRevisions);
-        }
+          if (isDeploymentRepository(thisRepository)) {
+            const { items: syncs } = await api.listRootSyncs();
 
-        if (isDeploymentRepository(thisRepository)) {
-          const { items: thisRootSyncs } = await api.listRootSyncs();
-          setRootSyncs(thisRootSyncs);
-        } else {
-          setRootSyncs(undefined);
+            const updatedPackageSummaries = updatePackageSummariesSyncStatus(
+              thisPackageSummaries,
+              syncs,
+            );
+            setPackageSummaries(updatedPackageSummaries);
+          }
         }
       }
     }, [repositorySummary]);
@@ -112,8 +111,13 @@ export const RepositoryPage = () => {
       isDeploymentRepository(repositorySummary.repository)
     ) {
       const refreshRootSync = async (): Promise<void> => {
-        const { items: thisRootSyncs } = await api.listRootSyncs();
-        setRootSyncs(thisRootSyncs);
+        const { items: syncs } = await api.listRootSyncs();
+
+        const updatedPackageSummaries = updatePackageSummariesSyncStatus(
+          packageSummaries,
+          syncs,
+        );
+        setPackageSummaries(updatedPackageSummaries);
       };
 
       const refreshSeconds = 10;
@@ -128,7 +132,7 @@ export const RepositoryPage = () => {
     }
 
     return undefined;
-  }, [api, repositorySummary]);
+  }, [api, repositorySummary, packageSummaries]);
 
   if (repositoryLoading || packagesLoading) {
     return <Progress />;
@@ -155,8 +159,7 @@ export const RepositoryPage = () => {
         <PackageRevisionsTable
           title={`${packageDescriptor}s`}
           repository={thisRepository}
-          packages={packageRevisions}
-          syncs={rootSyncs}
+          packages={packageSummaries}
         />
       );
     }
