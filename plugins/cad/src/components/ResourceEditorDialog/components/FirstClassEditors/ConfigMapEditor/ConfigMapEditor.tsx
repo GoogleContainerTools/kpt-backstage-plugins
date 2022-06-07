@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import { dump, load } from 'js-yaml';
 import React, { ChangeEvent, useEffect, useState } from 'react';
 import { ConfigMap } from '../../../../../types/ConfigMap';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
+import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { KeyValueEditorAccordion } from '../Controls/KeyValueEditorAccordion';
 import { SingleTextFieldAccordion } from '../Controls/SingleTextFieldAccordion';
 import { useEditorStyles } from '../styles';
@@ -41,7 +41,7 @@ export const ConfigMapEditor = ({
   yaml,
   onUpdatedYaml,
 }: ResourceEditorProps) => {
-  const resourceYaml = load(yaml) as ConfigMap;
+  const resourceYaml = loadYaml(yaml) as ConfigMap;
 
   const createResourceState = (): State => ({
     name: resourceYaml.metadata.name,
@@ -75,7 +75,7 @@ export const ConfigMapEditor = ({
       delete resourceYaml.metadata.labels;
     }
 
-    onUpdatedYaml(dump(resourceYaml));
+    onUpdatedYaml(dumpYaml(resourceYaml));
   }, [state, resourceYaml, onUpdatedYaml]);
 
   return (

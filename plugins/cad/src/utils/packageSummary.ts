@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { load } from 'js-yaml';
 import { groupBy } from 'lodash';
 import { Kptfile } from '../types/Kptfile';
 import { PackageRevision } from '../types/PackageRevision';
@@ -32,6 +31,7 @@ import {
   getPackageResourcesFromResourcesMap,
   getPackageRevisionResources,
 } from './packageRevisionResources';
+import { loadYaml } from './yaml';
 
 export type PackageSummary = {
   repository: Repository;
@@ -98,7 +98,7 @@ export const getPackageSummaries = (
       const kptfileResource = packageResources.find(r => r.kind === 'Kptfile');
 
       if (kptfileResource) {
-        const kptfile = load(kptfileResource.yaml) as Kptfile;
+        const kptfile = loadYaml(kptfileResource.yaml) as Kptfile;
 
         if (kptfile.upstream?.git?.ref) {
           const [upstreamPackageName, upstreamPackageRevision] =

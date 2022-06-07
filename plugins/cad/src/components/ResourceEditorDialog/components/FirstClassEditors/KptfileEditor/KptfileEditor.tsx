@@ -17,7 +17,6 @@
 import { useApi } from '@backstage/core-plugin-api';
 import { Button } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import { dump, load } from 'js-yaml';
 import { last, omit } from 'lodash';
 import React, { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import useAsync from 'react-use/lib/useAsync';
@@ -30,6 +29,7 @@ import {
   isValidatorFunction,
 } from '../../../../../utils/function';
 import { PackageResource } from '../../../../../utils/packageRevisionResources';
+import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { KeyValueEditorAccordion } from '../Controls/KeyValueEditorAccordion';
 import { SingleTextFieldAccordion } from '../Controls/SingleTextFieldAccordion';
 import { useEditorStyles } from '../styles';
@@ -59,7 +59,7 @@ export const KptfileEditor = ({
   onUpdatedYaml,
   packageResources,
 }: KptfileEditorProps) => {
-  const resourceYaml = load(yaml) as Kptfile;
+  const resourceYaml = loadYaml(yaml) as Kptfile;
   const api = useApi(configAsDataApiRef);
 
   const createResourceState = (): State => ({
@@ -136,7 +136,7 @@ export const KptfileEditor = ({
       delete resourceYaml.metadata.labels;
     }
 
-    onUpdatedYaml(dump(resourceYaml));
+    onUpdatedYaml(dumpYaml(resourceYaml));
   }, [state, mutators, validators, resourceYaml, onUpdatedYaml]);
 
   const kptFunctionUpdateFn = (

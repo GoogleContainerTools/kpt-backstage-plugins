@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { load } from 'js-yaml';
 import { cloneDeep, kebabCase } from 'lodash';
 import { KubernetesResource } from '../types/KubernetesResource';
 import {
@@ -24,6 +23,7 @@ import {
 import {
   createMultiResourceYaml,
   getResourcesFromMultiResourceYaml,
+  loadYaml,
 } from './yaml';
 
 export type PackageResource = {
@@ -75,7 +75,7 @@ export const getPackageResourcesFromResourcesMap = (
     const resourcesYaml = getResourcesFromMultiResourceYaml(multiResourceYaml);
 
     return resourcesYaml.map((resourceYaml, index) => {
-      const k8sResource = load(resourceYaml) as KubernetesResource;
+      const k8sResource = loadYaml(resourceYaml) as KubernetesResource;
 
       const uniqueId = `${k8sResource.kind}:${
         k8sResource.metadata.namespace ?? ''
@@ -109,7 +109,7 @@ export const addResourceToResourcesMap = (
   resourcesMap: PackageRevisionResourcesMap,
   newResourceYaml: string,
 ): PackageRevisionResourcesMap => {
-  const resourceYaml = load(newResourceYaml) as KubernetesResource;
+  const resourceYaml = loadYaml(newResourceYaml) as KubernetesResource;
   const resourceKind = resourceYaml.kind;
 
   const filename = `${kebabCase(resourceKind)}.yaml`;

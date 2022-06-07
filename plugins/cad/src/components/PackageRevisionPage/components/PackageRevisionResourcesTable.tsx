@@ -18,7 +18,6 @@ import { Table, TableColumn } from '@backstage/core-components';
 import { Button, Divider, IconButton, Menu, MenuItem } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
-import { dump } from 'js-yaml';
 import { startCase } from 'lodash';
 import React, { Fragment, useRef, useState } from 'react';
 import {
@@ -33,6 +32,7 @@ import {
   removeResourceFromResourcesMap,
   updateResourceInResourcesMap,
 } from '../../../utils/packageRevisionResources';
+import { dumpYaml } from '../../../utils/yaml';
 import { ResourceEditorDialog } from '../../ResourceEditorDialog';
 import { ResourceViewerDialog } from '../../ResourceViewerDialog';
 
@@ -280,7 +280,7 @@ export const PackageRevisionResourcesTable = ({
       ? generateNewResource(resourceGVK)
       : generateNewResource({ apiVersion: '', kind: '' });
 
-    const yaml = dump(resourceJson);
+    const yaml = dumpYaml(resourceJson);
 
     const thisSelectedResource = { yaml };
 

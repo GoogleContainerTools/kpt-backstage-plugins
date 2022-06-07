@@ -14,6 +14,18 @@
  * limitations under the License.
  */
 
+import { dump, load } from 'js-yaml';
+
+export type Yaml = any;
+
+export const loadYaml = (yamlString: string): Yaml => {
+  return load(yamlString);
+};
+
+export const dumpYaml = (yaml: Yaml): string => {
+  return dump(yaml);
+};
+
 export const createMultiResourceYaml = (resourcesYaml: string[]): string => {
   return resourcesYaml.join('\n---\n');
 };

@@ -17,7 +17,6 @@
 import { SelectItem } from '@backstage/core-components';
 import { Button, TextField } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import { dump, load } from 'js-yaml';
 import { last, omit } from 'lodash';
 import React, {
   ChangeEvent,
@@ -33,6 +32,7 @@ import {
 } from '../../../../../types/RoleBinding';
 import { PackageResource } from '../../../../../utils/packageRevisionResources';
 import { sortByLabel } from '../../../../../utils/selectItem';
+import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { Select } from '../../../../Controls/Select';
 import { EditorAccordion } from '../Controls/EditorAccordion';
 import { KeyValueEditorAccordion } from '../Controls/KeyValueEditorAccordion';
@@ -67,7 +67,7 @@ export const RoleBindingEditor = ({
   onUpdatedYaml,
   packageResources,
 }: RoleBindingEditorProps) => {
-  const resourceYaml = load(yaml) as RoleBinding;
+  const resourceYaml = loadYaml(yaml) as RoleBinding;
 
   const roleResources = useMemo(
     () => packageResources.filter(resource => resource.kind === 'Role'),
@@ -147,7 +147,7 @@ export const RoleBindingEditor = ({
       delete resourceYaml.metadata.labels;
     }
 
-    onUpdatedYaml(dump(resourceYaml));
+    onUpdatedYaml(dumpYaml(resourceYaml));
   }, [state, subjects, onUpdatedYaml, resourceYaml]);
 
   const onSubjectUpdated = (

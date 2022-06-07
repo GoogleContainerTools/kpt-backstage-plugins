@@ -15,9 +15,9 @@
  */
 
 import { StructuredMetadataTable } from '@backstage/core-components';
-import { load } from 'js-yaml';
 import React from 'react';
 import { KubernetesResource } from '../../../../../types/KubernetesResource';
+import { loadYaml } from '../../../../../utils/yaml';
 
 export type Metadata = {
   [key: string]: any;
@@ -48,7 +48,7 @@ const getMetadataForResource = (
   yaml: string,
   getCustomMetadata?: (resource: KubernetesResource) => Metadata,
 ): Metadata => {
-  const resource = load(yaml) as KubernetesResource;
+  const resource = loadYaml(yaml) as KubernetesResource;
 
   const baseMetadata = {
     name: resource.metadata.name,

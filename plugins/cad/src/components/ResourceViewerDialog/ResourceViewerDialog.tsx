@@ -22,9 +22,9 @@ import {
   DialogTitle,
   makeStyles,
 } from '@material-ui/core';
-import { load } from 'js-yaml';
 import React, { Fragment, useEffect, useState } from 'react';
 import { KubernetesResource } from '../../types/KubernetesResource';
+import { loadYaml } from '../../utils/yaml';
 import { YamlViewer } from '../Controls';
 import { FirstClassViewerSelector } from './components/FirstClassViewerSelector';
 
@@ -60,7 +60,7 @@ export const ResourceViewerDialog = ({
 
   if (!yaml) return <div />;
 
-  const resourceYaml = load(yaml) as KubernetesResource;
+  const resourceYaml = loadYaml(yaml) as KubernetesResource;
 
   const toggleView = (): void => {
     setShowYamlView(!showYamlView);

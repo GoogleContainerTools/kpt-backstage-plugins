@@ -22,10 +22,10 @@ import {
   DialogTitle,
   makeStyles,
 } from '@material-ui/core';
-import { load } from 'js-yaml';
 import React, { Fragment, useEffect, useState } from 'react';
 import { KubernetesResource } from '../../types/KubernetesResource';
 import { PackageResource } from '../../utils/packageRevisionResources';
+import { loadYaml } from '../../utils/yaml';
 import { YamlViewer } from '../Controls';
 import { FirstClassEditorSelector } from './components/FirstClassEditorSelector';
 
@@ -61,7 +61,7 @@ export const ResourceEditorDialog = ({
   const [showYamlView, setShowYamlView] = useState<boolean>(false);
   const [latestYaml, setLatestYaml] = useState<string>('');
 
-  const resourceYaml = load(yaml) as KubernetesResource;
+  const resourceYaml = loadYaml(yaml) as KubernetesResource;
 
   const resourceApiVersion = resourceYaml && resourceYaml.apiVersion;
   const kind = resourceYaml && resourceYaml.kind;
