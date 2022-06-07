@@ -15,10 +15,10 @@
  */
 
 import { TextField } from '@material-ui/core';
-import { dump, load } from 'js-yaml';
 import React, { ChangeEvent, Fragment, useEffect, useState } from 'react';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
 import { ResourceQuota } from '../../../../../types/ResourceQuota';
+import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { EditorAccordion } from '../Controls/EditorAccordion';
 import { KeyValueEditorAccordion } from '../Controls/KeyValueEditorAccordion';
 import { SingleTextFieldAccordion } from '../Controls/SingleTextFieldAccordion';
@@ -46,7 +46,7 @@ export const ResourceQuotaEditor = ({
   yaml,
   onUpdatedYaml,
 }: ResourceQuotaEditorProps) => {
-  const resourceYaml = load(yaml) as ResourceQuota;
+  const resourceYaml = loadYaml(yaml) as ResourceQuota;
 
   const specHard = resourceYaml.spec?.hard;
   const useCPURequestsPrefix = !specHard?.cpu;
@@ -102,7 +102,7 @@ export const ResourceQuotaEditor = ({
       delete resourceYaml.metadata.labels;
     }
 
-    onUpdatedYaml(dump(resourceYaml));
+    onUpdatedYaml(dumpYaml(resourceYaml));
   }, [
     state,
     onUpdatedYaml,

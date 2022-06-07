@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import { dump, load } from 'js-yaml';
 import React, { ChangeEvent, useEffect, useState } from 'react';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
 import { Namespace } from '../../../../../types/Namespace';
+import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { KeyValueEditorAccordion } from '../Controls/KeyValueEditorAccordion';
 import { SingleTextFieldAccordion } from '../Controls/SingleTextFieldAccordion';
 import { useEditorStyles } from '../styles';
@@ -39,7 +39,7 @@ export const NamespaceEditor = ({
   yaml,
   onUpdatedYaml,
 }: ResourceEditorProps) => {
-  const resourceYaml = load(yaml) as Namespace;
+  const resourceYaml = loadYaml(yaml) as Namespace;
 
   const createResourceState = (): State => ({
     name: resourceYaml.metadata.name,
@@ -69,7 +69,7 @@ export const NamespaceEditor = ({
       delete resourceYaml.metadata.labels;
     }
 
-    onUpdatedYaml(dump(resourceYaml));
+    onUpdatedYaml(dumpYaml(resourceYaml));
   }, [state, onUpdatedYaml, resourceYaml]);
 
   return (

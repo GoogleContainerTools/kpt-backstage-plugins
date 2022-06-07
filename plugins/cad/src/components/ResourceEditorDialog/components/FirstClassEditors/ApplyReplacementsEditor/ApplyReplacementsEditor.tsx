@@ -16,7 +16,6 @@
 
 import { SelectItem } from '@backstage/core-components';
 import { TextField } from '@material-ui/core';
-import { dump, load } from 'js-yaml';
 import React, { ChangeEvent, Fragment, useEffect, useState } from 'react';
 import {
   ApplyReplacement,
@@ -31,6 +30,7 @@ import {
 } from '../../../../../types/KubernetesResource';
 import { PackageResource } from '../../../../../utils/packageRevisionResources';
 import { sortByLabel } from '../../../../../utils/selectItem';
+import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { Select } from '../../../../Controls/Select';
 import { EditorAccordion } from '../Controls/EditorAccordion';
 import { KeyValueEditorAccordion } from '../Controls/KeyValueEditorAccordion';
@@ -100,7 +100,7 @@ const getPathSelectItems = (
   );
 
   if (resource) {
-    const k8Resource = load(resource.yaml) as KubernetesResource;
+    const k8Resource = loadYaml(resource.yaml) as KubernetesResource;
     const flatResource = flattenResource(k8Resource);
 
     return Object.entries(flatResource)
@@ -127,7 +127,7 @@ const getIndexSelectItems = (
     );
 
     if (resource) {
-      const k8Resource = load(resource.yaml) as KubernetesResource;
+      const k8Resource = loadYaml(resource.yaml) as KubernetesResource;
       const flatResource = flattenResource(k8Resource);
 
       const value = flatResource[replacementState.fieldPath];
@@ -190,7 +190,7 @@ export const ApplyReplacementsEditor = ({
   onUpdatedYaml,
   packageResources,
 }: ApplyReplacementsEditorProps) => {
-  const resourceYaml = load(yaml) as ApplyReplacement;
+  const resourceYaml = loadYaml(yaml) as ApplyReplacement;
 
   const packageResourcesSelectItems: SelectItem[] =
     getPackageSelectItems(packageResources);
@@ -309,7 +309,7 @@ export const ApplyReplacementsEditor = ({
       delete resourceYaml.metadata.labels;
     }
 
-    onUpdatedYaml(dump(resourceYaml));
+    onUpdatedYaml(dumpYaml(resourceYaml));
   }, [state, sourceState, targetState, onUpdatedYaml, resourceYaml]);
 
   const handleChange =

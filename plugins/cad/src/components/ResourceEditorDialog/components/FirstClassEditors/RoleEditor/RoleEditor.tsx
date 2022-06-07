@@ -16,11 +16,11 @@
 
 import { Button } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import { dump, load } from 'js-yaml';
 import { last, omit } from 'lodash';
 import React, { ChangeEvent, useEffect, useState } from 'react';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
 import { Role, RoleRule } from '../../../../../types/Role';
+import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { KeyValueEditorAccordion } from '../Controls/KeyValueEditorAccordion';
 import { SingleTextFieldAccordion } from '../Controls/SingleTextFieldAccordion';
 import { useEditorStyles } from '../styles';
@@ -45,7 +45,7 @@ export type RoleRuleView = RoleRule & {
 };
 
 export const RoleEditor = ({ yaml, onUpdatedYaml }: RoleEditorProps) => {
-  const resourceYaml = load(yaml) as Role;
+  const resourceYaml = loadYaml(yaml) as Role;
 
   const createResourceState = (): State => ({
     name: resourceYaml.metadata.name,
@@ -88,7 +88,7 @@ export const RoleEditor = ({ yaml, onUpdatedYaml }: RoleEditorProps) => {
       delete resourceYaml.metadata.labels;
     }
 
-    onUpdatedYaml(dump(resourceYaml));
+    onUpdatedYaml(dumpYaml(resourceYaml));
   }, [state, rules, onUpdatedYaml, resourceYaml]);
 
   const onRuleUpdated = (currentRule: RoleRuleView, rule?: RoleRuleView) => {

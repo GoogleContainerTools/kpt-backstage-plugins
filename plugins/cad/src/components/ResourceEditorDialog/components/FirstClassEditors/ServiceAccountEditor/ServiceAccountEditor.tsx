@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import { dump, load } from 'js-yaml';
 import React, { ChangeEvent, useEffect, useState } from 'react';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
 import { ServiceAccount } from '../../../../../types/ServiceAccount';
+import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { KeyValueEditorAccordion } from '../Controls/KeyValueEditorAccordion';
 import { SingleTextFieldAccordion } from '../Controls/SingleTextFieldAccordion';
 import { useEditorStyles } from '../styles';
@@ -40,7 +40,7 @@ export const ServiceAccountEditor = ({
   yaml,
   onUpdatedYaml,
 }: ResourceEditorProps) => {
-  const resourceYaml = load(yaml) as ServiceAccount;
+  const resourceYaml = loadYaml(yaml) as ServiceAccount;
 
   const createResourceState = (): State => ({
     name: resourceYaml.metadata.name,
@@ -72,7 +72,7 @@ export const ServiceAccountEditor = ({
       delete resourceYaml.metadata.labels;
     }
 
-    onUpdatedYaml(dump(resourceYaml));
+    onUpdatedYaml(dumpYaml(resourceYaml));
   }, [state, onUpdatedYaml, resourceYaml]);
 
   return (
