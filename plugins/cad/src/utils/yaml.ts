@@ -23,7 +23,7 @@ export const loadYaml = (yamlString: string): Yaml => {
 };
 
 export const dumpYaml = (yaml: Yaml): string => {
-  return dump(yaml);
+  return dump(yaml, { noArrayIndent: true });
 };
 
 export const createMultiResourceYaml = (resourcesYaml: string[]): string => {
