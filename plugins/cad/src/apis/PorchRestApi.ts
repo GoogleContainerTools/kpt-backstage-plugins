@@ -19,7 +19,10 @@ import { ConfigAsDataApi } from '.';
 import { Function } from '../types/Function';
 import { KubernetesStatus } from '../types/KubernetesStatus';
 import { PackageRevision } from '../types/PackageRevision';
-import { PackageRevisionResources } from '../types/PackageRevisionResource';
+import {
+  ListPackageRevisionResources,
+  PackageRevisionResources,
+} from '../types/PackageRevisionResource';
 import { ListRepositories, Repository } from '../types/Repository';
 import { ListRootSyncs, RootSync } from '../types/RootSync';
 import { ListSecrets, Secret } from '../types/Secret';
@@ -309,6 +312,14 @@ export class PorchRestAPI implements ConfigAsDataApi {
   ): Promise<PackageRevisionResources> {
     const resourcesResponse = await this.cadFetch(
       `apis/porch.kpt.dev/v1alpha1/namespaces/default/packagerevisionresources/${packageName}`,
+    );
+
+    return resourcesResponse;
+  }
+
+  async listPackageRevisionResources(): Promise<ListPackageRevisionResources> {
+    const resourcesResponse = await this.cadFetch(
+      `apis/porch.kpt.dev/v1alpha1/namespaces/default/packagerevisionresources`,
     );
 
     return resourcesResponse;

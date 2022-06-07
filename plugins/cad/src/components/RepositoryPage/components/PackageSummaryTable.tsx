@@ -31,6 +31,7 @@ import { formatCreationTimestamp } from '../../../utils/formatDate';
 import { PackageSummary } from '../../../utils/packageSummary';
 import { isDeploymentRepository } from '../../../utils/repository';
 import { PackageIcon } from '../../Controls';
+import { PackageLink } from '../../Links';
 import { SyncStatusVisual } from './SyncStatusVisual';
 
 type PackageRevisionsTableProps = {
@@ -58,6 +59,8 @@ type PackageSummaryRow = {
   syncStatus?: SyncStatus | null;
   lifecycle: PackageRevisionLifecycle;
   created: string;
+  upstreamPackageDisplayName?: string;
+  upstreamPackageRevision?: PackageRevision;
   navigate: () => void;
   unpublished?: UnpublishedPackageRevision;
 };
@@ -95,9 +98,27 @@ const renderStatusColumn = (
   return <Fragment />;
 };
 
+const renderBlueprintColumn = (row: PackageSummaryRow): JSX.Element => {
+  if (row.upstreamPackageRevision) {
+    return (
+      <PackageLink
+        packageRevision={row.upstreamPackageRevision}
+        stopPropagation
+      />
+    );
+  }
+
+  return <Fragment>{row.upstreamPackageDisplayName || ''}</Fragment>;
+};
+
+const renderSyncColumn = (row: PackageSummaryRow): JSX.Element => (
+  <SyncStatusVisual syncStatus={row.syncStatus} />
+);
+
 const getTableColumns = (
   includeSyncsColumn: boolean,
   renderStatus: RenderColumn,
+  renderBlueprint: RenderColumn,
   renderSync: RenderColumn,
 ): TableColumn<PackageSummaryRow>[] => {
   const columns: TableColumn<PackageSummaryRow>[] = [
@@ -109,6 +130,7 @@ const getTableColumns = (
     { title: 'Name', field: 'packageName' },
     { title: 'Revision', field: 'revision' },
     { title: 'Lifecycle', field: 'lifecycle' },
+    { title: 'Blueprint', render: renderBlueprint },
     { title: 'Created', field: 'created' },
   ];
 
@@ -176,6 +198,10 @@ const mapToPackageSummaryRow = (
     syncStatus: getRootSyncStatus(packageSummary),
     created: formatCreationTimestamp(onePackage.metadata.creationTimestamp),
     navigate: () => navigateToPackageRevision(onePackage),
+    upstreamPackageDisplayName: packageSummary.upstreamPackageName
+      ? `${packageSummary.upstreamPackageName} ${packageSummary.upstreamPackageRevision}`
+      : undefined,
+    upstreamPackageRevision: packageSummary.upstreamRevision,
     unpublished: mapToUnpublishedRevision(
       packageSummary,
       navigateToPackageRevision,
@@ -213,12 +239,14 @@ export const PackageRevisionsTable = ({
 
   const renderStatus = (row: PackageSummaryRow): JSX.Element =>
     renderStatusColumn(row, classes);
-  const renderSync = (row: PackageSummaryRow): JSX.Element => (
-    <SyncStatusVisual syncStatus={row.syncStatus} />
-  );
 
   const includeSyncsColumn = isDeploymentRepository(repository);
-  const columns = getTableColumns(includeSyncsColumn, renderStatus, renderSync);
+  const columns = getTableColumns(
+    includeSyncsColumn,
+    renderStatus,
+    renderBlueprintColumn,
+    renderSyncColumn,
+  );
 
   const data = mapPackageRevisionsToRows(packages, navigateToPackageRevision);
 

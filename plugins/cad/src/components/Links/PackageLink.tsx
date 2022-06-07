@@ -25,11 +25,13 @@ import { useLinkStyles } from './styles';
 type PackageLinkProps = {
   packageRevision: PackageRevision;
   breadcrumb?: boolean;
+  stopPropagation?: boolean;
 };
 
 export const PackageLink = ({
   packageRevision,
   breadcrumb,
+  stopPropagation,
 }: PackageLinkProps) => {
   const packageRef = useRouteRef(packageRouteRef);
 
@@ -42,6 +44,11 @@ export const PackageLink = ({
   return (
     <Link
       className={className}
+      onClick={e => {
+        if (stopPropagation) {
+          e.stopPropagation();
+        }
+      }}
       to={packageRef({ repositoryName, packageName })}
     >
       {getPackageRevisionTitle(packageRevision)}

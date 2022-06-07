@@ -17,7 +17,10 @@
 import { createApiRef } from '@backstage/core-plugin-api';
 import { Function } from '../types/Function';
 import { PackageRevision } from '../types/PackageRevision';
-import { PackageRevisionResources } from '../types/PackageRevisionResource';
+import {
+  ListPackageRevisionResources,
+  PackageRevisionResources,
+} from '../types/PackageRevisionResource';
 import { ListRepositories, Repository } from '../types/Repository';
 import { ListRootSyncs, RootSync } from '../types/RootSync';
 import { ListSecrets, Secret } from '../types/Secret';
@@ -66,6 +69,8 @@ export type ConfigAsDataApi = {
   getPackageRevisionResources(
     packageName: string,
   ): Promise<PackageRevisionResources>;
+
+  listPackageRevisionResources(): Promise<ListPackageRevisionResources>;
 
   listCatalogFunctions(): Promise<Function[]>;
 

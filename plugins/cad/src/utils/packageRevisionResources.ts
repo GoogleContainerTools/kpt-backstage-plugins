@@ -36,6 +36,15 @@ export type PackageResource = {
   resourceIndex: number;
 };
 
+export const getPackageRevisionResources = (
+  packageRevisionResources: PackageRevisionResources[],
+  packageRevisionName: string,
+): PackageRevisionResources => {
+  return packageRevisionResources.find(
+    r => r.metadata.name === packageRevisionName,
+  ) as PackageRevisionResources;
+};
+
 export const getPackageRevisionResourcesResource = (
   fullPackageName: string,
   resourcesMap: PackageRevisionResourcesMap,
