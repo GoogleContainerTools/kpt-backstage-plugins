@@ -19,18 +19,15 @@ import { useRouteRef } from '@backstage/core-plugin-api';
 import React from 'react';
 import { packageRouteRef } from '../../routes';
 import { PackageRevision } from '../../types/PackageRevision';
-import { Repository } from '../../types/Repository';
 import { getPackageRevisionTitle } from '../../utils/packageRevision';
 import { useLinkStyles } from './styles';
 
 type PackageLinkProps = {
-  repository: Repository;
   packageRevision: PackageRevision;
   breadcrumb?: boolean;
 };
 
 export const PackageLink = ({
-  repository,
   packageRevision,
   breadcrumb,
 }: PackageLinkProps) => {
@@ -39,7 +36,7 @@ export const PackageLink = ({
   const classes = useLinkStyles();
   const className = breadcrumb ? classes.breadcrumb : '';
 
-  const repositoryName = repository.metadata.name;
+  const repositoryName = packageRevision.spec.repository;
   const packageName = packageRevision.metadata.name;
 
   return (
