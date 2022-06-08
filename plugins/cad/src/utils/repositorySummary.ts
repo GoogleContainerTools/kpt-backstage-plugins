@@ -15,6 +15,8 @@
  */
 
 import { ConfigAsDataApi } from '../apis';
+import { PackageRevision } from '../types/PackageRevision';
+import { PackageRevisionResources } from '../types/PackageRevisionResource';
 import {
   Repository,
   RepositoryGitDetails,
@@ -22,6 +24,7 @@ import {
   RepositoryUpstream,
 } from '../types/Repository';
 import { RepositorySummary } from '../types/RepositorySummary';
+import { getPackageSummaries } from './packageSummary';
 import { isBlueprintRepository } from './repository';
 
 type RepositoryDetails = RepositoryUpstream;
@@ -81,6 +84,35 @@ export const getRepositorySummary = async (
   }
 
   return repositorySummary;
+};
+
+export const populatePackageSummaries = (
+  repositorySummaries: RepositorySummary[],
+  packageRevisions: PackageRevision[],
+  packageRevisionResources: PackageRevisionResources[],
+) => {
+  for (const repositorySummary of repositorySummaries) {
+    const repositoryPackageRevisions = packageRevisions.filter(
+      revision =>
+        revision.spec.repository === repositorySummary.repository.metadata.name,
+    );
+
+    const upstreamPackageRevisions = packageRevisions.filter(
+      revision =>
+        repositorySummary.upstreamRepository &&
+        revision.spec.repository ===
+          repositorySummary.upstreamRepository.metadata.name,
+    );
+
+    const packageSummaries = getPackageSummaries(
+      repositoryPackageRevisions,
+      packageRevisionResources,
+      upstreamPackageRevisions,
+      repositorySummary.repository,
+    );
+
+    repositorySummary.packageSummaries = packageSummaries;
+  }
 };
 
 export const fitlerRepositorySummary = (

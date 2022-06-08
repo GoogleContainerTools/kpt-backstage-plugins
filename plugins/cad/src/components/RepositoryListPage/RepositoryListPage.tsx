@@ -40,6 +40,7 @@ import {
 import {
   fitlerRepositorySummary,
   listRepositorySummaries,
+  populatePackageSummaries,
 } from '../../utils/repositorySummary';
 import { RepositoriesTable } from './components/RepositoriesTable';
 
@@ -49,12 +50,13 @@ interface TabProps {
 }
 
 const createRepositoriesTable = (
-  title: string,
+  descriptor: string,
   repositories: RepositorySummary[],
   content: RepositoryContent,
 ): JSX.Element => (
   <RepositoriesTable
-    title={title}
+    title={`${descriptor}s Repository`}
+    packageDescriptor={descriptor}
     repositories={repositories}
     repositoryContent={content}
   />
@@ -65,7 +67,7 @@ const getDeploymentsTab = (
 ): TabProps => ({
   label: 'Deployments',
   content: createRepositoriesTable(
-    'Deployment Repositories',
+    'Deployment',
     fitlerRepositorySummary(allRepositorySummaries, isDeploymentRepository),
     RepositoryContent.PACKAGE,
   ),
@@ -76,7 +78,7 @@ const getBlueprintsTab = (
 ): TabProps => ({
   label: 'Blueprints',
   content: createRepositoriesTable(
-    'Blueprint Repositories',
+    'Blueprint',
     fitlerRepositorySummary(allRepositorySummaries, isBlueprintRepository),
     RepositoryContent.PACKAGE,
   ),
@@ -87,7 +89,7 @@ const getFunctionsTab = (
 ): TabProps => ({
   label: 'Functions',
   content: createRepositoriesTable(
-    'Function Repositories',
+    'Function',
     fitlerRepositorySummary(allRepositorySummaries, isFunctionRepository),
     RepositoryContent.FUNCTION,
   ),
@@ -117,7 +119,31 @@ export const RepositoryListPage = () => {
     value: allRepositorySummaries,
     loading,
     error,
-  } = useAsync(() => listRepositorySummaries(api), []);
+  } = useAsync(async () => {
+    const repositorySummaries = await listRepositorySummaries(api);
+
+    try {
+      const [allPackageRevisions, packageRevisionsResourcesResponse] =
+        await Promise.all([
+          api.listPackageRevisions(),
+          api.listPackageRevisionResources(),
+        ]);
+
+      const allPackageRevisionResources =
+        packageRevisionsResourcesResponse.items;
+
+      populatePackageSummaries(
+        repositorySummaries,
+        allPackageRevisions,
+        allPackageRevisionResources,
+      );
+    } catch {
+      // Best effort only. An error from one of these APIs should not prevent
+      // the page from rendering.
+    }
+
+    return repositorySummaries;
+  }, []);
 
   if (loading) {
     return <Progress />;
@@ -126,7 +152,7 @@ export const RepositoryListPage = () => {
   }
 
   if (!allRepositorySummaries) {
-    throw new Error('Repositories summaries not definied');
+    throw new Error('Repository summaries is not defined');
   }
 
   const repositoryTabs = getRepositoryTabs(allRepositorySummaries);

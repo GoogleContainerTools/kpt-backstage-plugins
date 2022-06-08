@@ -19,8 +19,10 @@ import { useRouteRef } from '@backstage/core-plugin-api';
 import React, { Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { repositoryRouteRef } from '../../../routes';
+import { PackageRevisionLifecycle } from '../../../types/PackageRevision';
 import { Repository, RepositoryContent } from '../../../types/Repository';
 import { RepositorySummary } from '../../../types/RepositorySummary';
+import { PackageSummary } from '../../../utils/packageSummary';
 import { getRepositoryTitle } from '../../../utils/repository';
 import { RepositoryLink } from '../../Links';
 
@@ -28,6 +30,7 @@ type RepositoriesTableProps = {
   title: string;
   repositories: RepositorySummary[];
   repositoryContent: RepositoryContent;
+  packageDescriptor: string;
 };
 
 type RepositoryRow = {
@@ -35,15 +38,18 @@ type RepositoryRow = {
   title: string;
   description: string;
   name: string;
+  summary: string;
   blueprint?: Repository;
 };
 
 const getTableColumns = (
+  packageDescriptor: string,
   repositoryContent: RepositoryContent,
 ): TableColumn<RepositoryRow>[] => {
   const columns: TableColumn<RepositoryRow>[] = [
     { title: 'Title', field: 'title' },
     { title: 'Description', field: 'description' },
+    { title: `${packageDescriptor}s`, field: 'summary' },
   ];
 
   if (repositoryContent === RepositoryContent.PACKAGE) {
@@ -63,6 +69,36 @@ const getTableColumns = (
   return columns;
 };
 
+const getSummary = (packageSummaries?: PackageSummary[]): string => {
+  if (!packageSummaries) return '';
+
+  const publishedPackages = packageSummaries.filter(
+    summary => summary.latestPublishedRevision,
+  ).length;
+  const draftPackages = packageSummaries.filter(
+    summary =>
+      summary.unpublishedRevision?.spec.lifecycle ===
+      PackageRevisionLifecycle.DRAFT,
+  ).length;
+  const proposedPackages = packageSummaries.filter(
+    summary =>
+      summary.unpublishedRevision?.spec.lifecycle ===
+      PackageRevisionLifecycle.PROPOSED,
+  ).length;
+
+  let summary = `${publishedPackages} Published`;
+
+  if (proposedPackages) {
+    summary = `${summary}, ${proposedPackages} Proposed`;
+  }
+
+  if (draftPackages) {
+    summary = `${summary}, ${draftPackages} Draft`;
+  }
+
+  return summary;
+};
+
 const mapToRepositoryRow = (
   repositorySummary: RepositorySummary,
 ): RepositoryRow => {
@@ -75,6 +111,7 @@ const mapToRepositoryRow = (
     description: repository.spec.description,
     blueprint: blueprint,
     name: repository.metadata.name,
+    summary: getSummary(repositorySummary.packageSummaries),
   };
 };
 
@@ -82,12 +119,13 @@ export const RepositoriesTable = ({
   title,
   repositories,
   repositoryContent,
+  packageDescriptor,
 }: RepositoriesTableProps) => {
   const navigate = useNavigate();
 
   const repositoryRef = useRouteRef(repositoryRouteRef);
 
-  const columns = getTableColumns(repositoryContent);
+  const columns = getTableColumns(packageDescriptor, repositoryContent);
   const data = repositories.map(mapToRepositoryRow);
 
   return (
