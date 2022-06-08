@@ -18,7 +18,8 @@ import { Table, TableColumn } from '@backstage/core-components';
 import { Button, Divider, IconButton, Menu, MenuItem } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
-import { startCase } from 'lodash';
+import { diffLines } from 'diff';
+import { startCase, sum } from 'lodash';
 import React, { Fragment, useRef, useState } from 'react';
 import {
   KubernetesKeyValueObject,
@@ -49,11 +50,15 @@ enum Dialog {
 
 type PackageRevisionResourcesTableProps = {
   resourcesMap: PackageRevisionResourcesMap;
+  baseResourcesMap?: PackageRevisionResourcesMap;
   mode: ResourcesTableMode;
   onUpdatedResourcesMap?: (resourcesMap: PackageRevisionResourcesMap) => void;
 };
 
-type ResourceRow = PackageResource;
+type ResourceRow = PackageResource & {
+  diffSummary: string;
+  isDeleted: boolean;
+};
 
 type KubernetesGKV = {
   apiVersion: string;
@@ -71,6 +76,7 @@ type DialogResource = {
 
 export const PackageRevisionResourcesTable = ({
   resourcesMap,
+  baseResourcesMap,
   mode,
   onUpdatedResourcesMap,
 }: PackageRevisionResourcesTableProps) => {
@@ -149,7 +155,7 @@ export const PackageRevisionResourcesTable = ({
   const rowOptions = (resourceRow: ResourceRow): JSX.Element[] => {
     const options: JSX.Element[] = [];
 
-    if (isEditMode) {
+    if (isEditMode && !resourceRow.isDeleted) {
       if (resourceRow.filename !== 'Kptfile') {
         options.push(
           <IconButton
@@ -178,8 +184,13 @@ export const PackageRevisionResourcesTable = ({
     { title: 'Kind', field: 'kind' },
     { title: 'Name', field: 'name' },
     { title: 'Namespace', field: 'namespace' },
+    { title: '' },
     { title: '', render: resourceRow => <div>{rowOptions(resourceRow)}</div> },
   ];
+
+  if (baseResourcesMap) {
+    columns[3] = { title: 'Diff', field: 'diffSummary' };
+  }
 
   const allResources = getPackageResourcesFromResourcesMap(
     resourcesMap,
@@ -204,6 +215,45 @@ export const PackageRevisionResourcesTable = ({
 
     return resourceScore(resource1) < resourceScore(resource2) ? 1 : -1;
   });
+
+  if (baseResourcesMap) {
+    const baseResources = (
+      baseResourcesMap
+        ? getPackageResourcesFromResourcesMap(baseResourcesMap)
+        : []
+    ) as ResourceRow[];
+
+    for (const baseResource of baseResources) {
+      const thisResource = allResources.find(r => r.id === baseResource.id);
+
+      if (!thisResource) {
+        allResources.push({ ...baseResource, isDeleted: true, yaml: '' });
+      }
+    }
+
+    if (baseResources.length > 0) {
+      allResources.forEach(r => {
+        const baseResource = baseResources.find(br => br.id === r.id);
+
+        if (r.isDeleted) {
+          r.diffSummary = 'Removed';
+        } else if (!baseResource) {
+          r.diffSummary = 'Added';
+        } else if (baseResource.yaml !== r.yaml) {
+          const thisDiff = diffLines(baseResource.yaml, r.yaml);
+
+          const addedLines = sum(
+            thisDiff.filter(d => !!d.added).map(d => d.count),
+          );
+          const removedLines = sum(
+            thisDiff.filter(d => !!d.removed).map(d => d.count),
+          );
+
+          r.diffSummary = `Updated (+${addedLines}, -${removedLines})`;
+        }
+      });
+    }
+  }
 
   const saveUpdatedYaml = (yaml: string): void => {
     if (!onUpdatedResourcesMap) {

@@ -78,8 +78,8 @@ export const getPackageResourcesFromResourcesMap = (
       const k8sResource = loadYaml(resourceYaml) as KubernetesResource;
 
       const uniqueId = `${k8sResource.kind}:${
-        k8sResource.metadata.namespace ?? ''
-      }:${k8sResource.metadata.name}`;
+        filename ?? k8sResource.metadata.name
+      }:${index}`;
 
       return {
         id: uniqueId,

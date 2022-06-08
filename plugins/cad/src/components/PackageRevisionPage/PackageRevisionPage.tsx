@@ -19,6 +19,7 @@ import {
   Button,
   ContentHeader,
   Progress,
+  SelectItem,
   Tabs,
 } from '@backstage/core-components';
 import { useApi, useRouteRef } from '@backstage/core-plugin-api';
@@ -38,6 +39,7 @@ import {
   editPackageRouteRef,
   packageRouteRef,
 } from '../../routes';
+import { Kptfile } from '../../types/Kptfile';
 import {
   PackageRevision,
   PackageRevisionLifecycle,
@@ -64,13 +66,17 @@ import {
   isLatestPublishedRevision,
   sortByPackageNameAndRevisionComparison,
 } from '../../utils/packageRevision';
-import { getPackageRevisionResourcesResource } from '../../utils/packageRevisionResources';
+import {
+  getPackageResourcesFromResourcesMap,
+  getPackageRevisionResourcesResource,
+} from '../../utils/packageRevisionResources';
 import {
   getPackageDescriptor,
   isDeploymentRepository,
 } from '../../utils/repository';
 import { getRepositorySummary } from '../../utils/repositorySummary';
-import { ConfirmationDialog } from '../Controls';
+import { loadYaml } from '../../utils/yaml';
+import { ConfirmationDialog, Select } from '../Controls';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
 import { AdvancedPackageRevisionOptions } from './components/AdvancedPackageRevisionOptions';
 import {
@@ -129,6 +135,11 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const [userInitiatedApiRequest, setUserInitiatedApiRequest] =
     useState<boolean>(false);
 
+  const [baseResourcesMap, setBaseResourcesMap] =
+    useState<PackageRevisionResourcesMap>();
+  const [selectDiffItems, setSelectDiffItems] = useState<SelectItem[]>([]);
+  const [diffSelection, setDiffSelection] = useState<string>('none');
+
   const [openRestoreDialog, setOpenRestoreDialog] = useState<boolean>(false);
 
   const loadRepositorySummary = async (): Promise<void> => {
@@ -161,12 +172,76 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     setPackageRevisions(thisSortedRevisions);
     setPackageRevision(thisPackageRevision);
     setResourcesMap(thisResources.spec.resources);
+
+    const diffItems: SelectItem[] = [
+      { label: 'Hide comparison', value: 'none' },
+    ];
+
+    if (
+      thisSortedRevisions.indexOf(thisPackageRevision) !==
+      thisSortedRevisions.length - 1
+    ) {
+      const basePackageRevision =
+        thisSortedRevisions[
+          thisSortedRevisions.indexOf(thisPackageRevision) + 1
+        ];
+
+      if (basePackageRevision) {
+        diffItems.push({
+          label: `Previous Revision (${basePackageRevision.spec.revision})`,
+          value: basePackageRevision.metadata.name,
+        });
+      }
+    }
+
+    const kptfileResource = getPackageResourcesFromResourcesMap(
+      thisResources.spec.resources,
+    ).find(r => r.kind === 'Kptfile');
+
+    if (kptfileResource) {
+      const kptfile = loadYaml(kptfileResource.yaml) as Kptfile;
+
+      if (kptfile.upstream?.git?.ref) {
+        const [upstreamPackageName, upstreamPackageRevision] =
+          kptfile.upstream.git.ref.split('/');
+
+        const upstreamPackage = thisPackageRevisions.find(
+          r =>
+            r.spec.packageName === upstreamPackageName &&
+            r.spec.revision === upstreamPackageRevision,
+        );
+
+        if (upstreamPackage) {
+          diffItems.push({
+            label: `Upstream (${getPackageRevisionTitle(upstreamPackage)})`,
+            value: upstreamPackage.metadata.name,
+          });
+        }
+      }
+    }
+
+    setSelectDiffItems(diffItems);
   };
 
   const { loading, error } = useAsync(
     async () => Promise.all([loadRepositorySummary(), loadPackageRevision()]),
     [repositoryName, packageName, mode],
   );
+
+  useEffect(() => setDiffSelection('none'), [repositoryName, packageName]);
+
+  useEffect(() => {
+    if (!diffSelection || diffSelection === 'none') {
+      setBaseResourcesMap(undefined);
+    } else {
+      const setUpstream = async (): Promise<void> => {
+        const upstreamResources = await api.getPackageRevisionResources(diffSelection)
+        setBaseResourcesMap(upstreamResources.spec.resources);
+      };
+
+      setUpstream();
+    }
+  }, [api, diffSelection]);
 
   const isLatestPublishedPackageRevision =
     packageRevision && isLatestPublishedRevision(packageRevision);
@@ -731,11 +806,22 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
           {
             label: 'Resources',
             content: (
-              <PackageRevisionResourcesTable
-                resourcesMap={resourcesMap}
-                mode={resourcesTableMode}
-                onUpdatedResourcesMap={handleUpdatedResourcesMap}
-              />
+              <Fragment>
+                <PackageRevisionResourcesTable
+                  resourcesMap={resourcesMap}
+                  baseResourcesMap={baseResourcesMap}
+                  mode={resourcesTableMode}
+                  onUpdatedResourcesMap={handleUpdatedResourcesMap}
+                />
+                <br />
+                <Select
+                  label="Compare Revision"
+                  onChange={value => setDiffSelection(value)}
+                  selected={diffSelection}
+                  items={selectDiffItems}
+                  helperText="Compare revision to a previous revision or upstream blueprint."
+                />
+              </Fragment>
             ),
           },
           {
