@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+import { PackageSummary } from '../utils/packageSummary';
 import { Repository } from './Repository';
 
 export type RepositorySummary = {
   repository: Repository;
   upstreamRepository?: Repository;
   downstreamRepositories: Repository[];
+  packageSummaries?: PackageSummary[];
 };
