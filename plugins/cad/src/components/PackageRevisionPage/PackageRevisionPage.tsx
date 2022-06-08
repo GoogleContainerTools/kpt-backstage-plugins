@@ -235,7 +235,9 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       setBaseResourcesMap(undefined);
     } else {
       const setUpstream = async (): Promise<void> => {
-        const upstreamResources = await api.getPackageRevisionResources(diffSelection)
+        const upstreamResources = await api.getPackageRevisionResources(
+          diffSelection,
+        );
         setBaseResourcesMap(upstreamResources.spec.resources);
       };
 
