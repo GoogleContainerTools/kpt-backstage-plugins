@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import { cloneDeep, kebabCase } from 'lodash';
+import { diffLines } from 'diff';
+import { cloneDeep, kebabCase, sum } from 'lodash';
 import { KubernetesResource } from '../types/KubernetesResource';
 import {
   PackageRevisionResources,
@@ -35,6 +36,45 @@ export type PackageResource = {
   filename: string;
   resourceIndex: number;
 };
+
+export enum ResourceDiffStatus {
+  UNCHANGED = 'unchanged',
+  UPDATED = 'updated',
+  ADDED = 'added',
+  REMOVED = 'removed',
+}
+
+export type PackageResourceDiffRemoved = {
+  originalResource: PackageResource;
+  currentResource?: never;
+  diffStatus: ResourceDiffStatus.REMOVED;
+};
+
+export type PackageResourceDiffUpdated = {
+  originalResource: PackageResource;
+  currentResource: PackageResource;
+  diffStatus: ResourceDiffStatus.UPDATED;
+  linesAdded: number;
+  linesRemoved: number;
+};
+
+export type PackageResourceDiffUnchanged = {
+  originalResource: PackageResource;
+  currentResource: PackageResource;
+  diffStatus: ResourceDiffStatus.UNCHANGED;
+};
+
+export type PackageResourceDiffAdded = {
+  originalResource?: never;
+  currentResource: PackageResource;
+  diffStatus: ResourceDiffStatus.ADDED;
+};
+
+export type PackageResourceDiff =
+  | PackageResourceDiffAdded
+  | PackageResourceDiffUnchanged
+  | PackageResourceDiffUpdated
+  | PackageResourceDiffRemoved;
 
 export const getPackageRevisionResources = (
   packageRevisionResources: PackageRevisionResources[],
@@ -165,4 +205,76 @@ export const removeResourceFromResourcesMap = (
   }
 
   return updatedResourcesMap;
+};
+
+export const diffPackageResource = (
+  originalResource?: PackageResource,
+  currentResource?: PackageResource,
+): PackageResourceDiff => {
+  if (!originalResource && currentResource) {
+    return {
+      diffStatus: ResourceDiffStatus.ADDED,
+      currentResource: currentResource,
+    };
+  } else if (originalResource && !currentResource) {
+    return {
+      diffStatus: ResourceDiffStatus.REMOVED,
+      originalResource,
+    };
+  } else if (originalResource && currentResource) {
+    if (originalResource.yaml === currentResource.yaml) {
+      return {
+        diffStatus: ResourceDiffStatus.UNCHANGED,
+        originalResource,
+        currentResource,
+      };
+    }
+
+    const thisDiff = diffLines(originalResource.yaml, currentResource.yaml);
+    const linesAdded = sum(thisDiff.filter(d => !!d.added).map(d => d.count));
+    const linesRemoved = sum(
+      thisDiff.filter(d => !!d.removed).map(d => d.count),
+    );
+
+    return {
+      diffStatus: ResourceDiffStatus.UPDATED,
+      originalResource,
+      currentResource,
+      linesAdded,
+      linesRemoved,
+    };
+  }
+
+  throw new Error(
+    'Invalid resource comparison, both the original and current resource are not defined',
+  );
+};
+
+export const diffPackageResources = (
+  originalResources: PackageResource[],
+  currentResources: PackageResource[],
+): PackageResourceDiff[] => {
+  const diffSummary: PackageResourceDiff[] = [];
+
+  for (const currentResource of currentResources) {
+    const originalResource = originalResources.find(
+      resource => resource.id === currentResource.id,
+    );
+
+    const diff = diffPackageResource(originalResource, currentResource);
+    diffSummary.push(diff);
+  }
+
+  for (const originalResource of originalResources) {
+    const currentResource = currentResources.find(
+      resource => resource.id === originalResource.id,
+    );
+
+    if (!currentResource) {
+      const diff = diffPackageResource(originalResource, currentResource);
+      diffSummary.push(diff);
+    }
+  }
+
+  return diffSummary;
 };

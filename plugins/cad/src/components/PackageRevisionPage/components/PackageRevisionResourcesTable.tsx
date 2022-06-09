@@ -18,8 +18,7 @@ import { Table, TableColumn } from '@backstage/core-components';
 import { Button, Divider, IconButton, Menu, MenuItem } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
-import { diffLines } from 'diff';
-import { startCase, sum } from 'lodash';
+import { startCase } from 'lodash';
 import React, { Fragment, useRef, useState } from 'react';
 import {
   KubernetesKeyValueObject,
@@ -28,9 +27,11 @@ import {
 import { PackageRevisionResourcesMap } from '../../../types/PackageRevisionResource';
 import {
   addResourceToResourcesMap,
+  diffPackageResources,
   getPackageResourcesFromResourcesMap,
   PackageResource,
   removeResourceFromResourcesMap,
+  ResourceDiffStatus,
   updateResourceInResourcesMap,
 } from '../../../utils/packageRevisionResources';
 import { dumpYaml } from '../../../utils/yaml';
@@ -223,35 +224,48 @@ export const PackageRevisionResourcesTable = ({
         : []
     ) as ResourceRow[];
 
-    for (const baseResource of baseResources) {
-      const thisResource = allResources.find(r => r.id === baseResource.id);
+    const resourcesDiff = diffPackageResources(baseResources, allResources);
+
+    for (const resourceDiff of resourcesDiff) {
+      if (resourceDiff.diffStatus === ResourceDiffStatus.REMOVED) {
+        allResources.push({
+          ...resourceDiff.originalResource,
+          diffSummary: 'Removed',
+          isDeleted: true,
+          yaml: '',
+        });
+      }
+
+      const diffResource =
+        resourceDiff.currentResource ?? resourceDiff.originalResource;
+      const thisResource = allResources.find(
+        resource => resource.id === diffResource.id,
+      );
 
       if (!thisResource) {
-        allResources.push({ ...baseResource, isDeleted: true, yaml: '' });
+        throw new Error(
+          'Resource exists within diff, however the resource is not found in allResources',
+        );
       }
-    }
 
-    if (baseResources.length > 0) {
-      allResources.forEach(r => {
-        const baseResource = baseResources.find(br => br.id === r.id);
+      switch (resourceDiff.diffStatus) {
+        case ResourceDiffStatus.ADDED:
+          thisResource.diffSummary = 'Added';
+          break;
 
-        if (r.isDeleted) {
-          r.diffSummary = 'Removed';
-        } else if (!baseResource) {
-          r.diffSummary = 'Added';
-        } else if (baseResource.yaml !== r.yaml) {
-          const thisDiff = diffLines(baseResource.yaml, r.yaml);
+        case ResourceDiffStatus.REMOVED:
+          thisResource.diffSummary = 'Removed';
+          break;
 
-          const addedLines = sum(
-            thisDiff.filter(d => !!d.added).map(d => d.count),
-          );
-          const removedLines = sum(
-            thisDiff.filter(d => !!d.removed).map(d => d.count),
-          );
+        case ResourceDiffStatus.UPDATED:
+          thisResource.diffSummary = `Updated (+${resourceDiff.linesAdded}, -${resourceDiff.linesRemoved})`;
+          break;
+        case ResourceDiffStatus.UNCHANGED:
+          break;
 
-          r.diffSummary = `Updated (+${addedLines}, -${removedLines})`;
-        }
-      });
+        default:
+          throw new Error('Unknown diff status');
+      }
     }
   }
 
