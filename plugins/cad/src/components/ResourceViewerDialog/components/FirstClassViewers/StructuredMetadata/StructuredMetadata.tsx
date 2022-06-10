@@ -15,7 +15,10 @@
  */
 
 import { StructuredMetadataTable } from '@backstage/core-components';
-import React from 'react';
+import { makeStyles } from '@material-ui/core';
+import { ClassNameMap } from '@material-ui/core/styles/withStyles';
+import { diffArrays } from 'diff';
+import React, { Fragment } from 'react';
 import { KubernetesResource } from '../../../../../types/KubernetesResource';
 import { loadYaml } from '../../../../../utils/yaml';
 
@@ -26,11 +29,30 @@ export type Metadata = {
 export type CustomMetadataFn = (resource: KubernetesResource) => Metadata;
 
 type StructuredMetadataProps = {
-  yaml: string;
+  yaml?: string;
+  originalYaml?: string;
   getCustomMetadata?: CustomMetadataFn;
+  showDiff?: boolean;
 };
 
-const normalizeMetadata = (metadata: Metadata) => {
+const useStyles = makeStyles({
+  added: {
+    color: 'green',
+    '& > span:first-child': {
+      width: '10px',
+      display: 'inline-block',
+    },
+  },
+  removed: {
+    color: 'red',
+    '& > span:first-child': {
+      width: '10px',
+      display: 'inline-block',
+    },
+  },
+});
+
+const normalizeMetadata = (metadata: Metadata): void => {
   Object.keys(metadata).forEach(key => {
     if (metadata[key] === undefined || metadata[key] === '') {
       delete metadata[key];
@@ -47,9 +69,11 @@ const normalizeMetadata = (metadata: Metadata) => {
 };
 
 const getMetadataForResource = (
-  yaml: string,
+  yaml?: string,
   getCustomMetadata?: (resource: KubernetesResource) => Metadata,
 ): Metadata => {
+  if (!yaml) return {};
+
   const resource = loadYaml(yaml) as KubernetesResource;
 
   const baseMetadata = {
@@ -72,11 +96,122 @@ const getMetadataForResource = (
   return metadata;
 };
 
+export const getDiffMetadata = (
+  classes: ClassNameMap,
+  currentMetadata: Metadata,
+  originalMetadata: Metadata,
+): Metadata => {
+  const diffMetadata: Metadata = {};
+
+  const getAddedSpan = (value: any): JSX.Element => (
+    <span className={classes.added}>
+      <span>+</span>
+      {value}
+    </span>
+  );
+
+  const getRemovedSpan = (value: any): JSX.Element => (
+    <span className={classes.removed}>
+      <span>-</span>
+      {value}
+    </span>
+  );
+
+  Object.keys(currentMetadata).forEach(key => {
+    const isArray = Array.isArray(currentMetadata[key]);
+
+    if (isArray) {
+      const currentValue = currentMetadata[key];
+      const originalValue = originalMetadata[key];
+
+      const differences = diffArrays(originalValue ?? [], currentValue);
+      const spans: JSX.Element[] = [];
+
+      for (const diff of differences) {
+        for (const value of diff.value) {
+          if (diff.added) {
+            spans.push(getAddedSpan(value));
+          } else if (diff.removed) {
+            spans.push(getRemovedSpan(value));
+          } else {
+            spans.push(<Fragment>{value as any}</Fragment>);
+          }
+        }
+      }
+
+      diffMetadata[key] = spans;
+    } else {
+      const currentValue = currentMetadata[key];
+      const originalValue = originalMetadata[key];
+
+      if (originalValue === undefined) {
+        diffMetadata[key] = getAddedSpan(currentValue);
+      } else if (originalValue !== currentValue) {
+        diffMetadata[key] = (
+          <span>
+            {getRemovedSpan(originalValue)}
+            <div style={{ height: '8px' }} />
+            {getAddedSpan(currentValue)}
+          </span>
+        );
+      } else {
+        diffMetadata[key] = currentValue;
+      }
+    }
+  });
+
+  Object.keys(originalMetadata).forEach(key => {
+    if (!originalMetadata[key] || diffMetadata[key]) return;
+
+    const isArray = Array.isArray(originalMetadata[key]);
+
+    if (isArray) {
+      const arrayValue = originalMetadata[key];
+
+      const spans: JSX.Element[] = [];
+
+      for (const value of arrayValue) {
+        spans.push(getRemovedSpan(value));
+      }
+
+      diffMetadata[key] = spans;
+    } else {
+      const value = originalMetadata[key];
+
+      diffMetadata[key] = <span>{getRemovedSpan(value)}</span>;
+    }
+  });
+
+  return diffMetadata;
+};
+
 export const StructuredMetadata = ({
   yaml,
+  originalYaml,
   getCustomMetadata,
+  showDiff,
 }: StructuredMetadataProps) => {
-  const metadata = getMetadataForResource(yaml, getCustomMetadata);
+  const classes = useStyles();
 
-  return <StructuredMetadataTable metadata={metadata} />;
+  if (!showDiff) {
+    const metadata = getMetadataForResource(
+      yaml || originalYaml,
+      getCustomMetadata,
+    );
+    return <StructuredMetadataTable metadata={metadata} />;
+  }
+
+  const currentMetadata = getMetadataForResource(yaml, getCustomMetadata);
+  const originalMetadata = getMetadataForResource(
+    originalYaml,
+    getCustomMetadata,
+  );
+
+  const diffMetadata = getDiffMetadata(
+    classes,
+    currentMetadata,
+    originalMetadata,
+  );
+
+  return <StructuredMetadataTable metadata={diffMetadata} />;
 };
