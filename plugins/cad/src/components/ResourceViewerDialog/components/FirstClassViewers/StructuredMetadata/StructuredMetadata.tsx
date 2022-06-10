@@ -23,9 +23,11 @@ export type Metadata = {
   [key: string]: any;
 };
 
+export type CustomMetadataFn = (resource: KubernetesResource) => Metadata;
+
 type StructuredMetadataProps = {
   yaml: string;
-  getCustomMetadata?: (resource: KubernetesResource) => Metadata;
+  getCustomMetadata?: CustomMetadataFn;
 };
 
 const normalizeMetadata = (metadata: Metadata) => {
