@@ -31,7 +31,9 @@ import { FirstClassViewerSelector } from './components/FirstClassViewerSelector'
 type ResourceViewerProps = {
   open: boolean;
   onClose: () => void;
-  yaml: string;
+  yaml?: string;
+  originalYaml?: string;
+  showDiff?: boolean;
 };
 
 const useStyles = makeStyles({
@@ -48,6 +50,8 @@ export const ResourceViewerDialog = ({
   open,
   onClose,
   yaml,
+  originalYaml,
+  showDiff,
 }: ResourceViewerProps) => {
   const [showYamlView, setShowYamlView] = useState<boolean>(false);
   const classes = useStyles();
@@ -58,9 +62,12 @@ export const ResourceViewerDialog = ({
     }
   }, [open]);
 
-  if (!yaml) return <div />;
+  if (!yaml && !originalYaml) return <div />;
 
-  const resourceYaml = loadYaml(yaml) as KubernetesResource;
+  const isDeleted = !yaml;
+
+  const thisYaml = yaml || originalYaml || '';
+  const resourceYaml = loadYaml(thisYaml) as KubernetesResource;
 
   const toggleView = (): void => {
     setShowYamlView(!showYamlView);
@@ -69,12 +76,12 @@ export const ResourceViewerDialog = ({
   const { kind, apiVersion } = resourceYaml;
   const resourceName = resourceYaml.metadata.name;
 
-  const displayYamlHeight = (yaml.split('\n').length + 1) * 18;
+  const displayYamlHeight = (thisYaml.split('\n').length + 1) * 18;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg">
       <DialogTitle>
-        {kind} {resourceName}
+        {kind} {resourceName} {isDeleted && '(Removed)'}
       </DialogTitle>
       <DialogContent>
         <Fragment>
@@ -83,18 +90,24 @@ export const ResourceViewerDialog = ({
             style={{ height: `${displayYamlHeight}px` }}
           >
             {showYamlView ? (
-              <YamlViewer value={yaml} />
+              <YamlViewer
+                value={thisYaml}
+                original={originalYaml}
+                showDiff={showDiff}
+              />
             ) : (
               <FirstClassViewerSelector
                 apiVersion={apiVersion}
                 kind={kind}
                 yaml={yaml}
+                originalYaml={originalYaml}
+                showDiff={showDiff}
               />
             )}
           </div>
 
           <Button variant="text" color="primary" onClick={toggleView}>
-            Show {showYamlView ? 'Formatted View' : 'YAML View'}{' '}
+            Show {showYamlView ? 'Formatted View' : 'YAML View'}
           </Button>
         </Fragment>
       </DialogContent>

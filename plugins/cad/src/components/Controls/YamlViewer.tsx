@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-import Editor, { loader } from '@monaco-editor/react';
+import Editor, { DiffEditor, loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import React from 'react';
 
 type YamlViewerProps = {
   height?: string;
   width?: string;
+  original?: string;
   value: string;
+  showDiff?: boolean;
   allowEdit?: boolean;
   onUpdatedValue?: (newValue: string) => void;
 };
 
 export const YamlViewer = ({
-  height,
-  width,
+  original,
   value,
+  showDiff,
   allowEdit,
   onUpdatedValue,
 }: YamlViewerProps) => {
@@ -41,18 +43,33 @@ export const YamlViewer = ({
     }
   };
 
+  const sharedEditorOptions: monaco.editor.IStandaloneEditorConstructionOptions =
+    {
+      minimap: { enabled: false },
+      readOnly: !allowEdit,
+      scrollBeyondLastLine: false,
+    };
+
+  if (showDiff) {
+    return (
+      <DiffEditor
+        language="yaml"
+        original={original ?? ''}
+        modified={value}
+        options={{
+          renderSideBySide: false,
+          ...sharedEditorOptions,
+        }}
+      />
+    );
+  }
+
   return (
     <Editor
-      height={height}
-      width={width}
       language="yaml"
       value={value}
       onChange={handleUpdatedValue}
-      options={{
-        minimap: { enabled: false },
-        readOnly: !allowEdit,
-        scrollBeyondLastLine: false,
-      }}
+      options={sharedEditorOptions}
     />
   );
 };

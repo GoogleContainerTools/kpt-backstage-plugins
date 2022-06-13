@@ -15,6 +15,7 @@
  */
 
 import { Table, TableColumn } from '@backstage/core-components';
+import { errorApiRef, useApi } from '@backstage/core-plugin-api';
 import { Button, Divider, IconButton, Menu, MenuItem } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
@@ -45,6 +46,7 @@ export enum ResourcesTableMode {
 
 enum Dialog {
   VIEWER = 'viewer',
+  DIFF_VIEWER = 'diff-viewer',
   EDITOR = 'editor',
   NONE = 'none',
 }
@@ -59,6 +61,8 @@ type PackageRevisionResourcesTableProps = {
 type ResourceRow = PackageResource & {
   diffSummary: string;
   isDeleted: boolean;
+  originalResource?: PackageResource;
+  currentResource?: PackageResource;
 };
 
 type KubernetesGKV = {
@@ -83,6 +87,7 @@ export const PackageRevisionResourcesTable = ({
 }: PackageRevisionResourcesTableProps) => {
   const [openDialog, setOpenDialog] = useState<Dialog>(Dialog.NONE);
   const selectedDialogResource = useRef<DialogResource>();
+  const selectedDialogOriginalResource = useRef<DialogResource>();
 
   const [addResourceAnchorEl, setAddResourceAnchorEl] =
     React.useState<null | HTMLElement>(null);
@@ -126,13 +131,17 @@ export const PackageRevisionResourcesTable = ({
     },
   ].sort((gvk1, gvk2) => (gvk1.kind > gvk2.kind ? 1 : -1));
 
+  const errorApi = useApi(errorApiRef);
   const isEditMode = mode === ResourcesTableMode.EDIT;
 
   const openResourceDialog = (
     dialog: Dialog,
-    resource: DialogResource,
+    resource?: DialogResource,
+    originalResource?: DialogResource,
   ): void => {
     selectedDialogResource.current = resource;
+    selectedDialogOriginalResource.current = originalResource;
+
     setOpenDialog(dialog);
   };
 
@@ -153,7 +162,7 @@ export const PackageRevisionResourcesTable = ({
     onUpdatedResourcesMap(latestResourcesMap);
   };
 
-  const rowOptions = (resourceRow: ResourceRow): JSX.Element[] => {
+  const renderRowOptions = (resourceRow: ResourceRow): JSX.Element[] => {
     const options: JSX.Element[] = [];
 
     if (isEditMode && !resourceRow.isDeleted) {
@@ -181,21 +190,52 @@ export const PackageRevisionResourcesTable = ({
     return options;
   };
 
+  const renderDiffColumn = (row: ResourceRow): JSX.Element | null => {
+    if (row.diffSummary) {
+      return (
+        <Button
+          variant="outlined"
+          style={{
+            position: 'absolute',
+            transform: 'translateY(-50%)',
+          }}
+          onClick={e => {
+            e.stopPropagation();
+            openResourceDialog(
+              Dialog.DIFF_VIEWER,
+              row.currentResource,
+              row.originalResource,
+            );
+          }}
+        >
+          {row.diffSummary}
+        </Button>
+      );
+    }
+
+    return null;
+  };
+
   const columns: TableColumn<ResourceRow>[] = [
     { title: 'Kind', field: 'kind' },
     { title: 'Name', field: 'name' },
     { title: 'Namespace', field: 'namespace' },
-    { title: '' },
-    { title: '', render: resourceRow => <div>{rowOptions(resourceRow)}</div> },
+    {},
+    { render: resourceRow => <div>{renderRowOptions(resourceRow)}</div> },
   ];
 
   if (baseResourcesMap) {
-    columns[3] = { title: 'Diff', field: 'diffSummary' };
+    columns[3] = { title: 'Diff', render: renderDiffColumn };
   }
 
-  const allResources = getPackageResourcesFromResourcesMap(
+  const packageResources = getPackageResourcesFromResourcesMap(
     resourcesMap,
   ) as ResourceRow[];
+
+  const allResources: ResourceRow[] = packageResources.map(r => ({
+    ...r,
+    currentResource: r,
+  }));
 
   allResources.sort((resource1, resource2) => {
     const resourceScore = (resource: ResourceRow): number => {
@@ -233,6 +273,7 @@ export const PackageRevisionResourcesTable = ({
           diffSummary: 'Removed',
           isDeleted: true,
           yaml: '',
+          originalResource: resourceDiff.originalResource,
         });
       }
 
@@ -248,6 +289,8 @@ export const PackageRevisionResourcesTable = ({
         );
       }
 
+      thisResource.originalResource = resourceDiff.originalResource;
+
       switch (resourceDiff.diffStatus) {
         case ResourceDiffStatus.ADDED:
           thisResource.diffSummary = 'Added';
@@ -258,7 +301,7 @@ export const PackageRevisionResourcesTable = ({
           break;
 
         case ResourceDiffStatus.UPDATED:
-          thisResource.diffSummary = `Updated (+${resourceDiff.linesAdded}, -${resourceDiff.linesRemoved})`;
+          thisResource.diffSummary = `Diff (+${resourceDiff.linesAdded}, -${resourceDiff.linesRemoved})`;
           break;
         case ResourceDiffStatus.UNCHANGED:
           break;
@@ -406,7 +449,16 @@ export const PackageRevisionResourcesTable = ({
       <ResourceViewerDialog
         open={openDialog === Dialog.VIEWER}
         onClose={closeDialog}
-        yaml={selectedDialogResource.current?.yaml ?? ''}
+        yaml={selectedDialogResource.current?.yaml}
+        originalYaml={selectedDialogOriginalResource.current?.yaml}
+      />
+
+      <ResourceViewerDialog
+        open={openDialog === Dialog.DIFF_VIEWER}
+        onClose={closeDialog}
+        yaml={selectedDialogResource.current?.yaml}
+        originalYaml={selectedDialogOriginalResource.current?.yaml}
+        showDiff
       />
 
       <Table<ResourceRow>
@@ -414,10 +466,19 @@ export const PackageRevisionResourcesTable = ({
         options={{ search: false, paging: false }}
         columns={columns}
         data={allResources}
-        onRowClick={(_, resource) => {
-          if (resource) {
+        onRowClick={(_, row) => {
+          if (row) {
+            if (isEditMode && row.isDeleted) {
+              errorApi.post(new Error('Deleted resources cannot be updated.'));
+              return;
+            }
+
             const dialog = isEditMode ? Dialog.EDITOR : Dialog.VIEWER;
-            openResourceDialog(dialog, resource);
+            openResourceDialog(
+              dialog,
+              row.currentResource,
+              row.originalResource,
+            );
           }
         }}
       />
