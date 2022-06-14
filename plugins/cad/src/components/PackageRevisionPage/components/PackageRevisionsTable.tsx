@@ -27,12 +27,21 @@ import {
 } from '../../../types/PackageRevision';
 import { Repository } from '../../../types/Repository';
 import { formatCreationTimestamp } from '../../../utils/formatDate';
-import { sortByPackageNameAndRevisionComparison } from '../../../utils/packageRevision';
+import {
+  diffPackageResources,
+  PackageResource,
+  ResourceDiffStatus,
+} from '../../../utils/packageRevisionResources';
 import { PackageIcon } from '../../Controls';
+
+export type RevisionSummary = {
+  revision: PackageRevision;
+  resources: PackageResource[];
+};
 
 type PackageRevisionsTableProps = {
   repository: Repository;
-  revisions: PackageRevision[];
+  revisions: RevisionSummary[];
 };
 
 type PackageRevisionRow = {
@@ -41,6 +50,8 @@ type PackageRevisionRow = {
   revision: string;
   packageName: string;
   lifecycle: PackageRevisionLifecycle;
+  resourcesCount: number;
+  changesSummary: string;
   created: string;
 };
 
@@ -83,33 +94,77 @@ const getTableColumns = (
     },
     { title: 'Revision', field: 'revision' },
     { title: 'Lifecycle', field: 'lifecycle' },
+    { title: 'Resources', field: 'resourcesCount' },
+    { title: 'Changes Summary', field: 'changesSummary' },
     { title: 'Created', field: 'created' },
   ];
 
   return columns;
 };
 
+const getResourcesChangesSummary = (
+  summary: RevisionSummary,
+  prevSummary?: RevisionSummary,
+): string => {
+  const getResourcesChangeText = (count: number, change: string): string => {
+    return `${count} ${change}`;
+  };
+
+  if (!prevSummary) {
+    return `Base revision`;
+  }
+
+  const resourcesDiff = diffPackageResources(
+    prevSummary.resources,
+    summary.resources,
+  );
+  const findResourceCount = (status: ResourceDiffStatus): number => {
+    return resourcesDiff.filter(diff => diff.diffStatus === status).length;
+  };
+
+  const allChanges: string[] = [];
+  const added = findResourceCount(ResourceDiffStatus.ADDED);
+  const updated = findResourceCount(ResourceDiffStatus.UPDATED);
+  const removed = findResourceCount(ResourceDiffStatus.REMOVED);
+
+  if (added > 0) {
+    allChanges.push(getResourcesChangeText(added, 'Added'));
+  }
+  if (updated > 0) {
+    allChanges.push(getResourcesChangeText(updated, 'Updated'));
+  }
+  if (removed > 0) {
+    allChanges.push(getResourcesChangeText(removed, 'Removed'));
+  }
+
+  const changeSummary =
+    allChanges.length > 0 ? allChanges.join(', ') : 'no changes';
+
+  return changeSummary;
+};
+
 const mapToPackageRevisionRow = (
-  onePackage: PackageRevision,
-): PackageRevisionRow => ({
-  id: onePackage.metadata.name,
-  name: onePackage.metadata.name,
-  packageName: onePackage.spec.packageName,
-  revision: onePackage.spec.revision,
-  lifecycle: onePackage.spec.lifecycle,
-  created: formatCreationTimestamp(onePackage.metadata.creationTimestamp, true),
-});
-
-const mapPackageRevisionsToRows = (
-  packageRevisions: PackageRevision[],
-): PackageRevisionRow[] => {
-  packageRevisions.sort(sortByPackageNameAndRevisionComparison);
-
-  const rows: PackageRevisionRow[] = packageRevisions.map(
-    mapToPackageRevisionRow,
+  summary: RevisionSummary,
+  index: number,
+  allSummaries: RevisionSummary[],
+): PackageRevisionRow => {
+  const revision = summary.revision;
+  const previousSummary = allSummaries[index + 1];
+  const creationTimestamp = formatCreationTimestamp(
+    revision.metadata.creationTimestamp,
+    true,
   );
 
-  return rows;
+  return {
+    id: revision.metadata.name,
+    name: revision.metadata.name,
+    packageName: revision.spec.packageName,
+    revision: revision.spec.revision,
+    lifecycle: revision.spec.lifecycle,
+    created: creationTimestamp,
+    resourcesCount: summary.resources.length,
+    changesSummary: getResourcesChangesSummary(summary, previousSummary),
+  };
 };
 
 export const PackageRevisionsTable = ({
@@ -130,7 +185,7 @@ export const PackageRevisionsTable = ({
   };
 
   const columns = getTableColumns(classes);
-  const data = mapPackageRevisionsToRows(revisions);
+  const data = revisions.map(mapToPackageRevisionRow);
 
   return (
     <Table
