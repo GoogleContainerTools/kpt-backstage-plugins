@@ -256,6 +256,7 @@ export const RoleBindingEditor = ({
           onChange={handleChange(`subject-${subject.key}`)}
           subject={subject}
           onUpdatedSubject={onSubjectUpdated}
+          packageResources={packageResources}
         />
       ))}
 

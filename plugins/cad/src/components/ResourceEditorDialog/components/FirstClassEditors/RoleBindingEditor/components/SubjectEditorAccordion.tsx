@@ -17,7 +17,9 @@
 import { SelectItem } from '@backstage/core-components';
 import { Button, TextField } from '@material-ui/core';
 import DeleteIcon from '@material-ui/icons/Delete';
-import React, { Fragment, useRef } from 'react';
+import React, { Fragment, useMemo, useRef } from 'react';
+import { PackageResource } from '../../../../../../utils/packageRevisionResources';
+import { sortByLabel } from '../../../../../../utils/selectItem';
 import { Select } from '../../../../../Controls/Select';
 import {
   EditorAccordion,
@@ -35,6 +37,7 @@ type SubjectEditorAccordionProps = {
   onChange: OnAccordionChange;
   subject: RoleBindingSubjectView;
   onUpdatedSubject: OnUpdatedSubject;
+  packageResources: PackageResource[];
 };
 
 type ViewModel = {
@@ -69,12 +72,26 @@ export const SubjectEditorAccordion = ({
   onChange,
   subject,
   onUpdatedSubject,
+  packageResources,
 }: SubjectEditorAccordionProps) => {
   const viewModel = useRef<ViewModel>({
     kind: subject.kind ?? '',
     name: subject.name ?? '',
     apiGroup: subject.apiGroup ?? '',
   });
+
+  const serviceAccountResources = useMemo(
+    () =>
+      packageResources.filter(resource => resource.kind === 'ServiceAccount'),
+    [packageResources],
+  );
+
+  const serviceAccountSelectItems: SelectItem[] = sortByLabel(
+    serviceAccountResources.map(serviceAccount => ({
+      label: serviceAccount.name,
+      value: serviceAccount.name,
+    })),
+  );
 
   const subjectUpdated = (): void => {
     const updatedSubject: RoleBindingSubjectView = {
@@ -110,16 +127,30 @@ export const SubjectEditorAccordion = ({
           }}
         />
 
-        <TextField
-          label="Name"
-          variant="outlined"
-          value={viewModel.current.name}
-          onChange={e => {
-            viewModel.current.name = e.target.value;
-            subjectUpdated();
-          }}
-          fullWidth
-        />
+        {viewModel.current.kind === 'ServiceAccount' && (
+          <Select
+            label="Name"
+            selected={viewModel.current.name}
+            items={serviceAccountSelectItems}
+            onChange={serviceAccountName => {
+              viewModel.current.name = serviceAccountName;
+              subjectUpdated();
+            }}
+          />
+        )}
+
+        {viewModel.current.kind !== 'ServiceAccount' && (
+          <TextField
+            label="Name"
+            variant="outlined"
+            value={viewModel.current.name}
+            onChange={e => {
+              viewModel.current.name = e.target.value;
+              subjectUpdated();
+            }}
+            fullWidth
+          />
+        )}
 
         <Button
           variant="outlined"
