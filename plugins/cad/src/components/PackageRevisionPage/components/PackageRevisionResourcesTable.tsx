@@ -443,7 +443,7 @@ export const PackageRevisionResourcesTable = ({
         onClose={closeDialog}
         yaml={selectedDialogResource.current?.yaml ?? ''}
         onSaveYaml={saveUpdatedYaml}
-        packageResources={allResources}
+        packageResources={packageResources}
       />
 
       <ResourceViewerDialog
