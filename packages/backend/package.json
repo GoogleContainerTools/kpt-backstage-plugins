@@ -31,7 +31,7 @@
     "@backstage/plugin-search-backend": "^0.5.1",
     "@backstage/plugin-search-backend-node": "^0.6.0",
     "@backstage/plugin-techdocs-backend": "^1.1.0",
-    "@kpt/backstage-plugin-cad-backend": "^0.0.0",
+    "@kpt/backstage-plugin-cad-backend": "*",
     "dockerode": "^3.3.1",
     "express": "^4.17.1",
     "express-promise-router": "^4.1.0",
