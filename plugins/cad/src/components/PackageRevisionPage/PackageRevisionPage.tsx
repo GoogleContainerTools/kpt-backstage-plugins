@@ -68,6 +68,7 @@ import {
 } from '../../utils/packageRevision';
 import {
   getPackageResourcesFromResourcesMap,
+  getPackageRevisionResources,
   getPackageRevisionResourcesResource,
 } from '../../utils/packageRevisionResources';
 import {
@@ -83,7 +84,10 @@ import {
   PackageRevisionResourcesTable,
   ResourcesTableMode,
 } from './components/PackageRevisionResourcesTable';
-import { PackageRevisionsTable } from './components/PackageRevisionsTable';
+import {
+  PackageRevisionsTable,
+  RevisionSummary,
+} from './components/PackageRevisionsTable';
 
 export enum PackageRevisionPageMode {
   EDIT = 'edit',
@@ -126,7 +130,8 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const [repositorySummary, setRepositorySummary] =
     useState<RepositorySummary>();
   const [packageRevision, setPackageRevision] = useState<PackageRevision>();
-  const [packageRevisions, setPackageRevisions] = useState<PackageRevision[]>();
+  const [revisionSummaries, setRevisionSummaries] =
+    useState<RevisionSummary[]>();
   const [resourcesMap, setResourcesMap] = useState<PackageRevisionResourcesMap>(
     {},
   );
@@ -152,12 +157,15 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
   const loadPackageRevision = async (): Promise<void> => {
     const asyncPackageRevisions = api.listPackageRevisions();
-    const asyncResources = api.getPackageRevisionResources(packageName);
+    const asyncAllPackageResources = api.listPackageRevisionResources();
 
-    const [thisPackageRevisions, thisResources] = await Promise.all([
-      asyncPackageRevisions,
-      asyncResources,
-    ]);
+    const [thisPackageRevisions, { items: thisAllPacakgesResources }] =
+      await Promise.all([asyncPackageRevisions, asyncAllPackageResources]);
+
+    const thisResources = getPackageRevisionResources(
+      thisAllPacakgesResources,
+      packageName,
+    );
 
     const thisPackageRevision = getPackageRevision(
       thisPackageRevisions,
@@ -169,7 +177,19 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       thisPackageRevision.spec.packageName,
     ).sort(sortByPackageNameAndRevisionComparison);
 
-    setPackageRevisions(thisSortedRevisions);
+    const thisRevisionSummaries = thisSortedRevisions.map(revision => {
+      const revisionResourcesMap = getPackageRevisionResources(
+        thisAllPacakgesResources,
+        revision.metadata.name,
+      ).spec.resources;
+
+      const resources =
+        getPackageResourcesFromResourcesMap(revisionResourcesMap);
+
+      return { revision, resources };
+    });
+
+    setRevisionSummaries(thisRevisionSummaries);
     setPackageRevision(thisPackageRevision);
     setResourcesMap(thisResources.spec.resources);
 
@@ -304,13 +324,16 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     return <Alert severity="error">{error.message}</Alert>;
   }
 
-  if (!repositorySummary || !packageRevision || !packageRevisions) {
+  if (!repositorySummary || !packageRevision || !revisionSummaries) {
     return <Alert severity="error">Unexpected undefined value</Alert>;
   }
 
   const repository = repositorySummary.repository;
   const packageDescriptor = getPackageDescriptor(repository);
   const packageRevisionTitle = getPackageRevisionTitle(packageRevision);
+  const packageRevisions = revisionSummaries.map(
+    revisionSummary => revisionSummary.revision,
+  );
 
   const rejectProposedPackage = async (): Promise<void> => {
     setUserInitiatedApiRequest(true);
@@ -831,7 +854,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
             content: (
               <PackageRevisionsTable
                 repository={repositorySummary.repository}
-                revisions={packageRevisions ?? []}
+                revisions={revisionSummaries ?? []}
               />
             ),
           },
