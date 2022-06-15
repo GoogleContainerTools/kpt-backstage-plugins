@@ -484,6 +484,9 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
         requestPackageRevision.spec.revision = getNextRevision(
           latestPublishedRevision.spec.revision,
         );
+        requestPackageRevision.spec.tasks = [
+          getEditTask(latestPublishedRevision.metadata.name),
+        ];
         requestPackageRevision.spec.lifecycle = PackageRevisionLifecycle.DRAFT;
 
         const newPackageRevision = await api.createPackageRevision(
