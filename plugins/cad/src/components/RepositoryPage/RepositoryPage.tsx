@@ -31,6 +31,7 @@ import { configAsDataApiRef } from '../../apis';
 import { addPackageRouteRef } from '../../routes';
 import { Function } from '../../types/Function';
 import { RepositorySummary } from '../../types/RepositorySummary';
+import { RootSync } from '../../types/RootSync';
 import {
   getPackageSummaries,
   PackageSummary,
@@ -82,9 +83,22 @@ export const RepositoryPage = () => {
         }
 
         if (isPackageRepository(thisRepository)) {
-          const allPackageRevisions = await api.listPackageRevisions();
-          const { items: allPackageRevisionResources } =
-            await api.listPackageRevisionResources();
+          const getRootSyncs = async (): Promise<RootSync[]> => {
+            if (!isDeploymentRepository(thisRepository)) return [];
+
+            const { items: rootSyncs } = await api.listRootSyncs();
+            return rootSyncs;
+          };
+
+          const [
+            allPackageRevisions,
+            { items: allPackageRevisionResources },
+            syncs,
+          ] = await Promise.all([
+            api.listPackageRevisions(),
+            api.listPackageRevisionResources(),
+            getRootSyncs(),
+          ]);
 
           const thisPackageRevisions = allPackageRevisions.filter(
             revision => revision.spec.repository === repositoryName,
@@ -103,16 +117,15 @@ export const RepositoryPage = () => {
             upstreamPackageRevisions,
             thisRepository,
           );
-          setPackageSummaries(thisPackageSummaries);
 
           if (isDeploymentRepository(thisRepository)) {
-            const { items: syncs } = await api.listRootSyncs();
-
             const updatedPackageSummaries = updatePackageSummariesSyncStatus(
               thisPackageSummaries,
               syncs,
             );
             setPackageSummaries(updatedPackageSummaries);
+          } else {
+            setPackageSummaries(thisPackageSummaries);
           }
         }
       }
