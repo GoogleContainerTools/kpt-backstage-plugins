@@ -23,7 +23,7 @@ export const loadYaml = (yamlString: string): Yaml => {
 };
 
 export const dumpYaml = (yaml: Yaml): string => {
-  return dump(yaml, { noArrayIndent: true });
+  return dump(yaml, { noArrayIndent: true, quotingType: '"' });
 };
 
 export const createMultiResourceYaml = (resourcesYaml: string[]): string => {
