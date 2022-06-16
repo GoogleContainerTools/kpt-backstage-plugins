@@ -100,22 +100,10 @@ export const RepositoryPage = () => {
             getRootSyncs(),
           ]);
 
-          const thisPackageRevisions = allPackageRevisions.filter(
-            revision => revision.spec.repository === repositoryName,
-          );
-          const upstreamPackageRevisions = repositorySummary.upstreamRepository
-            ? allPackageRevisions.filter(
-                revision =>
-                  revision.spec.repository ===
-                  repositorySummary.upstreamRepository?.metadata.name,
-              )
-            : [];
-
           const thisPackageSummaries = getPackageSummaries(
-            thisPackageRevisions,
+            allPackageRevisions,
             allPackageRevisionResources,
-            upstreamPackageRevisions,
-            thisRepository,
+            [repositorySummary],
           );
 
           if (isDeploymentRepository(thisRepository)) {

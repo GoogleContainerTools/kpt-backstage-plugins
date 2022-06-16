@@ -19,6 +19,7 @@ import { Kptfile } from '../types/Kptfile';
 import { PackageRevision } from '../types/PackageRevision';
 import { PackageRevisionResources } from '../types/PackageRevisionResource';
 import { Repository } from '../types/Repository';
+import { RepositorySummary } from '../types/RepositorySummary';
 import { RootSync } from '../types/RootSync';
 import { findRootSyncForPackage } from './configSync';
 import {
@@ -44,7 +45,7 @@ export type PackageSummary = {
   sync?: RootSync;
 };
 
-export const getPackageSummaries = (
+export const getPackageSummariesForRepository = (
   packageRevisions: PackageRevision[],
   packageRevisionResources: PackageRevisionResources[],
   upstreamRevisions: PackageRevision[],
@@ -122,6 +123,39 @@ export const getPackageSummaries = (
   return packageSummaries;
 };
 
+export const getPackageSummaries = (
+  packageRevisions: PackageRevision[],
+  packageRevisionResources: PackageRevisionResources[],
+  repositorySummaries: RepositorySummary[],
+): PackageSummary[] => {
+  const packageSummaries = [];
+
+  for (const repositorySummary of repositorySummaries) {
+    const repositoryPackageRevisions = packageRevisions.filter(
+      revision =>
+        revision.spec.repository === repositorySummary.repository.metadata.name,
+    );
+
+    const upstreamPackageRevisions = packageRevisions.filter(
+      revision =>
+        repositorySummary.upstreamRepository &&
+        revision.spec.repository ===
+          repositorySummary.upstreamRepository.metadata.name,
+    );
+
+    const repositoryPackageSummaries = getPackageSummariesForRepository(
+      repositoryPackageRevisions,
+      packageRevisionResources,
+      upstreamPackageRevisions,
+      repositorySummary.repository,
+    );
+
+    packageSummaries.push(...repositoryPackageSummaries);
+  }
+
+  return packageSummaries;
+};
+
 export const updatePackageSummariesSyncStatus = (
   packageSummaries: PackageSummary[],
   syncs: RootSync[],
@@ -138,4 +172,13 @@ export const updatePackageSummariesSyncStatus = (
 
     return packageSummary;
   });
+};
+
+export const filterPackageSummaries = (
+  packageSummaries: PackageSummary[],
+  { repository }: { repository: Repository },
+): PackageSummary[] => {
+  return packageSummaries.filter(
+    packageSummary => packageSummary.repository === repository,
+  );
 };
