@@ -60,7 +60,7 @@ import {
   findLatestPublishedRevision,
   findPackageRevision,
   getEditTask,
-  getNextRevision,
+  getNextPackageRevisionResource,
   getPackageRevision,
   getPackageRevisionTitle,
   getUpstreamPackageRevisionDetails,
@@ -434,14 +434,10 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     setUserInitiatedApiRequest(true);
 
     try {
-      const requestPackageRevision = cloneDeep(packageRevision);
-      requestPackageRevision.spec.revision = getNextRevision(
-        packageRevision.spec.revision,
-      );
-      requestPackageRevision.spec.tasks = [
+      const requestPackageRevision = getNextPackageRevisionResource(
+        packageRevision,
         getEditTask(packageRevision.metadata.name),
-      ];
-      requestPackageRevision.spec.lifecycle = PackageRevisionLifecycle.DRAFT;
+      );
 
       const newPackageRevision = await api.createPackageRevision(
         requestPackageRevision,
@@ -470,15 +466,10 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       }
 
       const createNextRevision = async (): Promise<string> => {
-        const requestPackageRevision = cloneDeep(latestPublishedRevision);
-
-        requestPackageRevision.spec.revision = getNextRevision(
-          latestPublishedRevision.spec.revision,
-        );
-        requestPackageRevision.spec.tasks = [
+        const requestPackageRevision = getNextPackageRevisionResource(
+          latestPublishedRevision,
           getEditTask(latestPublishedRevision.metadata.name),
-        ];
-        requestPackageRevision.spec.lifecycle = PackageRevisionLifecycle.DRAFT;
+        );
 
         const newPackageRevision = await api.createPackageRevision(
           requestPackageRevision,
