@@ -15,24 +15,19 @@
  */
 
 import { groupBy } from 'lodash';
-import { Kptfile } from '../types/Kptfile';
 import { PackageRevision } from '../types/PackageRevision';
-import { PackageRevisionResources } from '../types/PackageRevisionResource';
 import { Repository } from '../types/Repository';
 import { RepositorySummary } from '../types/RepositorySummary';
 import { RootSync } from '../types/RootSync';
 import { findRootSyncForPackage } from './configSync';
 import {
   findLatestPublishedRevision,
+  findPackageRevision,
+  getUpstreamPackageRevisionDetails,
   isLatestPublishedRevision,
   isNotAPublishedRevision,
   sortByPackageNameAndRevisionComparison,
 } from './packageRevision';
-import {
-  getPackageResourcesFromResourcesMap,
-  getPackageRevisionResources,
-} from './packageRevisionResources';
-import { loadYaml } from './yaml';
 
 export type PackageSummary = {
   repository: Repository;
@@ -47,7 +42,6 @@ export type PackageSummary = {
 
 export const getPackageSummariesForRepository = (
   packageRevisions: PackageRevision[],
-  packageRevisionResources: PackageRevisionResources[],
   upstreamRevisions: PackageRevision[],
   repository: Repository,
 ): PackageSummary[] => {
@@ -85,35 +79,18 @@ export const getPackageSummariesForRepository = (
         unpublishedRevision,
       };
 
-      const useVersion = latestPublishedRevision ?? latestRevision;
-      const upstreamPackageRevisionName = useVersion.metadata.name;
+      const useRevision = latestPublishedRevision ?? latestRevision;
+      const upstream = getUpstreamPackageRevisionDetails(useRevision);
 
-      const resources = getPackageRevisionResources(
-        packageRevisionResources,
-        upstreamPackageRevisionName,
-      );
+      if (upstream) {
+        thisPackageSummary.upstreamPackageName = upstream.packageName;
+        thisPackageSummary.upstreamPackageRevision = upstream.revision;
 
-      const packageResources = getPackageResourcesFromResourcesMap(
-        resources.spec.resources,
-      );
-      const kptfileResource = packageResources.find(r => r.kind === 'Kptfile');
-
-      if (kptfileResource) {
-        const kptfile = loadYaml(kptfileResource.yaml) as Kptfile;
-
-        if (kptfile.upstream?.git?.ref) {
-          const [upstreamPackageName, upstreamPackageRevision] =
-            kptfile.upstream.git.ref.split('/');
-
-          thisPackageSummary.upstreamPackageName = upstreamPackageName;
-          thisPackageSummary.upstreamPackageRevision = upstreamPackageRevision;
-
-          thisPackageSummary.upstreamRevision = upstreamRevisions.find(
-            r =>
-              r.spec.packageName === upstreamPackageName &&
-              r.spec.revision === upstreamPackageRevision,
-          );
-        }
+        thisPackageSummary.upstreamRevision = findPackageRevision(
+          upstreamRevisions,
+          upstream.packageName,
+          upstream.revision,
+        );
       }
 
       return thisPackageSummary;
@@ -125,7 +102,6 @@ export const getPackageSummariesForRepository = (
 
 export const getPackageSummaries = (
   packageRevisions: PackageRevision[],
-  packageRevisionResources: PackageRevisionResources[],
   repositorySummaries: RepositorySummary[],
 ): PackageSummary[] => {
   const packageSummaries = [];
@@ -145,7 +121,6 @@ export const getPackageSummaries = (
 
     const repositoryPackageSummaries = getPackageSummariesForRepository(
       repositoryPackageRevisions,
-      packageRevisionResources,
       upstreamPackageRevisions,
       repositorySummary.repository,
     );

@@ -90,19 +90,13 @@ export const RepositoryPage = () => {
             return rootSyncs;
           };
 
-          const [
-            allPackageRevisions,
-            { items: allPackageRevisionResources },
-            syncs,
-          ] = await Promise.all([
+          const [allPackageRevisions, syncs] = await Promise.all([
             api.listPackageRevisions(),
-            api.listPackageRevisionResources(),
             getRootSyncs(),
           ]);
 
           const thisPackageSummaries = getPackageSummaries(
             allPackageRevisions,
-            allPackageRevisionResources,
             [repositorySummary],
           );
 

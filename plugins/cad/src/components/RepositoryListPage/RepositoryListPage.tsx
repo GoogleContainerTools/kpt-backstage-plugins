@@ -123,22 +123,11 @@ export const RepositoryListPage = () => {
     const repositorySummaries = await listRepositorySummaries(api);
 
     try {
-      const [allPackageRevisions, packageRevisionsResourcesResponse] =
-        await Promise.all([
-          api.listPackageRevisions(),
-          api.listPackageRevisionResources(),
-        ]);
+      const allPackageRevisions = await api.listPackageRevisions();
 
-      const allPackageRevisionResources =
-        packageRevisionsResourcesResponse.items;
-
-      populatePackageSummaries(
-        repositorySummaries,
-        allPackageRevisions,
-        allPackageRevisionResources,
-      );
+      populatePackageSummaries(repositorySummaries, allPackageRevisions);
     } catch {
-      // Best effort only. An error from one of these APIs should not prevent
+      // Best effort only. An error from the Package Revision API should not prevent
       // the page from rendering.
     }
 
