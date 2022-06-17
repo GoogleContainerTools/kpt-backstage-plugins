@@ -35,12 +35,30 @@ const getRevisionNumber = (
   return defaultNumber;
 };
 
+type UpstreamPackageRevisionDetails = {
+  packageName: string;
+  revision: string;
+};
+
 export const getPackageRevisionTitle = (
   packageRevision: PackageRevision,
 ): string => {
   const { packageName, revision } = packageRevision.spec;
 
   return `${packageName} ${revision}`;
+};
+
+export const getUpstreamPackageRevisionDetails = (
+  packageRevision: PackageRevision,
+): UpstreamPackageRevisionDetails | undefined => {
+  if (packageRevision.status?.UpstreamLock?.git?.ref) {
+    const [packageName, revision] =
+      packageRevision.status.UpstreamLock.git.ref.split('/');
+
+    return { packageName, revision };
+  }
+
+  return undefined;
 };
 
 export const isLatestPublishedRevision = (
@@ -60,6 +78,18 @@ export const findLatestPublishedRevision = (
   );
 
   return latestPublishedRevision;
+};
+
+export const findPackageRevision = (
+  packageRevisions: PackageRevision[],
+  packageName: string,
+  revision: string,
+): PackageRevision | undefined => {
+  return packageRevisions.find(
+    packageRevision =>
+      packageRevision.spec.packageName === packageName &&
+      packageRevision.spec.revision === revision,
+  );
 };
 
 export const filterPackageRevisions = (

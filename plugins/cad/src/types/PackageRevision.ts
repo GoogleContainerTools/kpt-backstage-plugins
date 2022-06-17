@@ -21,6 +21,7 @@ export type PackageRevision = {
   apiVersion: string;
   metadata: PackageRevisionMetadata;
   spec: PackageRevisionSpec;
+  status?: PackageRevisionStatus;
 };
 
 export type PackageRevisionMetadata = {
@@ -81,4 +82,20 @@ export type PackageRevisionTaskEval = {
 
 export type PackageRevisionTaskEvalConfigMap = {
   [key: string]: string;
+};
+
+export type PackageRevisionStatus = {
+  UpstreamLock?: PackageRevisionStatusUpstreamLock;
+};
+
+export type PackageRevisionStatusUpstreamLock = {
+  git?: PackageRevisionStatusUpstreamLockGit;
+  type: string;
+};
+
+export type PackageRevisionStatusUpstreamLockGit = {
+  repo: string;
+  directory: string;
+  ref: string;
+  commit: string;
 };

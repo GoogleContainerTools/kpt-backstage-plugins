@@ -16,7 +16,6 @@
 
 import { ConfigAsDataApi } from '../apis';
 import { PackageRevision } from '../types/PackageRevision';
-import { PackageRevisionResources } from '../types/PackageRevisionResource';
 import {
   Repository,
   RepositoryGitDetails,
@@ -89,11 +88,9 @@ export const getRepositorySummary = async (
 export const populatePackageSummaries = (
   repositorySummaries: RepositorySummary[],
   packageRevisions: PackageRevision[],
-  packageRevisionResources: PackageRevisionResources[],
 ) => {
   const allPackageSummaries = getPackageSummaries(
     packageRevisions,
-    packageRevisionResources,
     repositorySummaries,
   );
 

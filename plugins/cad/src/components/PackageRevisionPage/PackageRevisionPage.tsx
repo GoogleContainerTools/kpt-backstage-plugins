@@ -39,7 +39,6 @@ import {
   editPackageRouteRef,
   packageRouteRef,
 } from '../../routes';
-import { Kptfile } from '../../types/Kptfile';
 import {
   PackageRevision,
   PackageRevisionLifecycle,
@@ -59,10 +58,12 @@ import {
   canCloneOrDeploy,
   filterPackageRevisions,
   findLatestPublishedRevision,
+  findPackageRevision,
   getEditTask,
   getNextRevision,
   getPackageRevision,
   getPackageRevisionTitle,
+  getUpstreamPackageRevisionDetails,
   isLatestPublishedRevision,
   sortByPackageNameAndRevisionComparison,
 } from '../../utils/packageRevision';
@@ -76,7 +77,6 @@ import {
   isDeploymentRepository,
 } from '../../utils/repository';
 import { getRepositorySummary } from '../../utils/repositorySummary';
-import { loadYaml } from '../../utils/yaml';
 import { ConfirmationDialog, Select } from '../Controls';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
 import { AdvancedPackageRevisionOptions } from './components/AdvancedPackageRevisionOptions';
@@ -214,29 +214,20 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       }
     }
 
-    const kptfileResource = getPackageResourcesFromResourcesMap(
-      thisResources.spec.resources,
-    ).find(r => r.kind === 'Kptfile');
+    const upstream = getUpstreamPackageRevisionDetails(thisPackageRevision);
 
-    if (kptfileResource) {
-      const kptfile = loadYaml(kptfileResource.yaml) as Kptfile;
+    if (upstream) {
+      const upstreamPackage = findPackageRevision(
+        thisPackageRevisions,
+        upstream.packageName,
+        upstream.revision,
+      );
 
-      if (kptfile.upstream?.git?.ref) {
-        const [upstreamPackageName, upstreamPackageRevision] =
-          kptfile.upstream.git.ref.split('/');
-
-        const upstreamPackage = thisPackageRevisions.find(
-          r =>
-            r.spec.packageName === upstreamPackageName &&
-            r.spec.revision === upstreamPackageRevision,
-        );
-
-        if (upstreamPackage) {
-          diffItems.push({
-            label: `Upstream (${getPackageRevisionTitle(upstreamPackage)})`,
-            value: upstreamPackage.metadata.name,
-          });
-        }
+      if (upstreamPackage) {
+        diffItems.push({
+          label: `Upstream (${getPackageRevisionTitle(upstreamPackage)})`,
+          value: upstreamPackage.metadata.name,
+        });
       }
     }
 
