@@ -197,21 +197,15 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       { label: 'Hide comparison', value: 'none' },
     ];
 
-    if (
-      thisSortedRevisions.indexOf(thisPackageRevision) !==
-      thisSortedRevisions.length - 1
-    ) {
-      const basePackageRevision =
-        thisSortedRevisions[
-          thisSortedRevisions.indexOf(thisPackageRevision) + 1
-        ];
+    const currentRevisionIdx = thisSortedRevisions.indexOf(thisPackageRevision);
 
-      if (basePackageRevision) {
-        diffItems.push({
-          label: `Previous Revision (${basePackageRevision.spec.revision})`,
-          value: basePackageRevision.metadata.name,
-        });
-      }
+    for (let i = currentRevisionIdx + 1; i < thisSortedRevisions.length; i++) {
+      const previousPackageRevision = thisSortedRevisions[i];
+
+      diffItems.push({
+        label: `Previous Revision (${previousPackageRevision.spec.revision})`,
+        value: previousPackageRevision.metadata.name,
+      });
     }
 
     const upstream = getUpstreamPackageRevisionDetails(thisPackageRevision);
