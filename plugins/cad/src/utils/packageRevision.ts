@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { cloneDeep } from 'lodash';
 import {
   PackageRevision,
   PackageRevisionLifecycle,
@@ -183,18 +182,6 @@ export const getEditTask = (fullPackageName: string): PackageRevisionTask => {
   return editTask;
 };
 
-export const getNextPackageRevisionResource = (
-  currentRevision: PackageRevision,
-  task: PackageRevisionTask,
-): PackageRevision => {
-  const resource = cloneDeep(currentRevision);
-  resource.spec.revision = getNextRevision(currentRevision.spec.revision);
-  resource.spec.tasks = [task];
-  resource.spec.lifecycle = PackageRevisionLifecycle.DRAFT;
-
-  return resource;
-};
-
 export const getPackageRevisionResource = (
   repositoryName: string,
   packageName: string,
@@ -217,6 +204,24 @@ export const getPackageRevisionResource = (
       tasks: tasks,
     },
   };
+
+  return resource;
+};
+
+export const getNextPackageRevisionResource = (
+  currentRevision: PackageRevision,
+  task: PackageRevisionTask,
+): PackageRevision => {
+  const { repository, packageName, revision } = currentRevision.spec;
+  const nextRevision = getNextRevision(revision);
+
+  const resource = getPackageRevisionResource(
+    repository,
+    packageName,
+    nextRevision,
+    PackageRevisionLifecycle.DRAFT,
+    [task],
+  );
 
   return resource;
 };
