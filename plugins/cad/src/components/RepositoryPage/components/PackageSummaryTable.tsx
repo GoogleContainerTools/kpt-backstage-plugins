@@ -31,6 +31,7 @@ import { isDeploymentRepository } from '../../../utils/repository';
 import { IconButton, PackageIcon } from '../../Controls';
 import { PackageLink } from '../../Links';
 import { SyncStatusVisual } from './SyncStatusVisual';
+import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 
 type PackageRevisionsTableProps = {
   title: string;
@@ -61,6 +62,7 @@ type PackageSummaryRow = {
   upstreamPackageRevision?: PackageRevision;
   navigate: () => void;
   unpublished?: UnpublishedPackageRevision;
+  isUpgradeAvailable?: boolean;
 };
 
 type NavigateToPackageRevision = (revision: PackageRevision) => void;
@@ -70,20 +72,33 @@ const renderStatusColumn = (
 ): JSX.Element => {
   const unpublishedRevision = thisPackageRevisionRow.unpublished;
 
+  const elements: JSX.Element[] = [];
+
+  if (thisPackageRevisionRow.isUpgradeAvailable) {
+    elements.push(
+      <IconButton title="Upgrade available">
+        <ArrowUpwardIcon />
+      </IconButton>,
+    );
+  }
+
   if (unpublishedRevision) {
-    return (
+    elements.push(
       <IconButton
         title={`${unpublishedRevision.lifecycle} revision`}
-        inTable
         stopPropagation
         onClick={() => unpublishedRevision.navigate()}
       >
         <PackageIcon lifecycle={unpublishedRevision.lifecycle} />
-      </IconButton>
+      </IconButton>,
     );
   }
 
-  return <Fragment />;
+  return (
+    <div style={{ position: 'absolute', transform: 'translateY(-50%)' }}>
+      {...elements}
+    </div>
+  );
 };
 
 const renderBlueprintColumn = (row: PackageSummaryRow): JSX.Element => {
@@ -189,6 +204,7 @@ const mapToPackageSummaryRow = (
     upstreamPackageDisplayName: packageSummary.upstreamPackageName
       ? `${packageSummary.upstreamPackageName} ${packageSummary.upstreamPackageRevision}`
       : undefined,
+    isUpgradeAvailable: packageSummary.isUpgradeAvailable,
     upstreamPackageRevision: packageSummary.upstreamRevision,
     unpublished: mapToUnpublishedRevision(
       packageSummary,

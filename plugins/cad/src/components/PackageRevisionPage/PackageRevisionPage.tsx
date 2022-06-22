@@ -30,7 +30,7 @@ import {
 } from '@material-ui/core';
 import Alert, { Color } from '@material-ui/lab/Alert';
 import { cloneDeep } from 'lodash';
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../apis';
@@ -62,6 +62,7 @@ import {
   getNextPackageRevisionResource,
   getPackageRevision,
   getPackageRevisionTitle,
+  getUpgradePackageRevisionResource,
   getUpstreamPackageRevisionDetails,
   isLatestPublishedRevision,
   sortByPackageNameAndRevisionComparison,
@@ -76,6 +77,7 @@ import {
   isDeploymentRepository,
 } from '../../utils/repository';
 import { getRepositorySummary } from '../../utils/repositorySummary';
+import { toLowerCase } from '../../utils/string';
 import { ConfirmationDialog, Select } from '../Controls';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
 import { AdvancedPackageRevisionOptions } from './components/AdvancedPackageRevisionOptions';
@@ -146,6 +148,10 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
   const [openRestoreDialog, setOpenRestoreDialog] = useState<boolean>(false);
 
+  const [isUpgradeAvailable, setIsUpgradeAvailable] = useState<boolean>(false);
+
+  const latestPublishedUpstream = useRef<PackageRevision>();
+
   const loadRepositorySummary = async (): Promise<void> => {
     const thisRepositorySummary = await getRepositorySummary(
       api,
@@ -207,23 +213,41 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       });
     }
 
-    const upstream = getUpstreamPackageRevisionDetails(thisPackageRevision);
+    let upgradeAvailable = false;
 
-    if (upstream) {
-      const upstreamPackage = findPackageRevision(
-        thisPackageRevisions,
-        upstream.packageName,
-        upstream.revision,
-      );
+    if (isLatestPublishedRevision(thisPackageRevision)) {
+      const upstream = getUpstreamPackageRevisionDetails(thisPackageRevision);
 
-      if (upstreamPackage) {
-        diffItems.push({
-          label: `Upstream (${getPackageRevisionTitle(upstreamPackage)})`,
-          value: upstreamPackage.metadata.name,
-        });
+      if (upstream) {
+        const upstreamPackage = findPackageRevision(
+          thisPackageRevisions,
+          upstream.packageName,
+          upstream.revision,
+        );
+
+        if (upstreamPackage) {
+          diffItems.push({
+            label: `Upstream (${getPackageRevisionTitle(upstreamPackage)})`,
+            value: upstreamPackage.metadata.name,
+          });
+        }
+
+        const allUpstreamRevisions = filterPackageRevisions(
+          thisPackageRevisions,
+          upstream.packageName,
+        );
+        latestPublishedUpstream.current =
+          findLatestPublishedRevision(allUpstreamRevisions);
+
+        if (
+          upstream.revision !== latestPublishedUpstream.current?.spec.revision
+        ) {
+          upgradeAvailable = true;
+        }
       }
     }
 
+    setIsUpgradeAvailable(upgradeAvailable);
     setSelectDiffItems(diffItems);
 
     const isPublished =
@@ -431,6 +455,33 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
         setRootSync(newRootSync);
       }
+    } finally {
+      setUserInitiatedApiRequest(false);
+    }
+  };
+
+  const createUpgradeRevision = async (): Promise<void> => {
+    setUserInitiatedApiRequest(true);
+
+    try {
+      if (!latestPublishedUpstream.current) {
+        throw new Error('The latest published upstream package is not defined');
+      }
+
+      const blueprintPackageRevisionName =
+        latestPublishedUpstream.current.metadata.name;
+
+      const requestPackageRevision = getUpgradePackageRevisionResource(
+        packageRevision,
+        blueprintPackageRevisionName,
+      );
+
+      const newPackageRevision = await api.createPackageRevision(
+        requestPackageRevision,
+      );
+      const newPackageName = newPackageRevision.metadata.name;
+
+      navigate(packageRef({ repositoryName, packageName: newPackageName }));
     } finally {
       setUserInitiatedApiRequest(false);
     }
@@ -671,6 +722,20 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
         if (isLatestPublishedPackageRevision) {
           if (latestRevision === latestPublishedRevision) {
+            if (isUpgradeAvailable) {
+              options.push(
+                <MaterialButton
+                  key="create-upgrade-revision"
+                  variant="outlined"
+                  color="primary"
+                  onClick={createUpgradeRevision}
+                  disabled={userInitiatedApiRequest}
+                >
+                  Upgrade to Latest Blueprint
+                </MaterialButton>,
+              );
+            }
+
             options.push(
               <MaterialButton
                 key="create-new-revision"
@@ -781,6 +846,34 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
   const isViewMode = mode === PackageRevisionPageMode.VIEW;
 
+  const getUpgradeAlertText = (): string => {
+    const latestRevision = packageRevisions[0];
+
+    const blueprintName = `${latestPublishedUpstream.current?.spec.packageName} blueprint`;
+    const baseUpgradeText = `The ${blueprintName} has been upgraded.`;
+
+    const latestRevisionUpstream =
+      getUpstreamPackageRevisionDetails(latestRevision);
+
+    if (latestRevision !== packageRevision) {
+      const isLatestRevisionUpgraded =
+        latestRevisionUpstream?.revision ===
+        latestPublishedUpstream.current?.spec.revision;
+
+      const pendingRevisionName = `${latestRevision.spec.packageName} ${
+        latestRevision.spec.revision
+      } ${toLowerCase(latestRevision.spec.lifecycle)} revision`;
+
+      if (isLatestRevisionUpgraded) {
+        return `${baseUpgradeText} The ${pendingRevisionName} includes changes from the upgraded ${blueprintName}.`;
+      }
+
+      return `${baseUpgradeText} The ${pendingRevisionName} does not include changes from the upgraded ${blueprintName}. The revision must be either published or deleted first before changes from the upgraded ${blueprintName} can be pulled in.`;
+    }
+
+    return `${baseUpgradeText} Use the 'Upgrade to Latest Blueprint' button to create a revision that pulls in changes from the upgraded blueprint.`;
+  };
+
   return (
     <div>
       <Breadcrumbs>
@@ -820,6 +913,13 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
             label: 'Resources',
             content: (
               <Fragment>
+                {isUpgradeAvailable && (
+                  <Fragment>
+                    <Alert severity="info" style={{ marginBottom: '16px' }}>
+                      {getUpgradeAlertText()}
+                    </Alert>
+                  </Fragment>
+                )}
                 <PackageRevisionResourcesTable
                   resourcesMap={resourcesMap}
                   baseResourcesMap={baseResourcesMap}

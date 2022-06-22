@@ -95,7 +95,13 @@ const getSummary = (packageSummaries?: PackageSummary[]): string => {
   if (draftPackages) {
     summary = `${summary}, ${draftPackages} Draft`;
   }
+  /*
+  const upgradePackages = packageSummaries.filter(summary => summary.isUpgradeAvailable).length;
 
+  if (upgradePackages) {
+    summary = `${summary}, Upgrades Avaialble`
+  }
+*/
   return summary;
 };
 
