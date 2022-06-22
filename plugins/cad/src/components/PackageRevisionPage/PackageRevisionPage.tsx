@@ -226,14 +226,27 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     }
 
     setSelectDiffItems(diffItems);
+
+    const isPublished =
+      thisPackageRevision.spec.lifecycle === PackageRevisionLifecycle.PUBLISHED;
+
+    if (isPublished) {
+      setDiffSelection('none');
+    } else {
+      const updateDiffSelection =
+        !packageRevision ||
+        packageRevision.metadata.name !== thisPackageRevision.metadata.name;
+
+      if (updateDiffSelection) {
+        setDiffSelection((diffItems[1]?.value as string) || 'none');
+      }
+    }
   };
 
   const { loading, error } = useAsync(
     async () => Promise.all([loadRepositorySummary(), loadPackageRevision()]),
     [repositoryName, packageName, mode],
   );
-
-  useEffect(() => setDiffSelection('none'), [repositoryName, packageName]);
 
   useEffect(() => {
     if (!diffSelection || diffSelection === 'none') {
