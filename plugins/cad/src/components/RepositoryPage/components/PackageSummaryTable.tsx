@@ -16,8 +16,6 @@
 
 import { Table, TableColumn } from '@backstage/core-components';
 import { useRouteRef } from '@backstage/core-plugin-api';
-import { IconButton, makeStyles } from '@material-ui/core';
-import { ClassNameMap } from '@material-ui/core/styles/withStyles';
 import React, { Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { packageRouteRef } from '../../../routes';
@@ -30,7 +28,7 @@ import { getSyncStatus, SyncStatus } from '../../../utils/configSync';
 import { formatCreationTimestamp } from '../../../utils/formatDate';
 import { PackageSummary } from '../../../utils/packageSummary';
 import { isDeploymentRepository } from '../../../utils/repository';
-import { PackageIcon } from '../../Controls';
+import { IconButton, PackageIcon } from '../../Controls';
 import { PackageLink } from '../../Links';
 import { SyncStatusVisual } from './SyncStatusVisual';
 
@@ -67,28 +65,18 @@ type PackageSummaryRow = {
 
 type NavigateToPackageRevision = (revision: PackageRevision) => void;
 
-const useStyles = makeStyles({
-  iconButton: {
-    position: 'absolute',
-    transform: 'translateY(-50%)',
-  },
-});
-
 const renderStatusColumn = (
   thisPackageRevisionRow: PackageSummaryRow,
-  classes: ClassNameMap,
 ): JSX.Element => {
   const unpublishedRevision = thisPackageRevisionRow.unpublished;
 
   if (unpublishedRevision) {
     return (
       <IconButton
-        size="small"
-        className={classes.iconButton}
-        onClick={e => {
-          e.stopPropagation();
-          unpublishedRevision.navigate();
-        }}
+        title={`${unpublishedRevision.lifecycle} revision`}
+        inTable
+        stopPropagation
+        onClick={() => unpublishedRevision.navigate()}
       >
         <PackageIcon lifecycle={unpublishedRevision.lifecycle} />
       </IconButton>
@@ -223,7 +211,6 @@ export const PackageRevisionsTable = ({
   repository,
   packages,
 }: PackageRevisionsTableProps) => {
-  const classes = useStyles();
   const navigate = useNavigate();
 
   const packageRef = useRouteRef(packageRouteRef);
@@ -238,7 +225,7 @@ export const PackageRevisionsTable = ({
   };
 
   const renderStatus = (row: PackageSummaryRow): JSX.Element =>
-    renderStatusColumn(row, classes);
+    renderStatusColumn(row);
 
   const includeSyncsColumn = isDeploymentRepository(repository);
   const columns = getTableColumns(
