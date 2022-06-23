@@ -16,8 +16,6 @@
 
 import { Table, TableColumn } from '@backstage/core-components';
 import { useRouteRef } from '@backstage/core-plugin-api';
-import { IconButton, makeStyles } from '@material-ui/core';
-import { ClassNameMap } from '@material-ui/core/styles/withStyles';
 import React, { Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { packageRouteRef } from '../../../routes';
@@ -32,7 +30,7 @@ import {
   PackageResource,
   ResourceDiffStatus,
 } from '../../../utils/packageRevisionResources';
-import { PackageIcon } from '../../Controls';
+import { IconButton, PackageIcon } from '../../Controls';
 
 export type RevisionSummary = {
   revision: PackageRevision;
@@ -55,23 +53,13 @@ type PackageRevisionRow = {
   created: string;
 };
 
-const useStyles = makeStyles({
-  iconButton: {
-    position: 'absolute',
-    transform: 'translateY(-50%)',
-  },
-});
-
-const renderStatusColumn = (
-  revision: PackageRevisionRow,
-  classes: ClassNameMap,
-): JSX.Element => {
+const renderStatusColumn = (revision: PackageRevisionRow): JSX.Element => {
   const isUnpublishedRevision =
     revision.lifecycle !== PackageRevisionLifecycle.PUBLISHED;
 
   if (isUnpublishedRevision) {
     return (
-      <IconButton size="small" className={classes.iconButton}>
+      <IconButton title={`${revision.lifecycle} revision`} inTable>
         <PackageIcon lifecycle={revision.lifecycle} />
       </IconButton>
     );
@@ -80,11 +68,9 @@ const renderStatusColumn = (
   return <Fragment />;
 };
 
-const getTableColumns = (
-  classes: ClassNameMap,
-): TableColumn<PackageRevisionRow>[] => {
+const getTableColumns = (): TableColumn<PackageRevisionRow>[] => {
   const renderStatus = (row: PackageRevisionRow): JSX.Element =>
-    renderStatusColumn(row, classes);
+    renderStatusColumn(row);
 
   const columns: TableColumn<PackageRevisionRow>[] = [
     {
@@ -171,7 +157,6 @@ export const PackageRevisionsTable = ({
   repository,
   revisions,
 }: PackageRevisionsTableProps) => {
-  const classes = useStyles();
   const navigate = useNavigate();
 
   const packageRef = useRouteRef(packageRouteRef);
@@ -184,7 +169,7 @@ export const PackageRevisionsTable = ({
     }
   };
 
-  const columns = getTableColumns(classes);
+  const columns = getTableColumns();
   const data = revisions.map(mapToPackageRevisionRow);
 
   return (

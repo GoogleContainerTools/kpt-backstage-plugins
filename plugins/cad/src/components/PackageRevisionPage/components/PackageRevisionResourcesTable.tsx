@@ -16,7 +16,7 @@
 
 import { Table, TableColumn } from '@backstage/core-components';
 import { errorApiRef, useApi } from '@backstage/core-plugin-api';
-import { Button, Divider, IconButton, Menu, MenuItem } from '@material-ui/core';
+import { Button, Divider, Menu, MenuItem } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
 import { startCase } from 'lodash';
@@ -36,6 +36,7 @@ import {
   updateResourceInResourcesMap,
 } from '../../../utils/packageRevisionResources';
 import { dumpYaml } from '../../../utils/yaml';
+import { IconButton } from '../../Controls';
 import { ResourceEditorDialog } from '../../ResourceEditorDialog';
 import { ResourceViewerDialog } from '../../ResourceViewerDialog';
 
@@ -170,16 +171,10 @@ export const PackageRevisionResourcesTable = ({
         options.push(
           <IconButton
             key="delete"
-            size="small"
             title="Delete"
-            style={{
-              position: 'absolute',
-              transform: 'translateY(-50%)',
-            }}
-            onClick={event => {
-              event.stopPropagation();
-              deleteResource(resourceRow);
-            }}
+            inTable
+            stopPropagation
+            onClick={() => deleteResource(resourceRow)}
           >
             <DeleteIcon />
           </IconButton>,

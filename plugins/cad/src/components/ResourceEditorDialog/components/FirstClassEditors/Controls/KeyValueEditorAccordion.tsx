@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import { Button, IconButton, TextField } from '@material-ui/core';
+import { Button, TextField } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
 import React, { Fragment, useRef } from 'react';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
 import { toLowerCase } from '../../../../../utils/string';
+import { IconButton } from '../../../../Controls';
 import { useEditorStyles } from '../styles';
 import { EditorAccordion, OnAccordionChange } from './EditorAccordion';
 
@@ -106,7 +107,6 @@ export const KeyValueEditorAccordion = ({
               fullWidth
             />
             <IconButton
-              size="small"
               title="Delete"
               className={classes.iconButton}
               onClick={() => {
