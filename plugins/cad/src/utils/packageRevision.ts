@@ -213,6 +213,37 @@ export const getNextPackageRevisionResource = (
   return resource;
 };
 
+export const getUpgradePackageRevisionResource = (
+  currentRevision: PackageRevision,
+  upgradePackageRevisionName: string,
+): PackageRevision => {
+  const { repository, packageName, revision, tasks } = currentRevision.spec;
+  const nextRevision = getNextRevision(revision);
+
+  const [firstTask, ...remainderTasks] = tasks;
+
+  if (firstTask.type !== 'clone') {
+    throw new Error(
+      `First task of a package revision to be upgraded must be of type 'clone'`,
+    );
+  }
+
+  const newTasks = [
+    getCloneTask(upgradePackageRevisionName),
+    ...remainderTasks,
+  ];
+
+  const resource = getPackageRevisionResource(
+    repository,
+    packageName,
+    nextRevision,
+    PackageRevisionLifecycle.DRAFT,
+    newTasks,
+  );
+
+  return resource;
+};
+
 export const sortByPackageNameAndRevisionComparison = (
   packageRevision1: PackageRevision,
   packageRevision2: PackageRevision,

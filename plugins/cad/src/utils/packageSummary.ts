@@ -21,6 +21,7 @@ import { RepositorySummary } from '../types/RepositorySummary';
 import { RootSync } from '../types/RootSync';
 import { findRootSyncForPackage } from './configSync';
 import {
+  filterPackageRevisions,
   findLatestPublishedRevision,
   findPackageRevision,
   getUpstreamPackageRevisionDetails,
@@ -37,6 +38,8 @@ export type PackageSummary = {
   upstreamRevision?: PackageRevision;
   upstreamPackageName?: string;
   upstreamPackageRevision?: string;
+  upstreamLatestPublishedRevision?: PackageRevision;
+  isUpgradeAvailable?: boolean;
   sync?: RootSync;
 };
 
@@ -91,6 +94,15 @@ export const getPackageSummariesForRepository = (
           upstream.packageName,
           upstream.revision,
         );
+
+        thisPackageSummary.upstreamLatestPublishedRevision =
+          findLatestPublishedRevision(
+            filterPackageRevisions(upstreamRevisions, upstream.packageName),
+          );
+
+        thisPackageSummary.isUpgradeAvailable =
+          thisPackageSummary.upstreamLatestPublishedRevision?.spec.revision !==
+          upstream.revision;
       }
 
       return thisPackageSummary;
