@@ -36,7 +36,7 @@ export type PackageRevisionSpec = {
   repository: string;
   revision: string;
   lifecycle: PackageRevisionLifecycle;
-  tasks?: PackageRevisionTask[];
+  tasks: PackageRevisionTask[];
 };
 
 export enum PackageRevisionLifecycle {
