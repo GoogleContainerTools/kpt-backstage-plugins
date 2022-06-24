@@ -59,7 +59,6 @@ import {
   filterPackageRevisions,
   findLatestPublishedRevision,
   findPackageRevision,
-  getEditTask,
   getNextPackageRevisionResource,
   getPackageRevision,
   getPackageRevisionTitle,
@@ -441,10 +440,8 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     setUserInitiatedApiRequest(true);
 
     try {
-      const requestPackageRevision = getNextPackageRevisionResource(
-        packageRevision,
-        getEditTask(packageRevision.metadata.name),
-      );
+      const requestPackageRevision =
+        getNextPackageRevisionResource(packageRevision);
 
       const newPackageRevision = await api.createPackageRevision(
         requestPackageRevision,
@@ -475,7 +472,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       const createNextRevision = async (): Promise<string> => {
         const requestPackageRevision = getNextPackageRevisionResource(
           latestPublishedRevision,
-          getEditTask(latestPublishedRevision.metadata.name),
         );
 
         const newPackageRevision = await api.createPackageRevision(
