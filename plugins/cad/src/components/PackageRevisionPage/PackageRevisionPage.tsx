@@ -89,6 +89,7 @@ import {
   PackageRevisionsTable,
   RevisionSummary,
 } from './components/PackageRevisionsTable';
+import { processUpdatedResourcesMap } from './updatedResourcesMap/processUpdatedResourcesMap';
 
 export enum PackageRevisionPageMode {
   EDIT = 'edit',
@@ -838,10 +839,16 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       ? ResourcesTableMode.EDIT
       : ResourcesTableMode.VIEW;
 
-  const handleUpdatedResourcesMap = (
+  const handleUpdatedResourcesMap = async (
     latestResources: PackageRevisionResourcesMap,
-  ): void => {
-    setResourcesMap(latestResources);
+  ): Promise<void> => {
+    const updatedResources = await processUpdatedResourcesMap(
+      api,
+      resourcesMap,
+      latestResources,
+    );
+
+    setResourcesMap(updatedResources);
   };
 
   const isViewMode = mode === PackageRevisionPageMode.VIEW;
