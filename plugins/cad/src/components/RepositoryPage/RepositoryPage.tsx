@@ -32,6 +32,7 @@ import { addPackageRouteRef } from '../../routes';
 import { Function } from '../../types/Function';
 import { RepositorySummary } from '../../types/RepositorySummary';
 import { RootSync } from '../../types/RootSync';
+import { isConfigSyncEnabled } from '../../utils/featureFlags';
 import {
   getPackageSummaries,
   PackageSummary,
@@ -64,6 +65,8 @@ export const RepositoryPage = () => {
   );
   const [functions, setFunctions] = useState<Function[]>([]);
 
+  const configSyncEnabled = isConfigSyncEnabled();
+
   const { loading: repositoryLoading, error: repositoryError } =
     useAsync(async (): Promise<void> => {
       const thisRepositorySummary = await getRepositorySummary(
@@ -84,7 +87,8 @@ export const RepositoryPage = () => {
 
         if (isPackageRepository(thisRepository)) {
           const getRootSyncs = async (): Promise<RootSync[]> => {
-            if (!isDeploymentRepository(thisRepository)) return [];
+            if (!configSyncEnabled || !isDeploymentRepository(thisRepository))
+              return [];
 
             const { items: rootSyncs } = await api.listRootSyncs();
             return rootSyncs;
@@ -116,16 +120,16 @@ export const RepositoryPage = () => {
   useEffect(() => {
     if (
       repositorySummary &&
-      isDeploymentRepository(repositorySummary.repository)
+      configSyncEnabled &&
+      isDeploymentRepository(repositorySummary.repository) &&
+      packageSummaries.length > 0
     ) {
       const refreshRootSync = async (): Promise<void> => {
         const { items: syncs } = await api.listRootSyncs();
 
-        const updatedPackageSummaries = updatePackageSummariesSyncStatus(
-          packageSummaries,
-          syncs,
+        setPackageSummaries(thisPackageSummaries =>
+          updatePackageSummariesSyncStatus(thisPackageSummaries, syncs),
         );
-        setPackageSummaries(updatedPackageSummaries);
       };
 
       const refreshSeconds = 10;
@@ -140,7 +144,7 @@ export const RepositoryPage = () => {
     }
 
     return undefined;
-  }, [api, repositorySummary, packageSummaries]);
+  }, [api, repositorySummary, packageSummaries, configSyncEnabled]);
 
   if (repositoryLoading || packagesLoading) {
     return <Progress />;

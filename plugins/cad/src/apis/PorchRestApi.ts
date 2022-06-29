@@ -16,6 +16,8 @@
 
 import { DiscoveryApi, FetchApi, OAuthApi } from '@backstage/core-plugin-api';
 import { ConfigAsDataApi } from '.';
+import { ListApiGroups } from '../types/ApiGroup';
+import { ListConfigManagements } from '../types/ConfigManagement';
 import { Function } from '../types/Function';
 import { KubernetesStatus } from '../types/KubernetesStatus';
 import { PackageRevision } from '../types/PackageRevision';
@@ -139,6 +141,20 @@ export class PorchRestAPI implements ConfigAsDataApi {
     const features = await this.cadFetch('v1/features');
 
     this.authentication = features.authentication;
+  }
+
+  async listApiGroups(): Promise<ListApiGroups> {
+    const apiGroups = await this.cadFetch('apis');
+
+    return apiGroups;
+  }
+
+  async listConfigManagements(): Promise<ListConfigManagements> {
+    const configManagements = await this.cadFetch(
+      'apis/configmanagement.gke.io/v1/configmanagements',
+    );
+
+    return configManagements;
   }
 
   async createSecret(secret: Secret): Promise<Secret> {
