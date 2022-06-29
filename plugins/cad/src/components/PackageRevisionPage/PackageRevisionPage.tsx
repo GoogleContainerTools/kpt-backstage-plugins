@@ -45,6 +45,7 @@ import {
   SyncStatus,
   SyncStatusState,
 } from '../../utils/configSync';
+import { isConfigSyncEnabled } from '../../utils/featureFlags';
 import {
   filterPackageRevisions,
   findLatestPublishedRevision,
@@ -144,6 +145,8 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const [isUpgradeAvailable, setIsUpgradeAvailable] = useState<boolean>(false);
 
   const latestPublishedUpstream = useRef<PackageRevision>();
+
+  const configSyncEnabled = isConfigSyncEnabled();
 
   const loadRepositorySummary = async (): Promise<void> => {
     const thisRepositorySummary = await getRepositorySummary(
@@ -286,7 +289,11 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
   useAsync(async () => {
     if (!loading && packageRevision && repositorySummary) {
-      if (isLatestPublishedPackageRevision && isDeploymentPackage) {
+      if (
+        isLatestPublishedPackageRevision &&
+        isDeploymentPackage &&
+        configSyncEnabled
+      ) {
         const { items: allRootSyncs } = await api.listRootSyncs();
 
         const thisRootSync = findRootSyncForPackage(
@@ -400,7 +407,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
       await api.approvePackageRevision(targetRevision);
 
-      if (isDeploymentPackage) {
+      if (isDeploymentPackage && configSyncEnabled) {
         await updateRootSyncToLatestPackage(targetRevision);
       }
 

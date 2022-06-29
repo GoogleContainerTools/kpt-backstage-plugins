@@ -29,6 +29,7 @@ import {
   registerRepositoryRouteRef,
   repositoryRouteRef,
 } from '../../routes';
+import { loadFeatures } from '../../utils/featureFlags';
 import { AddPackagePage } from '../AddPackagePage';
 import { PackageRevisionPage } from '../PackageRevisionPage';
 import { PackageRevisionPageMode } from '../PackageRevisionPage/PackageRevisionPage';
@@ -39,7 +40,7 @@ import { RepositoryPage } from '../RepositoryPage';
 export const LandingPage = () => {
   const api = useApi(configAsDataApiRef);
 
-  const { loading, error } = useAsync(() => api.getFeatures(), []);
+  const { loading, error } = useAsync(() => loadFeatures(api), []);
 
   const getContent = (): JSX.Element => {
     if (loading) {

@@ -15,6 +15,8 @@
  */
 
 import { createApiRef } from '@backstage/core-plugin-api';
+import { ListApiGroups } from '../types/ApiGroup';
+import { ListConfigManagements } from '../types/ConfigManagement';
 import { Function } from '../types/Function';
 import { PackageRevision } from '../types/PackageRevision';
 import {
@@ -27,6 +29,10 @@ import { ListSecrets, Secret } from '../types/Secret';
 
 export type ConfigAsDataApi = {
   getFeatures(): Promise<void>;
+
+  listApiGroups(): Promise<ListApiGroups>;
+
+  listConfigManagements(): Promise<ListConfigManagements>;
 
   createSecret(secret: Secret): Promise<Secret>;
 
