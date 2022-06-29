@@ -211,34 +211,34 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
     let upgradeAvailable = false;
 
-    if (isLatestPublishedRevision(thisPackageRevision)) {
-      const upstream = getUpstreamPackageRevisionDetails(thisPackageRevision);
+    const upstream = getUpstreamPackageRevisionDetails(thisPackageRevision);
 
-      if (upstream) {
-        const upstreamPackage = findPackageRevision(
-          thisPackageRevisions,
-          upstream.packageName,
-          upstream.revision,
-        );
+    if (upstream) {
+      const upstreamPackage = findPackageRevision(
+        thisPackageRevisions,
+        upstream.packageName,
+        upstream.revision,
+      );
 
-        if (upstreamPackage) {
-          diffItems.push({
-            label: `Upstream (${getPackageRevisionTitle(upstreamPackage)})`,
-            value: upstreamPackage.metadata.name,
-          });
-        }
+      if (upstreamPackage) {
+        diffItems.push({
+          label: `Upstream (${getPackageRevisionTitle(upstreamPackage)})`,
+          value: upstreamPackage.metadata.name,
+        });
 
-        const allUpstreamRevisions = filterPackageRevisions(
-          thisPackageRevisions,
-          upstream.packageName,
-        );
-        latestPublishedUpstream.current =
-          findLatestPublishedRevision(allUpstreamRevisions);
+        if (isLatestPublishedRevision(thisPackageRevision)) {
+          const allUpstreamRevisions = filterPackageRevisions(
+            thisPackageRevisions,
+            upstream.packageName,
+          );
+          latestPublishedUpstream.current =
+            findLatestPublishedRevision(allUpstreamRevisions);
 
-        if (
-          upstream.revision !== latestPublishedUpstream.current?.spec.revision
-        ) {
-          upgradeAvailable = true;
+          if (
+            upstream.revision !== latestPublishedUpstream.current?.spec.revision
+          ) {
+            upgradeAvailable = true;
+          }
         }
       }
     }
