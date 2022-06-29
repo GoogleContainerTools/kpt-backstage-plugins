@@ -16,29 +16,20 @@
 
 import {
   Breadcrumbs,
-  Button,
   ContentHeader,
   Progress,
   SelectItem,
   Tabs,
 } from '@backstage/core-components';
 import { useApi, useRouteRef } from '@backstage/core-plugin-api';
-import {
-  Button as MaterialButton,
-  makeStyles,
-  Typography,
-} from '@material-ui/core';
+import { makeStyles, Typography } from '@material-ui/core';
 import Alert, { Color } from '@material-ui/lab/Alert';
 import { cloneDeep } from 'lodash';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../apis';
-import {
-  deployPackageRouteRef,
-  editPackageRouteRef,
-  packageRouteRef,
-} from '../../routes';
+import { packageRouteRef } from '../../routes';
 import {
   PackageRevision,
   PackageRevisionLifecycle,
@@ -55,7 +46,6 @@ import {
   SyncStatusState,
 } from '../../utils/configSync';
 import {
-  canCloneOrDeploy,
   filterPackageRevisions,
   findLatestPublishedRevision,
   findPackageRevision,
@@ -81,6 +71,10 @@ import { toLowerCase } from '../../utils/string';
 import { ConfirmationDialog, Select } from '../Controls';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
 import { AdvancedPackageRevisionOptions } from './components/AdvancedPackageRevisionOptions';
+import {
+  PackageRevisionOptions,
+  RevisionOption,
+} from './components/PackageRevisionOptions';
 import {
   PackageRevisionResourcesTable,
   ResourcesTableMode,
@@ -126,8 +120,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const api = useApi(configAsDataApiRef);
 
   const packageRef = useRouteRef(packageRouteRef);
-  const deployPackageRef = useRouteRef(deployPackageRouteRef);
-  const editPackageRef = useRouteRef(editPackageRouteRef);
 
   const [repositorySummary, setRepositorySummary] =
     useState<RepositorySummary>();
@@ -358,33 +350,21 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   );
 
   const rejectProposedPackage = async (): Promise<void> => {
-    setUserInitiatedApiRequest(true);
+    const targetPackageRevision = cloneDeep(packageRevision);
+    targetPackageRevision.spec.lifecycle = PackageRevisionLifecycle.DRAFT;
 
-    try {
-      const targetPackageRevision = cloneDeep(packageRevision);
-      targetPackageRevision.spec.lifecycle = PackageRevisionLifecycle.DRAFT;
+    await api.replacePackageRevision(targetPackageRevision);
 
-      await api.replacePackageRevision(targetPackageRevision);
-
-      await loadPackageRevision();
-    } finally {
-      setUserInitiatedApiRequest(false);
-    }
+    await loadPackageRevision();
   };
 
   const moveToProposed = async (): Promise<void> => {
-    setUserInitiatedApiRequest(true);
+    const targetPackageRevision = cloneDeep(packageRevision);
+    targetPackageRevision.spec.lifecycle = PackageRevisionLifecycle.PROPOSED;
 
-    try {
-      const targetPackageRevision = cloneDeep(packageRevision);
-      targetPackageRevision.spec.lifecycle = PackageRevisionLifecycle.PROPOSED;
+    await api.replacePackageRevision(targetPackageRevision);
 
-      await api.replacePackageRevision(targetPackageRevision);
-
-      await loadPackageRevision();
-    } finally {
-      setUserInitiatedApiRequest(false);
-    }
+    await loadPackageRevision();
   };
 
   const updateRootSyncToLatestPackage = async (
@@ -431,79 +411,61 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   };
 
   const createSync = async (): Promise<void> => {
-    setUserInitiatedApiRequest(true);
+    const repoSecretName =
+      repositorySummary.repository.spec.git?.secretRef?.name;
 
-    try {
-      const repoSecretName =
-        repositorySummary.repository.spec.git?.secretRef?.name;
+    if (repoSecretName) {
+      const baseName = packageRevision.spec.packageName;
+      const newSecretName = `${baseName}-sync`;
 
-      if (repoSecretName) {
-        const baseName = packageRevision.spec.packageName;
-        const newSecretName = `${baseName}-sync`;
+      const repoSecret = await api.getSecret(repoSecretName);
 
-        const repoSecret = await api.getSecret(repoSecretName);
+      const syncSecret = await getRootSyncSecret(newSecretName, repoSecret);
+      const createdSyncSecret = await api.createSecret(syncSecret);
 
-        const syncSecret = await getRootSyncSecret(newSecretName, repoSecret);
-        const createdSyncSecret = await api.createSecret(syncSecret);
+      const rootSyncResource = getRootSync(
+        repositorySummary.repository,
+        packageRevision,
+        createdSyncSecret.metadata.name,
+      );
 
-        const rootSyncResource = getRootSync(
-          repositorySummary.repository,
-          packageRevision,
-          createdSyncSecret.metadata.name,
-        );
+      const newRootSync = await api.createRootSync(rootSyncResource);
 
-        const newRootSync = await api.createRootSync(rootSyncResource);
-
-        setRootSync(newRootSync);
-      }
-    } finally {
-      setUserInitiatedApiRequest(false);
+      setRootSync(newRootSync);
     }
   };
 
   const createUpgradeRevision = async (): Promise<void> => {
-    setUserInitiatedApiRequest(true);
-
-    try {
-      if (!latestPublishedUpstream.current) {
-        throw new Error('The latest published upstream package is not defined');
-      }
-
-      const blueprintPackageRevisionName =
-        latestPublishedUpstream.current.metadata.name;
-
-      const requestPackageRevision = getUpgradePackageRevisionResource(
-        packageRevision,
-        blueprintPackageRevisionName,
-      );
-
-      const newPackageRevision = await api.createPackageRevision(
-        requestPackageRevision,
-      );
-      const newPackageName = newPackageRevision.metadata.name;
-
-      navigate(packageRef({ repositoryName, packageName: newPackageName }));
-    } finally {
-      setUserInitiatedApiRequest(false);
+    if (!latestPublishedUpstream.current) {
+      throw new Error('The latest published upstream package is not defined');
     }
+
+    const blueprintPackageRevisionName =
+      latestPublishedUpstream.current.metadata.name;
+
+    const requestPackageRevision = getUpgradePackageRevisionResource(
+      packageRevision,
+      blueprintPackageRevisionName,
+    );
+
+    const newPackageRevision = await api.createPackageRevision(
+      requestPackageRevision,
+    );
+    const newPackageName = newPackageRevision.metadata.name;
+
+    navigate(packageRef({ repositoryName, packageName: newPackageName }));
   };
 
   const createNewRevision = async (): Promise<void> => {
-    setUserInitiatedApiRequest(true);
+    const requestPackageRevision =
+      getNextPackageRevisionResource(packageRevision);
 
-    try {
-      const requestPackageRevision =
-        getNextPackageRevisionResource(packageRevision);
+    const newPackageRevision = await api.createPackageRevision(
+      requestPackageRevision,
+    );
+    const newPackageName = newPackageRevision.metadata.name;
 
-      const newPackageRevision = await api.createPackageRevision(
-        requestPackageRevision,
-      );
-      const newPackageName = newPackageRevision.metadata.name;
-
-      navigate(packageRef({ repositoryName, packageName: newPackageName }));
-    } finally {
-      setUserInitiatedApiRequest(false);
-    }
+    navigate(packageRef({ repositoryName, packageName: newPackageName }));
   };
 
   const createRestoreRevision = async (): Promise<void> => {
@@ -554,7 +516,19 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     }
   };
 
-  const getCurrentSyncStatus = (): JSX.Element => {
+  const getPackageLifecycleDescription = (): JSX.Element | null => {
+    if (packageRevision.spec.lifecycle !== PackageRevisionLifecycle.PUBLISHED) {
+      return (
+        <div>
+          {packageRevision.spec.lifecycle} {packageDescriptor}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  const getCurrentSyncStatus = (): JSX.Element | null => {
     if (syncStatus) {
       const getAlertSeverity = (thisSyncStatus: SyncStatus): Color => {
         switch (thisSyncStatus.state) {
@@ -596,242 +570,18 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       );
     }
 
-    return <Fragment key="sync-status" />;
+    return null;
   };
 
   const savePackageRevision = async (): Promise<void> => {
-    setUserInitiatedApiRequest(true);
+    const packageRevisionResources = getPackageRevisionResourcesResource(
+      packageName,
+      resourcesMap,
+    );
 
-    try {
-      const packageRevisionResources = getPackageRevisionResourcesResource(
-        packageName,
-        resourcesMap,
-      );
+    await api.replacePackageRevisionResources(packageRevisionResources);
 
-      await api.replacePackageRevisionResources(packageRevisionResources);
-
-      navigate(packageRef({ repositoryName, packageName }));
-    } finally {
-      setUserInitiatedApiRequest(false);
-    }
-  };
-
-  const renderOptions = (): JSX.Element[] => {
-    const options: JSX.Element[] = [];
-
-    if (mode === PackageRevisionPageMode.EDIT) {
-      options.push(
-        <Button
-          key="edit-package"
-          to={packageRef({ repositoryName, packageName })}
-          variant="outlined"
-          disabled={userInitiatedApiRequest}
-        >
-          Cancel
-        </Button>,
-      );
-
-      options.push(
-        <MaterialButton
-          key="save-package"
-          onClick={savePackageRevision}
-          variant="contained"
-          color="primary"
-          disabled={userInitiatedApiRequest}
-        >
-          Save
-        </MaterialButton>,
-      );
-    }
-
-    if (mode === PackageRevisionPageMode.VIEW) {
-      const isDraft =
-        packageRevision.spec.lifecycle === PackageRevisionLifecycle.DRAFT;
-      const isProposed =
-        packageRevision.spec.lifecycle === PackageRevisionLifecycle.PROPOSED;
-      const isPublished =
-        packageRevision.spec.lifecycle === PackageRevisionLifecycle.PUBLISHED;
-
-      if (isDraft || isProposed) {
-        options.push(
-          <div key="package-lifecycle">
-            {packageRevision.spec.lifecycle} {packageDescriptor}
-          </div>,
-        );
-      }
-
-      if (isDraft) {
-        options.push(
-          <Button
-            key="edit-package"
-            to={editPackageRef({ repositoryName, packageName })}
-            color="primary"
-            variant="outlined"
-            disabled={userInitiatedApiRequest}
-          >
-            Edit
-          </Button>,
-        );
-
-        options.push(
-          <MaterialButton
-            key="propose-package"
-            color="primary"
-            variant="contained"
-            onClick={moveToProposed}
-            disabled={userInitiatedApiRequest}
-          >
-            Propose
-          </MaterialButton>,
-        );
-      }
-
-      if (isProposed) {
-        options.push(
-          <MaterialButton
-            key="reject-proposed-package"
-            color="primary"
-            variant="outlined"
-            onClick={rejectProposedPackage}
-            disabled={userInitiatedApiRequest}
-          >
-            Reject
-          </MaterialButton>,
-        );
-
-        options.push(
-          <MaterialButton
-            key="approve-proposed-package"
-            color="primary"
-            variant="contained"
-            onClick={approveProposedPackage}
-            disabled={userInitiatedApiRequest}
-          >
-            Approve
-          </MaterialButton>,
-        );
-      }
-
-      if (isPublished) {
-        if (!packageRevisions || packageRevisions.length === 0) {
-          throw new Error('No package revisions');
-        }
-
-        const latestRevision = packageRevisions[0];
-        const latestPublishedRevision =
-          findLatestPublishedRevision(packageRevisions);
-
-        if (isLatestPublishedPackageRevision) {
-          if (latestRevision === latestPublishedRevision) {
-            if (isUpgradeAvailable) {
-              options.push(
-                <MaterialButton
-                  key="create-upgrade-revision"
-                  variant="outlined"
-                  color="primary"
-                  onClick={createUpgradeRevision}
-                  disabled={userInitiatedApiRequest}
-                >
-                  Upgrade to Latest Blueprint
-                </MaterialButton>,
-              );
-            }
-
-            options.push(
-              <MaterialButton
-                key="create-new-revision"
-                variant="outlined"
-                color="primary"
-                onClick={createNewRevision}
-                disabled={userInitiatedApiRequest}
-              >
-                Create New Revision
-              </MaterialButton>,
-            );
-          } else {
-            options.push(
-              <Button
-                key="view-latest-revision"
-                to={packageRef({
-                  repositoryName,
-                  packageName: latestRevision.metadata.name,
-                })}
-                color="primary"
-                variant="outlined"
-              >
-                View {latestRevision.spec.lifecycle} Revision
-              </Button>,
-            );
-          }
-        } else if (latestPublishedRevision) {
-          options.push(
-            <MaterialButton
-              key="restore-revision"
-              onClick={() => setOpenRestoreDialog(true)}
-              color="primary"
-              variant="outlined"
-            >
-              Restore Revision
-            </MaterialButton>,
-          );
-
-          options.push(
-            <Button
-              key="view-latest-published-revision"
-              to={packageRef({
-                repositoryName,
-                packageName: latestPublishedRevision.metadata.name,
-              })}
-              color="primary"
-              variant="outlined"
-            >
-              View Latest Published Revision
-            </Button>,
-          );
-        }
-
-        if (
-          isDeploymentPackage &&
-          isLatestPublishedPackageRevision &&
-          rootSync !== undefined
-        ) {
-          if (rootSync) {
-            options.push(getCurrentSyncStatus());
-          } else {
-            options.push(
-              <MaterialButton
-                key="create-sync"
-                color="primary"
-                variant="contained"
-                onClick={createSync}
-                disabled={userInitiatedApiRequest}
-              >
-                Create Sync
-              </MaterialButton>,
-            );
-          }
-        }
-      }
-
-      if (
-        repositorySummary.downstreamRepositories.length > 0 &&
-        canCloneOrDeploy(packageRevision)
-      ) {
-        options.push(
-          <Button
-            key="deploy-package"
-            to={deployPackageRef({ repositoryName, packageName })}
-            color="primary"
-            variant="contained"
-            disabled={userInitiatedApiRequest}
-          >
-            Deploy
-          </Button>,
-        );
-      }
-    }
-
-    return options;
+    navigate(packageRef({ repositoryName, packageName }));
   };
 
   const resourcesTableMode =
@@ -851,7 +601,58 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     setResourcesMap(updatedResources);
   };
 
-  const isViewMode = mode === PackageRevisionPageMode.VIEW;
+  const executeUserInitiatedApiRequest = async (
+    apiRequest: () => Promise<void>,
+  ): Promise<void> => {
+    setUserInitiatedApiRequest(true);
+
+    try {
+      await apiRequest();
+    } finally {
+      setUserInitiatedApiRequest(false);
+    }
+  };
+
+  const onRevisionOptionClick = async (
+    option: RevisionOption,
+  ): Promise<void> => {
+    switch (option) {
+      case RevisionOption.CREATE_NEW_REVISION:
+        await executeUserInitiatedApiRequest(createNewRevision);
+        break;
+
+      case RevisionOption.SAVE_REVISION:
+        await executeUserInitiatedApiRequest(savePackageRevision);
+        break;
+
+      case RevisionOption.PROPOSE_REVISION:
+        await executeUserInitiatedApiRequest(moveToProposed);
+        break;
+
+      case RevisionOption.REJECT_PROPOSED_REVISION:
+        await executeUserInitiatedApiRequest(rejectProposedPackage);
+        break;
+
+      case RevisionOption.APPROVE_PROPOSED_REVISION:
+        await executeUserInitiatedApiRequest(approveProposedPackage);
+        break;
+
+      case RevisionOption.CREATE_UPGRADE_REVISION:
+        await executeUserInitiatedApiRequest(createUpgradeRevision);
+        break;
+
+      case RevisionOption.RESTORE_REVISION:
+        setOpenRestoreDialog(true);
+        break;
+
+      case RevisionOption.CREATE_SYNC:
+        await executeUserInitiatedApiRequest(createSync);
+        break;
+
+      default:
+        throw new Error(`Unexpected option, '${option}'`);
+    }
+  };
 
   const getUpgradeAlertText = (): string => {
     const latestRevision = packageRevisions[0];
@@ -881,6 +682,8 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     return `${baseUpgradeText} Use the 'Upgrade to Latest Blueprint' button to create a revision that pulls in changes from the upgraded blueprint.`;
   };
 
+  const isViewMode = mode === PackageRevisionPageMode.VIEW;
+
   return (
     <div>
       <Breadcrumbs>
@@ -894,7 +697,22 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       </Breadcrumbs>
 
       <ContentHeader title={packageRevisionTitle}>
-        <div className={classes.packageRevisionOptions}>{renderOptions()}</div>
+        <div className={classes.packageRevisionOptions}>
+          {getPackageLifecycleDescription()}
+
+          {getCurrentSyncStatus()}
+
+          <PackageRevisionOptions
+            repositorySummary={repositorySummary}
+            mode={mode}
+            packageRevision={packageRevision}
+            packageRevisions={packageRevisions}
+            isUpgradeAvailable={isUpgradeAvailable}
+            rootSync={rootSync}
+            onClick={onRevisionOptionClick}
+            disabled={userInitiatedApiRequest}
+          />
+        </div>
       </ContentHeader>
 
       <Fragment>
@@ -911,7 +729,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
         title="Restore Revision"
         contentText={`Create new revision to restore ${packageRevision.spec.packageName} to revision ${packageRevision.spec.revision}?`}
         actionText="Create Revision"
-        onAction={createRestoreRevision}
+        onAction={() => executeUserInitiatedApiRequest(createRestoreRevision)}
       />
 
       <Tabs
