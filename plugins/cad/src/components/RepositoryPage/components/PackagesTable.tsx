@@ -65,14 +65,12 @@ type PackageRow = {
 
 type NavigateToPackageRevision = (revision: PackageRevision) => void;
 
-const renderStatusColumn = (
-  thisPackageRevisionRow: PackageRow,
-): JSX.Element => {
-  const unpublishedRevision = thisPackageRevisionRow.unpublished;
+const renderStatusColumn = (row: PackageRow): JSX.Element => {
+  const unpublishedRevision = row.unpublished;
 
   const elements: JSX.Element[] = [];
 
-  if (thisPackageRevisionRow.isUpgradeAvailable) {
+  if (row.isUpgradeAvailable) {
     elements.push(
       <IconButton title="Upgrade available">
         <ArrowUpwardIcon />
