@@ -49,7 +49,7 @@ import { getRepositorySummary } from '../../utils/repositorySummary';
 import { RepositoriesLink } from '../Links';
 import { AdvancedRepositoryOptions } from './components/AdvancedRepositoryOptions';
 import { FunctionsTable } from './components/FunctionsTable';
-import { PackageRevisionsTable } from './components/PackageSummaryTable';
+import { PackagesTable } from './components/PackagesTable';
 import { RelatedRepositoryContent } from './components/RelatedRepositoryContent';
 
 export const RepositoryPage = () => {
@@ -168,7 +168,7 @@ export const RepositoryPage = () => {
 
     if (isPackageRepository(repositorySummary.repository)) {
       return (
-        <PackageRevisionsTable
+        <PackagesTable
           title={`${packageDescriptor}s`}
           repository={thisRepository}
           packages={packageSummaries}
