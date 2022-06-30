@@ -72,13 +72,19 @@ FROM base-backstage-app as backstage-app-local
 COPY app-config.yaml ./
 
 # Install gcloud and gke-gcloud-auth-plugin
-# https://cloud.google.com/sdk/docs/install#deb
+# https://cloud.google.com/sdk/docs/install#other_installation_options
+
 RUN apt-get update && \
-    apt-get install -y apt-transport-https ca-certificates gnupg curl && \
-    echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
-    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | tee /usr/share/keyrings/cloud.google.gpg && \
-    apt-get update && \
-    apt-get install -y google-cloud-sdk google-cloud-sdk-gke-gcloud-auth-plugin
+    apt-get install -y curl
+
+RUN curl https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-392.0.0-linux-x86_64.tar.gz --output google-cloud-sdk.tar.gz && \
+    tar -xzf ./google-cloud-sdk.tar.gz && \
+    google-cloud-sdk/install.sh && \
+    rm -rf ./google-cloud-sdk.tar.gz
+
+RUN google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin
+
+ENV PATH="/app/google-cloud-sdk/bin:${PATH}"
 
 CMD ["node", "packages/backend", "--config", "app-config.yaml"]
 
