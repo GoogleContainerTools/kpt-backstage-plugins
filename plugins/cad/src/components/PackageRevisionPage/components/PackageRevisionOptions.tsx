@@ -199,24 +199,38 @@ const PublishedPackageRevisionOptions = ({
     );
   }
 
-  if (latestRevision !== latestPublishedRevision) {
-    return (
-      <Button
-        to={packageRef({
-          repositoryName,
-          packageName: latestRevision.metadata.name,
-        })}
-        color="primary"
-        variant="outlined"
-      >
-        View {latestRevision.spec.lifecycle} Revision
-      </Button>
-    );
-  }
-
   const showDeploy =
     repositorySummary.downstreamRepositories.length > 0 &&
     canCloneOrDeploy(packageRevision);
+
+  if (latestRevision !== latestPublishedRevision) {
+    return (
+      <Fragment>
+        <Button
+          to={packageRef({
+            repositoryName,
+            packageName: latestRevision.metadata.name,
+          })}
+          color="primary"
+          variant="outlined"
+        >
+          View {latestRevision.spec.lifecycle} Revision
+        </Button>
+
+        {showDeploy && (
+          <Button
+            to={deployPackageRef({ repositoryName, packageName })}
+            color="primary"
+            variant="contained"
+            disabled={disabled}
+          >
+            Deploy
+          </Button>
+        )}
+      </Fragment>
+    );
+  }
+
   const showCreateSync =
     isDeploymentRepository(repositorySummary.repository) && rootSync === null;
 
