@@ -33,13 +33,11 @@ import { PackageLink } from '../../Links';
 import { SyncStatusVisual } from './SyncStatusVisual';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 
-type PackageRevisionsTableProps = {
+type PackagesTableProps = {
   title: string;
   repository: Repository;
   packages: PackageSummary[];
 };
-
-type RenderColumn = (row: PackageSummaryRow) => JSX.Element;
 
 type UnpublishedPackageRevision = {
   name: string;
@@ -50,7 +48,7 @@ type UnpublishedPackageRevision = {
   navigate: () => void;
 };
 
-type PackageSummaryRow = {
+type PackageRow = {
   id: string;
   name: string;
   revision: string;
@@ -68,7 +66,7 @@ type PackageSummaryRow = {
 type NavigateToPackageRevision = (revision: PackageRevision) => void;
 
 const renderStatusColumn = (
-  thisPackageRevisionRow: PackageSummaryRow,
+  thisPackageRevisionRow: PackageRow,
 ): JSX.Element => {
   const unpublishedRevision = thisPackageRevisionRow.unpublished;
 
@@ -101,7 +99,7 @@ const renderStatusColumn = (
   );
 };
 
-const renderBlueprintColumn = (row: PackageSummaryRow): JSX.Element => {
+const renderBlueprintColumn = (row: PackageRow): JSX.Element => {
   if (row.upstreamPackageRevision) {
     return (
       <PackageLink
@@ -114,33 +112,30 @@ const renderBlueprintColumn = (row: PackageSummaryRow): JSX.Element => {
   return <Fragment>{row.upstreamPackageDisplayName || ''}</Fragment>;
 };
 
-const renderSyncColumn = (row: PackageSummaryRow): JSX.Element => (
+const renderSyncColumn = (row: PackageRow): JSX.Element => (
   <SyncStatusVisual syncStatus={row.syncStatus} />
 );
 
 const getTableColumns = (
   includeSyncsColumn: boolean,
-  renderStatus: RenderColumn,
-  renderBlueprint: RenderColumn,
-  renderSync: RenderColumn,
-): TableColumn<PackageSummaryRow>[] => {
-  const columns: TableColumn<PackageSummaryRow>[] = [
+): TableColumn<PackageRow>[] => {
+  const columns: TableColumn<PackageRow>[] = [
     {
       title: 'Status',
       width: '80px',
-      render: renderStatus,
+      render: renderStatusColumn,
     },
     { title: 'Name', field: 'packageName' },
     { title: 'Revision', field: 'revision' },
     { title: 'Lifecycle', field: 'lifecycle' },
-    { title: 'Blueprint', render: renderBlueprint },
+    { title: 'Blueprint', render: renderBlueprintColumn },
     { title: 'Created', field: 'created' },
   ];
 
   if (includeSyncsColumn) {
     columns.splice(columns.length - 1, 0, {
       title: 'Sync Status',
-      render: renderSync,
+      render: renderSyncColumn,
     });
   }
 
@@ -188,7 +183,7 @@ const mapToUnpublishedRevision = (
 const mapToPackageSummaryRow = (
   packageSummary: PackageSummary,
   navigateToPackageRevision: NavigateToPackageRevision,
-): PackageSummaryRow => {
+): PackageRow => {
   const onePackage =
     packageSummary.latestPublishedRevision ?? packageSummary.latestRevision;
 
@@ -213,20 +208,20 @@ const mapToPackageSummaryRow = (
   };
 };
 
-const mapPackageRevisionsToRows = (
+const mapPackageSummariesToRows = (
   packageSummaries: PackageSummary[],
   navigateToPackageRevision: NavigateToPackageRevision,
-): PackageSummaryRow[] => {
+): PackageRow[] => {
   return packageSummaries.map(summary =>
     mapToPackageSummaryRow(summary, navigateToPackageRevision),
   );
 };
 
-export const PackageRevisionsTable = ({
+export const PackagesTable = ({
   title,
   repository,
   packages,
-}: PackageRevisionsTableProps) => {
+}: PackagesTableProps) => {
   const navigate = useNavigate();
 
   const packageRef = useRouteRef(packageRouteRef);
@@ -240,18 +235,10 @@ export const PackageRevisionsTable = ({
     navigate(packageRef({ repositoryName, packageName }));
   };
 
-  const renderStatus = (row: PackageSummaryRow): JSX.Element =>
-    renderStatusColumn(row);
-
   const includeSyncsColumn = isDeploymentRepository(repository);
-  const columns = getTableColumns(
-    includeSyncsColumn,
-    renderStatus,
-    renderBlueprintColumn,
-    renderSyncColumn,
-  );
+  const columns = getTableColumns(includeSyncsColumn);
 
-  const data = mapPackageRevisionsToRows(packages, navigateToPackageRevision);
+  const data = mapPackageSummariesToRows(packages, navigateToPackageRevision);
 
   return (
     <Table
