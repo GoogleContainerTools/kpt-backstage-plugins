@@ -85,7 +85,7 @@ export type PackageRevisionTaskEvalConfigMap = {
 };
 
 export type PackageRevisionStatus = {
-  UpstreamLock?: PackageRevisionStatusUpstreamLock;
+  upstreamLock?: PackageRevisionStatusUpstreamLock;
 };
 
 export type PackageRevisionStatusUpstreamLock = {

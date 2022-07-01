@@ -58,9 +58,9 @@ export const getPackageRevisionTitle = (
 export const getUpstreamPackageRevisionDetails = (
   packageRevision: PackageRevision,
 ): UpstreamPackageRevisionDetails | undefined => {
-  if (packageRevision.status?.UpstreamLock?.git?.ref) {
+  if (packageRevision.status?.upstreamLock?.git?.ref) {
     const [packageName, revision] =
-      packageRevision.status.UpstreamLock.git.ref.split('/');
+      packageRevision.status.upstreamLock.git.ref.split('/');
 
     return { packageName, revision };
   }
