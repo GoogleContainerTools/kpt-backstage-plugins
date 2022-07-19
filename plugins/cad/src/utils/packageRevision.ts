@@ -173,7 +173,7 @@ export const getCloneTask = (fullPackageName: string): PackageRevisionTask => {
 export const getUpdateTask = (
   fullUpstreamPackageName: string,
 ): PackageRevisionTask => {
-  const cloneTask: PackageRevisionTask = {
+  const updateTask: PackageRevisionTask = {
     type: 'update',
     update: {
       upstreamRef: {
@@ -184,7 +184,7 @@ export const getUpdateTask = (
     },
   };
 
-  return cloneTask;
+  return updateTask;
 };
 
 export const getPackageRevisionResource = (
