@@ -170,6 +170,23 @@ export const getCloneTask = (fullPackageName: string): PackageRevisionTask => {
   return cloneTask;
 };
 
+export const getUpdateTask = (
+  fullUpstreamPackageName: string,
+): PackageRevisionTask => {
+  const updateTask: PackageRevisionTask = {
+    type: 'update',
+    update: {
+      upstreamRef: {
+        upstreamRef: {
+          name: fullUpstreamPackageName,
+        },
+      },
+    },
+  };
+
+  return updateTask;
+};
+
 export const getPackageRevisionResource = (
   repositoryName: string,
   packageName: string,
@@ -220,17 +237,9 @@ export const getUpgradePackageRevisionResource = (
   const { repository, packageName, revision, tasks } = currentRevision.spec;
   const nextRevision = getNextRevision(revision);
 
-  const [firstTask, ...remainderTasks] = tasks;
-
-  if (firstTask.type !== 'clone') {
-    throw new Error(
-      `First task of a package revision to be upgraded must be of type 'clone'`,
-    );
-  }
-
-  const newTasks = [
-    getCloneTask(upgradePackageRevisionName),
-    ...remainderTasks,
+  const upgradePackageTasks = [
+    ...cloneDeep(tasks),
+    getUpdateTask(upgradePackageRevisionName),
   ];
 
   const resource = getPackageRevisionResource(
@@ -238,7 +247,7 @@ export const getUpgradePackageRevisionResource = (
     packageName,
     nextRevision,
     PackageRevisionLifecycle.DRAFT,
-    newTasks,
+    upgradePackageTasks,
   );
 
   return resource;
