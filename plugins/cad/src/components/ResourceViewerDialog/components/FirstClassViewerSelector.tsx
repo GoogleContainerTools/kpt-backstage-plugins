@@ -44,9 +44,11 @@ const getCustomMetadataFn = (
     case 'kpt.dev/v1/Kptfile':
       return getKptfileStructuredMetadata;
 
+    case 'rbac.authorization.k8s.io/v1/ClusterRole':
     case 'rbac.authorization.k8s.io/v1/Role':
       return getRoleStructuredMetadata;
 
+    case 'rbac.authorization.k8s.io/v1/ClusterRoleBinding':
     case 'rbac.authorization.k8s.io/v1/RoleBinding':
       return getRoleBindingStructuredMetadata;
 
