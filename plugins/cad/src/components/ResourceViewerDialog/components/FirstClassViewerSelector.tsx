@@ -18,6 +18,7 @@ import React from 'react';
 import { getApplyReplacementsStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/applyReplacements';
 import { getConfigMapStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/configMap';
 import { getKptfileStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/kptfile';
+import { getPersistentVolumeClaimStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/persistentVolumeClaim';
 import { getResourceQuotaStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/resourceQuota';
 import { getRoleStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/role';
 import { getRoleBindingStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/roleBinding';
@@ -54,6 +55,9 @@ const getCustomMetadataFn = (
 
     case 'v1/ConfigMap':
       return getConfigMapStructuredMetadata;
+
+    case 'v1/PersistentVolumeClaim':
+      return getPersistentVolumeClaimStructuredMetadata;
 
     case 'v1/ResourceQuota':
       return getResourceQuotaStructuredMetadata;
