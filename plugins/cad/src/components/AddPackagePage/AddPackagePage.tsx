@@ -41,9 +41,12 @@ import {
   getCloneTask,
   getInitTask,
   getPackageRevisionResource,
-  sortByPackageNameAndRevisionComparison,
 } from '../../utils/packageRevision';
-import { getPackageDescriptor } from '../../utils/repository';
+import {
+  getPackageDescriptor,
+  isBlueprintRepository,
+  isDeploymentRepository,
+} from '../../utils/repository';
 import { getRepositorySummary } from '../../utils/repositorySummary';
 import { sortByLabel } from '../../utils/selectItem';
 import { toLowerCase } from '../../utils/string';
@@ -73,8 +76,11 @@ export const AddPackagePage = () => {
   const [baseRepository, setBaseRepository] = useState<Repository>();
   const [repositorySummary, setRepositorySummary] =
     useState<RepositorySummary>();
+  const [allRepositories, setAllRepositories] = useState<Repository[]>([]);
 
-  const [basePackageName, setBasePackageName] = useState<string>(packageName);
+  const [basePackageName, setBasePackageName] = useState<string>(
+    packageName ?? '',
+  );
   const [basePackageRevision, setBasePackageRevision] =
     useState<PackageRevision>();
 
@@ -104,10 +110,13 @@ export const AddPackagePage = () => {
   );
 
   const { loading, error } = useAsync(async (): Promise<void> => {
-    const thisRepositorySummary = await getRepositorySummary(
-      api,
-      repositoryName,
-    );
+    const [{ items: thisRepositories }, thisRepositorySummary] =
+      await Promise.all([
+        api.listRepositories(),
+        getRepositorySummary(api, repositoryName),
+      ]);
+
+    setAllRepositories(thisRepositories);
     setRepositorySummary(thisRepositorySummary);
   });
 
@@ -116,24 +125,31 @@ export const AddPackagePage = () => {
 
     const loadRequired = async () => {
       const setBasePackages = async (): Promise<void> => {
-        let upstreamBlueprints: SelectItem[] = [];
+        const allPackages = await api.listPackageRevisions();
 
-        if (repositorySummary.upstreamRepository) {
-          const upstreamRepoName =
-            repositorySummary.upstreamRepository.metadata.name;
+        const getUpstreamPackages = (): PackageRevision[] => {
+          if (!isDeploymentRepository(repositorySummary.repository)) return [];
 
-          const upstreamPackages = await api.listPackageRevisions(
-            upstreamRepoName,
-          );
+          const blueprintRepositories = allRepositories
+            .filter(isBlueprintRepository)
+            .map(repostiory => repostiory.metadata.name);
 
-          upstreamBlueprints = upstreamPackages
-            .filter(canCloneOrDeploy)
-            .sort(sortByPackageNameAndRevisionComparison)
-            .map(p => ({
-              label: `${p.spec.packageName}:${p.spec.revision}`,
-              value: p.metadata.name,
-            }));
-        }
+          const upstreamBlueprintPackages = allPackages
+            .filter(thisPackage =>
+              blueprintRepositories.includes(thisPackage.spec.repository),
+            )
+            .filter(canCloneOrDeploy);
+
+          return upstreamBlueprintPackages;
+        };
+
+        const blueprintPackages = getUpstreamPackages();
+        const upstreamBlueprints = sortByLabel(
+          blueprintPackages.map(blueprintPackage => ({
+            label: `${blueprintPackage.spec.packageName}:${blueprintPackage.spec.revision}`,
+            value: blueprintPackage.metadata.name,
+          })),
+        );
 
         upstreamBlueprints.unshift({ label: 'none', value: 'none' });
 
@@ -145,22 +161,24 @@ export const AddPackagePage = () => {
       };
 
       const setDownstreamRepositories = (): void => {
-        if (repositorySummary.downstreamRepositories) {
-          const downstream: SelectItem[] = sortByLabel(
-            repositorySummary.downstreamRepositories.map(repository => ({
+        if (allRepositories && allRepositories.length > 0) {
+          const deploymentRepositorySelectItems: SelectItem[] = sortByLabel(
+            allRepositories.filter(isDeploymentRepository).map(repository => ({
               label: repository.metadata.name,
               value: repository.metadata.name,
             })),
           );
-          setSelectDownstreamRepositoryItems(downstream);
 
-          if (downstream.length > 0) {
-            setTargetRepositoryPackageDescriptor(
-              getPackageDescriptor(repositorySummary.downstreamRepositories[0]),
+          setSelectDownstreamRepositoryItems(deploymentRepositorySelectItems);
+
+          setTargetRepositoryPackageDescriptor(
+            getPackageDescriptor(allRepositories[0]),
+          );
+
+          if (deploymentRepositorySelectItems.length === 1) {
+            setTargetRepositoryName(
+              deploymentRepositorySelectItems[0].value as string,
             );
-          }
-          if (downstream.length === 1) {
-            setTargetRepositoryName(downstream[0].value as string);
           }
         }
       };
@@ -177,7 +195,13 @@ export const AddPackagePage = () => {
     };
 
     loadRequired();
-  }, [api, repositorySummary, packageName, deployToDownstreamRepository]);
+  }, [
+    api,
+    allRepositories,
+    repositorySummary,
+    packageName,
+    deployToDownstreamRepository,
+  ]);
 
   const getNewPackageRevisionResource = (): PackageRevision => {
     const baseTask =
@@ -202,7 +226,7 @@ export const AddPackagePage = () => {
     if (targetRepositoryName && repositorySummary) {
       const findRepository = (): Repository | undefined => {
         if (deployToDownstreamRepository) {
-          const thisRepository = repositorySummary.downstreamRepositories.find(
+          const thisRepository = allRepositories.find(
             repository => repository.metadata.name === targetRepositoryName,
           );
           return thisRepository;
@@ -220,7 +244,12 @@ export const AddPackagePage = () => {
         );
       }
     }
-  }, [targetRepositoryName, repositorySummary, deployToDownstreamRepository]);
+  }, [
+    allRepositories,
+    targetRepositoryName,
+    repositorySummary,
+    deployToDownstreamRepository,
+  ]);
 
   useEffect(() => {
     if (!basePackageName || basePackageName === 'none') return;
