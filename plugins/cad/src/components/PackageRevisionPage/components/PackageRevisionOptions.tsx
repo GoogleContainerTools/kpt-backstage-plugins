@@ -34,7 +34,10 @@ import {
   findLatestPublishedRevision,
   isLatestPublishedRevision,
 } from '../../../utils/packageRevision';
-import { isDeploymentRepository } from '../../../utils/repository';
+import {
+  isBlueprintRepository,
+  isDeploymentRepository,
+} from '../../../utils/repository';
 import { PackageRevisionPageMode } from '../PackageRevisionPage';
 
 export enum RevisionOption {
@@ -200,7 +203,7 @@ const PublishedPackageRevisionOptions = ({
   }
 
   const showDeploy =
-    repositorySummary.downstreamRepositories.length > 0 &&
+    isBlueprintRepository(repositorySummary.repository) &&
     canCloneOrDeploy(packageRevision);
 
   if (latestRevision !== latestPublishedRevision) {

@@ -45,7 +45,7 @@ export type PackageSummary = {
 
 export const getPackageSummariesForRepository = (
   packageRevisions: PackageRevision[],
-  upstreamRevisions: PackageRevision[],
+  allPackageRevisions: PackageRevision[],
   repository: Repository,
 ): PackageSummary[] => {
   const latestPackageRevisions = packageRevisions.filter(
@@ -90,14 +90,14 @@ export const getPackageSummariesForRepository = (
         thisPackageSummary.upstreamPackageRevision = upstream.revision;
 
         thisPackageSummary.upstreamRevision = findPackageRevision(
-          upstreamRevisions,
+          allPackageRevisions,
           upstream.packageName,
           upstream.revision,
         );
 
         thisPackageSummary.upstreamLatestPublishedRevision =
           findLatestPublishedRevision(
-            filterPackageRevisions(upstreamRevisions, upstream.packageName),
+            filterPackageRevisions(allPackageRevisions, upstream.packageName),
           );
 
         thisPackageSummary.isUpgradeAvailable =
@@ -124,16 +124,9 @@ export const getPackageSummaries = (
         revision.spec.repository === repositorySummary.repository.metadata.name,
     );
 
-    const upstreamPackageRevisions = packageRevisions.filter(
-      revision =>
-        repositorySummary.upstreamRepository &&
-        revision.spec.repository ===
-          repositorySummary.upstreamRepository.metadata.name,
-    );
-
     const repositoryPackageSummaries = getPackageSummariesForRepository(
       repositoryPackageRevisions,
-      upstreamPackageRevisions,
+      packageRevisions,
       repositorySummary.repository,
     );
 
