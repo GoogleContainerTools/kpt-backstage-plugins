@@ -24,6 +24,7 @@ import { getRoleStructuredMetadata } from './FirstClassViewers/StructuredMetadat
 import { getRoleBindingStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/roleBinding';
 import { getServiceStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/service';
 import { getSetLabelsStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/setLabels';
+import { getStarlarkRunStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/starlarkRun';
 import {
   CustomMetadataFn,
   StructuredMetadata,
@@ -46,6 +47,9 @@ const getCustomMetadataFn = (
 
     case 'fn.kpt.dev/v1alpha1/SetLabels':
       return getSetLabelsStructuredMetadata;
+
+    case 'fn.kpt.dev/v1alpha1/StarlarkRun':
+      return getStarlarkRunStructuredMetadata;
 
     case 'kpt.dev/v1/Kptfile':
       return getKptfileStructuredMetadata;
