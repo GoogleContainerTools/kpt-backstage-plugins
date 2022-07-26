@@ -23,6 +23,7 @@ import { getResourceQuotaStructuredMetadata } from './FirstClassViewers/Structur
 import { getRoleStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/role';
 import { getRoleBindingStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/roleBinding';
 import { getServiceStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/service';
+import { getSetLabelsStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/setLabels';
 import {
   CustomMetadataFn,
   StructuredMetadata,
@@ -42,6 +43,9 @@ const getCustomMetadataFn = (
   switch (groupVersionKind) {
     case 'fn.kpt.dev/v1alpha1/ApplyReplacements':
       return getApplyReplacementsStructuredMetadata;
+
+    case 'fn.kpt.dev/v1alpha1/SetLabels':
+      return getSetLabelsStructuredMetadata;
 
     case 'kpt.dev/v1/Kptfile':
       return getKptfileStructuredMetadata;
