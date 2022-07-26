@@ -17,6 +17,7 @@
 import React from 'react';
 import { getApplyReplacementsStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/applyReplacements';
 import { getConfigMapStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/configMap';
+import { getIngressStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/ingress';
 import { getKptfileStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/kptfile';
 import { getPersistentVolumeClaimStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/persistentVolumeClaim';
 import { getResourceQuotaStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/resourceQuota';
@@ -53,6 +54,9 @@ const getCustomMetadataFn = (
 
     case 'kpt.dev/v1/Kptfile':
       return getKptfileStructuredMetadata;
+
+    case 'networking.k8s.io/v1/Ingress':
+      return getIngressStructuredMetadata;
 
     case 'rbac.authorization.k8s.io/v1/ClusterRole':
     case 'rbac.authorization.k8s.io/v1/Role':
