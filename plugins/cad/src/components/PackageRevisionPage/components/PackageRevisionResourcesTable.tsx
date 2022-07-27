@@ -101,6 +101,11 @@ export const PackageRevisionResourcesTable = ({
       k8LocalConfig: true,
     },
     {
+      apiVersion: 'fn.kpt.dev/v1alpha1',
+      kind: 'SetLabels',
+      k8LocalConfig: true,
+    },
+    {
       apiVersion: 'v1',
       kind: 'ConfigMap',
       namespaceScoped: true,
