@@ -18,6 +18,7 @@ import React from 'react';
 import { getApplyReplacementsStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/applyReplacements';
 import { getClusterIssuerStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/clusterIssuer';
 import { getConfigMapStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/configMap';
+import { getDeploymentStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/deployment';
 import { getIngressStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/ingress';
 import { getKptfileStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/kptfile';
 import { getPersistentVolumeClaimStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/persistentVolumeClaim';
@@ -27,6 +28,7 @@ import { getRoleBindingStructuredMetadata } from './FirstClassViewers/Structured
 import { getServiceStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/service';
 import { getSetLabelsStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/setLabels';
 import { getStarlarkRunStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/starlarkRun';
+import { getStatefulSetStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/statefulSet';
 import {
   CustomMetadataFn,
   StructuredMetadata,
@@ -44,6 +46,12 @@ const getCustomMetadataFn = (
   groupVersionKind: string,
 ): CustomMetadataFn | undefined => {
   switch (groupVersionKind) {
+    case 'apps/v1/Deployment':
+      return getDeploymentStructuredMetadata;
+
+    case 'apps/v1/StatefulSet':
+      return getStatefulSetStructuredMetadata;
+
     case 'cert-manager.io/v1/ClusterIssuer':
       return getClusterIssuerStructuredMetadata;
 
