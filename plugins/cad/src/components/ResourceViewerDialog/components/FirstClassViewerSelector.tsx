@@ -16,6 +16,7 @@
 
 import React from 'react';
 import { getApplyReplacementsStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/applyReplacements';
+import { getClusterIssuerStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/clusterIssuer';
 import { getConfigMapStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/configMap';
 import { getIngressStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/ingress';
 import { getKptfileStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/kptfile';
@@ -43,6 +44,9 @@ const getCustomMetadataFn = (
   groupVersionKind: string,
 ): CustomMetadataFn | undefined => {
   switch (groupVersionKind) {
+    case 'cert-manager.io/v1/ClusterIssuer':
+      return getClusterIssuerStructuredMetadata;
+
     case 'fn.kpt.dev/v1alpha1/ApplyReplacements':
       return getApplyReplacementsStructuredMetadata;
 
