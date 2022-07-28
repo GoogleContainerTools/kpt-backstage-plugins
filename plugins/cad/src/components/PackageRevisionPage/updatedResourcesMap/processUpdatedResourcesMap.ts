@@ -18,6 +18,7 @@ import { cloneDeep } from 'lodash';
 import { ConfigAsDataApi } from '../../../apis';
 import { PackageRevisionResourcesMap } from '../../../types/PackageRevisionResource';
 import { processApplyReplacementsUpdates } from './resources/applyReplacements';
+import { processSetLabelsUpdates } from './resources/setLabels';
 
 type ProcessMapFn = (
   api: ConfigAsDataApi,
@@ -30,7 +31,10 @@ export const processUpdatedResourcesMap = async (
   originalMap: PackageRevisionResourcesMap,
   currentMap: PackageRevisionResourcesMap,
 ): Promise<PackageRevisionResourcesMap> => {
-  const processMapFns: ProcessMapFn[] = [processApplyReplacementsUpdates];
+  const processMapFns: ProcessMapFn[] = [
+    processApplyReplacementsUpdates,
+    processSetLabelsUpdates,
+  ];
 
   let resourcesMap = cloneDeep(currentMap);
 
