@@ -28,7 +28,7 @@ type AdvancedRepositoryOptionsProps = {
 };
 
 export const AdvancedRepositoryOptions = ({
-  repositorySummary
+  repositorySummary,
 }: AdvancedRepositoryOptionsProps) => {
   const { repositoryName } = useParams();
   const api = useApi(configAsDataApiRef);
@@ -48,19 +48,27 @@ export const AdvancedRepositoryOptions = ({
   };
 
   const executeUnregisterRepository = async (): Promise<void> => {
-    const checkUsedByOtherRepository = async (secretName : string): Promise<boolean> => {
+    const checkUsedByOtherRepository = async (
+      secretName: string,
+    ): Promise<boolean> => {
       const { items: repositories } = await api.listRepositories();
-      const isSecretShared = repositories.some(repository => repository.metadata.name !== repositoryName && repository.spec.git?.secretRef?.name === secretName)
+      const isSecretShared = repositories.some(
+        repository =>
+          repository.metadata.name !== repositoryName &&
+          repository.spec.git?.secretRef?.name === secretName,
+      );
       return isSecretShared;
-    }
-  
+    };
+
     const repoSecretName =
       repositorySummary.repository.spec.git?.secretRef?.name;
-    const repoNamespace = 
-      repositorySummary.repository.metadata.namespace;
+    const repoNamespace = repositorySummary.repository.metadata.namespace;
 
-    if(repoSecretName && !(await checkUsedByOtherRepository(repoSecretName))) {
-        await Promise.all([api.unregisterRepository(repositoryName), api.deleteSecret(repoSecretName, repoNamespace)]);
+    if (repoSecretName && !(await checkUsedByOtherRepository(repoSecretName))) {
+      await Promise.all([
+        api.unregisterRepository(repositoryName),
+        api.deleteSecret(repoSecretName, repoNamespace),
+      ]);
     } else {
       await api.unregisterRepository(repositoryName);
     }

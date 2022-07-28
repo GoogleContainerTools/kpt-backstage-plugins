@@ -215,7 +215,11 @@ export const RepositoryPage = () => {
           },
           {
             label: 'Advanced',
-            content: <AdvancedRepositoryOptions repositorySummary={repositorySummary} />,
+            content: (
+              <AdvancedRepositoryOptions
+                repositorySummary={repositorySummary}
+              />
+            ),
           },
         ]}
       />
