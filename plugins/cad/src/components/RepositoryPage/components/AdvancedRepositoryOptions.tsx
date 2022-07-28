@@ -48,6 +48,12 @@ export const AdvancedRepositoryOptions = ({
   };
 
   const executeUnregisterRepository = async (): Promise<void> => {
+    const checkUsedByOtherRepository = async (secretName : string): Promise<boolean> => {
+      const { items: repositories } = await api.listRepositories();
+      const isSecretShared = repositories.some(repository => repository.metadata.name !== repositoryName && repository.spec.git?.secretRef?.name === secretName)
+      return isSecretShared;
+    }
+  
     const repoSecretName =
       repositorySummary.repository.spec.git?.secretRef?.name;
     const repoNamespace = 
@@ -60,12 +66,6 @@ export const AdvancedRepositoryOptions = ({
     }
     navigate(repositoriesRef());
   };
-
-  const checkUsedByOtherRepository = async (secretName : string): Promise<boolean> => {
-    const { items: repositories } = await api.listRepositories();
-    const isSecretShared = repositories.some(repository => repository.metadata.name !== repositoryName && repository.spec.git?.secretRef?.name === secretName)
-    return isSecretShared;
-  }
 
   return (
     <Fragment>
