@@ -15,24 +15,15 @@
  */
 
 import { KubernetesResource } from '../../../../../../types/KubernetesResource';
-import { PersistentVolumeClaim } from '../../../../../../types/PersistentVolumeClaim';
+import { SetLabels } from '../../../../../../types/SetLabels';
 import { Metadata } from '../StructuredMetadata';
 
-export const getPersistentVolumeClaimStructuredMetadata = (
+export const getSetLabelsStructuredMetadata = (
   resource: KubernetesResource,
 ): Metadata => {
-  const persistentVolumeClaim = resource as PersistentVolumeClaim;
-
-  const getVolumeClaimDescription = (): string => {
-    const storage = persistentVolumeClaim.spec.resources?.requests?.storage;
-    const accessMethods = (persistentVolumeClaim.spec.accessModes ?? []).join(
-      ', ',
-    );
-
-    return `${storage} ${accessMethods}`;
-  };
+  const setLabels = resource as SetLabels;
 
   return {
-    volumeClaim: getVolumeClaimDescription(),
+    setLabels: setLabels.labels,
   };
 };

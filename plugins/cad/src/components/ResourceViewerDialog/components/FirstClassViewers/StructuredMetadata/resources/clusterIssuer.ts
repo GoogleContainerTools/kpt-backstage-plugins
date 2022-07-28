@@ -14,25 +14,18 @@
  * limitations under the License.
  */
 
+import { ClusterIssuer } from '../../../../../../types/ClusterIssuer';
 import { KubernetesResource } from '../../../../../../types/KubernetesResource';
-import { PersistentVolumeClaim } from '../../../../../../types/PersistentVolumeClaim';
 import { Metadata } from '../StructuredMetadata';
 
-export const getPersistentVolumeClaimStructuredMetadata = (
+export const getClusterIssuerStructuredMetadata = (
   resource: KubernetesResource,
 ): Metadata => {
-  const persistentVolumeClaim = resource as PersistentVolumeClaim;
-
-  const getVolumeClaimDescription = (): string => {
-    const storage = persistentVolumeClaim.spec.resources?.requests?.storage;
-    const accessMethods = (persistentVolumeClaim.spec.accessModes ?? []).join(
-      ', ',
-    );
-
-    return `${storage} ${accessMethods}`;
-  };
+  const clusterIssuer = resource as ClusterIssuer;
 
   return {
-    volumeClaim: getVolumeClaimDescription(),
+    server: clusterIssuer.spec.acme.server,
+    email: clusterIssuer.spec.acme.email,
+    privateKeySecretName: clusterIssuer.spec.acme.privateKeySecretRef?.name,
   };
 };

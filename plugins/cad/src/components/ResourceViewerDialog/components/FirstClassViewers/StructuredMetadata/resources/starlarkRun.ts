@@ -15,24 +15,15 @@
  */
 
 import { KubernetesResource } from '../../../../../../types/KubernetesResource';
-import { PersistentVolumeClaim } from '../../../../../../types/PersistentVolumeClaim';
+import { StarlarkRun } from '../../../../../../types/StarlarkRun';
 import { Metadata } from '../StructuredMetadata';
 
-export const getPersistentVolumeClaimStructuredMetadata = (
+export const getStarlarkRunStructuredMetadata = (
   resource: KubernetesResource,
 ): Metadata => {
-  const persistentVolumeClaim = resource as PersistentVolumeClaim;
-
-  const getVolumeClaimDescription = (): string => {
-    const storage = persistentVolumeClaim.spec.resources?.requests?.storage;
-    const accessMethods = (persistentVolumeClaim.spec.accessModes ?? []).join(
-      ', ',
-    );
-
-    return `${storage} ${accessMethods}`;
-  };
+  const starlarkRun = resource as StarlarkRun;
 
   return {
-    volumeClaim: getVolumeClaimDescription(),
+    source: starlarkRun.source,
   };
 };

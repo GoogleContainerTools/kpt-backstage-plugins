@@ -29,6 +29,7 @@ import {
 
 export type PackageResource = {
   id: string;
+  component: string;
   kind: string;
   name: string;
   namespace?: string;
@@ -108,7 +109,10 @@ export const getPackageResourcesFromResourcesMap = (
   resourcesMap: PackageRevisionResourcesMap,
 ): PackageResource[] => {
   const yamlFileEntries = Object.entries(resourcesMap).filter(
-    file => file[0].endsWith('.yaml') || file[0] === 'Kptfile',
+    file =>
+      file[0].endsWith('.yaml') ||
+      file[0] === 'Kptfile' ||
+      file[0].endsWith('/Kptfile'),
   );
 
   const resources = yamlFileEntries.map(([filename, multiResourceYaml]) => {
@@ -123,6 +127,7 @@ export const getPackageResourcesFromResourcesMap = (
 
       return {
         id: uniqueId,
+        component: filename.substring(0, filename.lastIndexOf('/')) || 'base',
         filename: filename,
         kind: k8sResource.kind,
         name: k8sResource.metadata.name,

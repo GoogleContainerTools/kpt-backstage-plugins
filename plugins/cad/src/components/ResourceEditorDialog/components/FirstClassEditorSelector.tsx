@@ -25,6 +25,7 @@ import { ResourceQuotaEditor } from './FirstClassEditors/ResourceQuotaEditor';
 import { RoleBindingEditor } from './FirstClassEditors/RoleBindingEditor';
 import { RoleEditor } from './FirstClassEditors/RoleEditor';
 import { ServiceAccountEditor } from './FirstClassEditors/ServiceAccountEditor';
+import { SetLabelsEditor } from './FirstClassEditors/SetLabelsEditor';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
 
@@ -54,6 +55,9 @@ export const FirstClassEditorSelector = ({
           packageResources={packageResources}
         />
       );
+
+    case 'fn.kpt.dev/v1alpha1/SetLabels':
+      return <SetLabelsEditor yaml={yaml} onUpdatedYaml={onUpdatedYaml} />;
 
     case 'kpt.dev/v1/Kptfile':
       return (

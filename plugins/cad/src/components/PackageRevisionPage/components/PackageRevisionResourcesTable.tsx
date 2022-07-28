@@ -101,6 +101,11 @@ export const PackageRevisionResourcesTable = ({
       k8LocalConfig: true,
     },
     {
+      apiVersion: 'fn.kpt.dev/v1alpha1',
+      kind: 'SetLabels',
+      k8LocalConfig: true,
+    },
+    {
       apiVersion: 'v1',
       kind: 'ConfigMap',
       namespaceScoped: true,
@@ -212,6 +217,7 @@ export const PackageRevisionResourcesTable = ({
   };
 
   const columns: TableColumn<ResourceRow>[] = [
+    { title: 'Component', field: 'component' },
     { title: 'Kind', field: 'kind' },
     { title: 'Name', field: 'name' },
     { title: 'Namespace', field: 'namespace' },
@@ -220,7 +226,7 @@ export const PackageRevisionResourcesTable = ({
   ];
 
   if (baseResourcesMap) {
-    columns[3] = { title: 'Diff', render: renderDiffColumn };
+    columns[4] = { title: 'Diff', render: renderDiffColumn };
   }
 
   const packageResources = getPackageResourcesFromResourcesMap(
@@ -240,8 +246,20 @@ export const PackageRevisionResourcesTable = ({
       return 0;
     };
 
+    const resourceComponent = (resource: ResourceRow): string => {
+      if (resource.component === 'base') return '';
+
+      return resource.component;
+    };
+
     const resourceQualifiedName = (resource: ResourceRow): string =>
       (resource.namespace || ' ') + resource.kind + resource.name;
+
+    if (resourceComponent(resource1) !== resourceComponent(resource2)) {
+      return resourceComponent(resource1) > resourceComponent(resource2)
+        ? 1
+        : -1;
+    }
 
     if (resourceScore(resource1) === resourceScore(resource2)) {
       return resourceQualifiedName(resource1) > resourceQualifiedName(resource2)

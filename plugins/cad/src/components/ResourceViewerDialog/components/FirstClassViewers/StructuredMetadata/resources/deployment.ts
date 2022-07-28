@@ -14,25 +14,23 @@
  * limitations under the License.
  */
 
+import { Deployment } from '../../../../../../types/Deployment';
 import { KubernetesResource } from '../../../../../../types/KubernetesResource';
-import { PersistentVolumeClaim } from '../../../../../../types/PersistentVolumeClaim';
 import { Metadata } from '../StructuredMetadata';
+import { getPodTemplatedStructuredMetadata } from './podTemplate';
 
-export const getPersistentVolumeClaimStructuredMetadata = (
+export const getDeploymentStructuredMetadata = (
   resource: KubernetesResource,
 ): Metadata => {
-  const persistentVolumeClaim = resource as PersistentVolumeClaim;
+  const deployment = resource as Deployment;
 
-  const getVolumeClaimDescription = (): string => {
-    const storage = persistentVolumeClaim.spec.resources?.requests?.storage;
-    const accessMethods = (persistentVolumeClaim.spec.accessModes ?? []).join(
-      ', ',
-    );
-
-    return `${storage} ${accessMethods}`;
-  };
+  const podMetadata: Metadata = getPodTemplatedStructuredMetadata(
+    deployment.spec.template,
+  );
 
   return {
-    volumeClaim: getVolumeClaimDescription(),
+    replicas: deployment.spec.replicas,
+    serviceAccountName: deployment.spec.template.spec.serviceAccountName,
+    ...podMetadata,
   };
 };
