@@ -37,3 +37,6 @@ site
 
 # Sensitive credentials
 *-credentials.yaml
+
+# Vscode settings
+.vscode

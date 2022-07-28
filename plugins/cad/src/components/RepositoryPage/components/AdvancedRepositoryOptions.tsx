@@ -21,8 +21,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { configAsDataApiRef } from '../../../apis';
 import { rootRouteRef } from '../../../routes';
 import { ConfirmationDialog } from '../../Controls/ConfirmationDialog';
+import { RepositorySummary } from '../../../types/RepositorySummary';
 
-export const AdvancedRepositoryOptions = () => {
+type AdvancedRepositoryOptionsProps = {
+  repositorySummary: RepositorySummary;
+};
+
+export const AdvancedRepositoryOptions = ({
+  repositorySummary,
+}: AdvancedRepositoryOptionsProps) => {
   const { repositoryName } = useParams();
   const api = useApi(configAsDataApiRef);
 
@@ -41,7 +48,30 @@ export const AdvancedRepositoryOptions = () => {
   };
 
   const executeUnregisterRepository = async (): Promise<void> => {
-    await api.unregisterRepository(repositoryName);
+    const checkUsedByOtherRepository = async (
+      secretName: string,
+    ): Promise<boolean> => {
+      const { items: repositories } = await api.listRepositories();
+      const isSecretShared = repositories.some(
+        repository =>
+          repository.metadata.name !== repositoryName &&
+          repository.spec.git?.secretRef?.name === secretName,
+      );
+      return isSecretShared;
+    };
+
+    const repoSecretName =
+      repositorySummary.repository.spec.git?.secretRef?.name;
+    const repoNamespace = repositorySummary.repository.metadata.namespace;
+
+    if (repoSecretName && !(await checkUsedByOtherRepository(repoSecretName))) {
+      await Promise.all([
+        api.unregisterRepository(repositoryName),
+        api.deleteSecret(repoSecretName, repoNamespace),
+      ]);
+    } else {
+      await api.unregisterRepository(repositoryName);
+    }
     navigate(repositoriesRef());
   };
 
