@@ -23,8 +23,16 @@ export const getPersistentVolumeClaimStructuredMetadata = (
 ): Metadata => {
   const persistentVolumeClaim = resource as PersistentVolumeClaim;
 
+  const getVolumeClaimDescription = (): string => {
+    const storage = persistentVolumeClaim.spec.resources?.requests?.storage;
+    const accessMethods = (persistentVolumeClaim.spec.accessModes ?? []).join(
+      ', ',
+    );
+
+    return `${storage} ${accessMethods}`;
+  };
+
   return {
-    accessModes: persistentVolumeClaim.spec.accessModes,
-    storage: persistentVolumeClaim.spec.resources?.requests?.storage,
+    volumeClaim: getVolumeClaimDescription(),
   };
 };
