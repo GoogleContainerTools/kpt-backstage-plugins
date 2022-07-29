@@ -20,6 +20,7 @@ import { getClusterIssuerStructuredMetadata } from './FirstClassViewers/Structur
 import { getConfigMapStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/configMap';
 import { getDeploymentStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/deployment';
 import { getIngressStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/ingress';
+import { getIngressClassStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/ingressClass';
 import { getKptfileStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/kptfile';
 import { getPersistentVolumeClaimStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/persistentVolumeClaim';
 import { getResourceQuotaStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/resourceQuota';
@@ -69,6 +70,9 @@ const getCustomMetadataFn = (
 
     case 'networking.k8s.io/v1/Ingress':
       return getIngressStructuredMetadata;
+
+    case 'networking.k8s.io/v1/IngressClass':
+      return getIngressClassStructuredMetadata;
 
     case 'rbac.authorization.k8s.io/v1/ClusterRole':
     case 'rbac.authorization.k8s.io/v1/Role':
