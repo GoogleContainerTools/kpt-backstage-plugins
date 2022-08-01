@@ -23,6 +23,7 @@ import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../apis';
 import {
   addPackageRouteRef,
+  clonePackageRouteRef,
   deployPackageRouteRef,
   editPackageRouteRef,
   packageRouteRef,
@@ -31,6 +32,7 @@ import {
 } from '../../routes';
 import { loadFeatures } from '../../utils/featureFlags';
 import { AddPackagePage } from '../AddPackagePage';
+import { AddPackagePageAction } from '../AddPackagePage/AddPackagePage';
 import { PackageRevisionPage } from '../PackageRevisionPage';
 import { PackageRevisionPageMode } from '../PackageRevisionPage/PackageRevisionPage';
 import { RegisterRepositoryPage } from '../RegisterRepositoryPage';
@@ -57,12 +59,22 @@ export const LandingPage = () => {
           element={<RegisterRepositoryPage />}
         />
         <Route path={repositoryRouteRef.path} element={<RepositoryPage />} />
-        <Route path={addPackageRouteRef.path} element={<AddPackagePage />} />
+        <Route
+          path={addPackageRouteRef.path}
+          element={<AddPackagePage action={AddPackagePageAction.ADD} />}
+        />
         <Route
           path={packageRouteRef.path}
           element={<PackageRevisionPage mode={PackageRevisionPageMode.VIEW} />}
         />
-        <Route path={deployPackageRouteRef.path} element={<AddPackagePage />} />
+        <Route
+          path={clonePackageRouteRef.path}
+          element={<AddPackagePage action={AddPackagePageAction.CLONE} />}
+        />
+        <Route
+          path={deployPackageRouteRef.path}
+          element={<AddPackagePage action={AddPackagePageAction.DEPLOY} />}
+        />
         <Route
           path={editPackageRouteRef.path}
           element={<PackageRevisionPage mode={PackageRevisionPageMode.EDIT} />}

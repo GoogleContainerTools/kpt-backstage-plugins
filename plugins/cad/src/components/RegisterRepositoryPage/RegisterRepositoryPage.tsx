@@ -31,7 +31,6 @@ import { configAsDataApiRef } from '../../apis';
 import { repositoryRouteRef } from '../../routes';
 import {
   Repository,
-  RepositoryContent,
   RepositoryGitDetails,
   RepositoryOciDetails,
   RepositorySecretRef,
@@ -41,12 +40,14 @@ import {
 import { Secret } from '../../types/Secret';
 import { allowFunctionRepositoryRegistration } from '../../utils/featureFlags';
 import {
+  ContentSummary,
   getRepositoryGitDetails,
   getRepositoryOciDetails,
   getRepositoryResource,
   getRepositoryTitle,
   getSecretRef,
-  isBlueprintRepository,
+  isCatalogBlueprintRepository,
+  isDeployableBlueprintRepository,
 } from '../../utils/repository';
 import { getBasicAuthSecret, isBasicAuthSecret } from '../../utils/secret';
 import { Select } from '../Controls/Select';
@@ -64,12 +65,6 @@ const useStyles = makeStyles(() => ({
 enum AuthenticationType {
   NONE = 'None',
   GITHUB_ACCESS_TOKEN = 'GitHub Personal Access Token',
-}
-
-enum ContentSummary {
-  BLUEPRINT = 'Blueprint',
-  DEPLOYMENT = 'Deployment',
-  FUNCTION = 'Function',
 }
 
 const mapRepositoryToSelectItem = (repository: Repository): SelectItem => {
@@ -136,13 +131,7 @@ export const RegisterRepositoryPage = () => {
     const loadRepositories = async () => {
       const { items: repositories } = await api.listRepositories();
 
-      const blueprintRepositories = repositories.filter(isBlueprintRepository);
-      const upstreamRepositoryItems = blueprintRepositories.map(
-        mapRepositoryToSelectItem,
-      );
-
       setAllRepositories(repositories);
-      setSelectUpstreamRepositoryItems(upstreamRepositoryItems);
     };
 
     loadSecrets();
@@ -161,7 +150,7 @@ export const RegisterRepositoryPage = () => {
   };
 
   const getRepositoryUpstream = (): RepositoryUpstream | undefined => {
-    if (state.upstreamRepoName) {
+    if (state.upstreamRepoName && state.upstreamRepoName !== 'none') {
       const upstreamRepository = allRepositories.find(
         repository => repository.metadata.name === state.upstreamRepoName,
       );
@@ -183,18 +172,11 @@ export const RegisterRepositoryPage = () => {
   };
 
   const getRepositoryResourceJson = (): Repository => {
-    const repositoryContent: RepositoryContent =
-      state.contentSummary === ContentSummary.FUNCTION
-        ? RepositoryContent.FUNCTION
-        : RepositoryContent.PACKAGE;
-
     const secretRef = getRepositorySecretRef();
 
     let gitDetails: RepositoryGitDetails | undefined = undefined;
     let ociDetails: RepositoryOciDetails | undefined = undefined;
     const upstream: RepositoryUpstream | undefined = getRepositoryUpstream();
-
-    const isDeploymentRepo = state.contentSummary === ContentSummary.DEPLOYMENT;
 
     if (state.type === RepositoryType.GIT) {
       gitDetails = getRepositoryGitDetails(
@@ -209,14 +191,15 @@ export const RegisterRepositoryPage = () => {
       ociDetails = getRepositoryOciDetails(state.repoUrl, secretRef);
     }
 
+    const contentSummary = state.contentSummary as ContentSummary;
+
     const resource = getRepositoryResource(
       state.name,
       state.description,
-      repositoryContent,
+      contentSummary,
       gitDetails,
       ociDetails,
       upstream,
-      isDeploymentRepo,
     );
 
     return resource;
@@ -317,6 +300,28 @@ export const RegisterRepositoryPage = () => {
       }
     }
 
+    if (toSet.contentSummary) {
+      const contentSummary = toSet.contentSummary;
+
+      if (
+        contentSummary === ContentSummary.DEPLOYMENT ||
+        contentSummary === ContentSummary.BLUEPRINT
+      ) {
+        const repositoryFilter =
+          contentSummary === ContentSummary.DEPLOYMENT
+            ? isDeployableBlueprintRepository
+            : isCatalogBlueprintRepository;
+
+        const blueprintRepositories = allRepositories.filter(repositoryFilter);
+        const upstreamRepositoryItems = blueprintRepositories.map(
+          mapRepositoryToSelectItem,
+        );
+        upstreamRepositoryItems.unshift({ label: 'none', value: 'none' });
+
+        setSelectUpstreamRepositoryItems(upstreamRepositoryItems);
+      }
+    }
+
     setState(s => ({ ...s, ...toSet }));
   };
 
@@ -329,6 +334,10 @@ export const RegisterRepositoryPage = () => {
 
   const repositoryContentSelectItems = useMemo(() => {
     const selectItems: SelectItem[] = [
+      {
+        label: 'Catalog Blueprints',
+        value: ContentSummary.CATALOG_BLUEPRINT,
+      },
       {
         label: 'Blueprints',
         value: ContentSummary.BLUEPRINT,
@@ -494,7 +503,7 @@ export const RegisterRepositoryPage = () => {
           <div className={classes.stepContent}>
             <Select
               label="Content"
-              onChange={value => setState({ ...state, contentSummary: value })}
+              onChange={value => updateStateValue('contentSummary', value)}
               selected={state.contentSummary}
               items={repositoryContentSelectItems}
               helperText="The content the repository will store."
@@ -502,7 +511,7 @@ export const RegisterRepositoryPage = () => {
           </div>
         </SimpleStepperStep>
 
-        {state.contentSummary === ContentSummary.DEPLOYMENT && (
+        {state.contentSummary !== ContentSummary.CATALOG_BLUEPRINT && (
           <SimpleStepperStep title="Upstream Repository">
             <div className={classes.stepContent}>
               <Select
