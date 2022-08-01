@@ -25,6 +25,7 @@ import {
 import { useApi, useRouteRef } from '@backstage/core-plugin-api';
 import { makeStyles, TextField, Typography } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
+import { startCase } from 'lodash';
 import React, { Fragment, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
@@ -44,7 +45,9 @@ import {
 } from '../../utils/packageRevision';
 import {
   getPackageDescriptor,
-  isBlueprintRepository,
+  getUpstreamPackageDescriptor,
+  isCatalogBlueprintRepository,
+  isDeployableBlueprintRepository,
   isDeploymentRepository,
 } from '../../utils/repository';
 import { getRepositorySummary } from '../../utils/repositorySummary';
@@ -62,14 +65,25 @@ const useStyles = makeStyles(() => ({
   },
 }));
 
-export const AddPackagePage = () => {
+export enum AddPackagePageAction {
+  ADD = 'add',
+  CLONE = 'clone',
+  DEPLOY = 'deploy',
+}
+
+type AddPackagePageProps = {
+  action: AddPackagePageAction;
+};
+
+export const AddPackagePage = ({ action }: AddPackagePageProps) => {
   const api = useApi(configAsDataApiRef);
 
   const { repositoryName, packageName } = useParams();
-  const deployToDownstreamRepository = !!packageName;
+
+  const cloneToDownstreamRepository = action !== AddPackagePageAction.ADD;
 
   const [targetRepositoryName, setTargetRepositoryName] = useState<string>(
-    !deployToDownstreamRepository ? repositoryName : '',
+    !cloneToDownstreamRepository ? repositoryName : '',
   );
 
   const [targetRepository, setTargetRepository] = useState<Repository>();
@@ -98,7 +112,11 @@ export const AddPackagePage = () => {
   const [
     targetRepositoryPackageDescriptor,
     setTargetRepositoryPackageDescriptor,
-  ] = useState<string>();
+  ] = useState<string>('Package');
+  const [
+    upstreamRepositoryPackageDescriptor,
+    setUpstreamRepositoryPackageDescriptor,
+  ] = useState<string>('Package');
 
   const classes = useStyles();
   const navigate = useNavigate();
@@ -106,7 +124,10 @@ export const AddPackagePage = () => {
   const packageRef = useRouteRef(packageRouteRef);
 
   const targetRepositoryPackageDescriptorLowercase = toLowerCase(
-    targetRepositoryPackageDescriptor ?? '',
+    targetRepositoryPackageDescriptor,
+  );
+  const upstreamRepositoryPackageDescriptorLowercase = toLowerCase(
+    upstreamRepositoryPackageDescriptor,
   );
 
   const { loading, error } = useAsync(async (): Promise<void> => {
@@ -128,15 +149,22 @@ export const AddPackagePage = () => {
         const allPackages = await api.listPackageRevisions();
 
         const getUpstreamPackages = (): PackageRevision[] => {
-          if (!isDeploymentRepository(repositorySummary.repository)) return [];
+          if (isCatalogBlueprintRepository(repositorySummary.repository))
+            return [];
 
-          const blueprintRepositories = allRepositories
-            .filter(isBlueprintRepository)
+          const upstreamRepositoryFilter = isDeploymentRepository(
+            repositorySummary.repository,
+          )
+            ? isDeployableBlueprintRepository
+            : isCatalogBlueprintRepository;
+
+          const upstreamRepositories = allRepositories
+            .filter(upstreamRepositoryFilter)
             .map(repostiory => repostiory.metadata.name);
 
           const upstreamBlueprintPackages = allPackages
             .filter(thisPackage =>
-              blueprintRepositories.includes(thisPackage.spec.repository),
+              upstreamRepositories.includes(thisPackage.spec.repository),
             )
             .filter(canCloneOrDeploy);
 
@@ -162,8 +190,20 @@ export const AddPackagePage = () => {
 
       const setDownstreamRepositories = (): void => {
         if (allRepositories && allRepositories.length > 0) {
+          const isCatalogBlueprint = isCatalogBlueprintRepository(
+            repositorySummary.repository,
+          );
+
+          const downstreamRepositoryFilter = isCatalogBlueprint
+            ? isDeployableBlueprintRepository
+            : isDeploymentRepository;
+
+          const downstreamRepositories = allRepositories.filter(
+            downstreamRepositoryFilter,
+          );
+
           const deploymentRepositorySelectItems: SelectItem[] = sortByLabel(
-            allRepositories.filter(isDeploymentRepository).map(repository => ({
+            downstreamRepositories.map(repository => ({
               label: repository.metadata.name,
               value: repository.metadata.name,
             })),
@@ -171,19 +211,21 @@ export const AddPackagePage = () => {
 
           setSelectDownstreamRepositoryItems(deploymentRepositorySelectItems);
 
-          setTargetRepositoryPackageDescriptor(
-            getPackageDescriptor(allRepositories[0]),
-          );
-
-          if (deploymentRepositorySelectItems.length === 1) {
-            setTargetRepositoryName(
-              deploymentRepositorySelectItems[0].value as string,
+          if (downstreamRepositories.length > 0) {
+            setTargetRepositoryPackageDescriptor(
+              getPackageDescriptor(downstreamRepositories[0]),
             );
+
+            if (deploymentRepositorySelectItems.length === 1) {
+              setTargetRepositoryName(
+                deploymentRepositorySelectItems[0].value as string,
+              );
+            }
           }
         }
       };
 
-      if (deployToDownstreamRepository) {
+      if (cloneToDownstreamRepository) {
         setBaseRepository(repositorySummary.repository);
 
         setDownstreamRepositories();
@@ -200,7 +242,7 @@ export const AddPackagePage = () => {
     allRepositories,
     repositorySummary,
     packageName,
-    deployToDownstreamRepository,
+    cloneToDownstreamRepository,
   ]);
 
   const getNewPackageRevisionResource = (): PackageRevision => {
@@ -225,7 +267,7 @@ export const AddPackagePage = () => {
   useEffect(() => {
     if (targetRepositoryName && repositorySummary) {
       const findRepository = (): Repository | undefined => {
-        if (deployToDownstreamRepository) {
+        if (cloneToDownstreamRepository) {
           const thisRepository = allRepositories.find(
             repository => repository.metadata.name === targetRepositoryName,
           );
@@ -242,13 +284,16 @@ export const AddPackagePage = () => {
         setTargetRepositoryPackageDescriptor(
           getPackageDescriptor(thisRepository),
         );
+        setUpstreamRepositoryPackageDescriptor(
+          getUpstreamPackageDescriptor(thisRepository),
+        );
       }
     }
   }, [
     allRepositories,
     targetRepositoryName,
     repositorySummary,
-    deployToDownstreamRepository,
+    cloneToDownstreamRepository,
   ]);
 
   useEffect(() => {
@@ -291,7 +336,7 @@ export const AddPackagePage = () => {
 
   return (
     <div>
-      {deployToDownstreamRepository ? (
+      {cloneToDownstreamRepository ? (
         <Fragment>
           <Breadcrumbs>
             <RepositoriesLink breadcrumb />
@@ -303,11 +348,11 @@ export const AddPackagePage = () => {
               packageRevision={basePackageRevision as PackageRevision}
               breadcrumb
             />
-            <Typography>Deploy</Typography>
+            <Typography>{action}</Typography>
           </Breadcrumbs>
 
           <ContentHeader
-            title={`Add ${targetRepositoryPackageDescriptor} for ${getDisplayPackageName(
+            title={`${startCase(action)} ${getDisplayPackageName(
               basePackageRevision,
             )}`}
           />
@@ -320,7 +365,7 @@ export const AddPackagePage = () => {
               repository={targetRepository as Repository}
               breadcrumb
             />
-            <Typography>Add {targetRepositoryPackageDescriptor}</Typography>
+            <Typography>add</Typography>
           </Breadcrumbs>
 
           <ContentHeader title={`Add ${targetRepositoryPackageDescriptor}`} />
@@ -332,21 +377,22 @@ export const AddPackagePage = () => {
           title={`${targetRepositoryPackageDescriptor} Metadata`}
         >
           <div className={classes.stepContent}>
-            {deployToDownstreamRepository ? (
+            {cloneToDownstreamRepository && (
               <Select
-                label="Deployment Repository"
+                label={`${targetRepositoryPackageDescriptor} Repository`}
                 onChange={value => setTargetRepositoryName(value)}
                 selected={targetRepositoryName}
                 items={selectDownstreamRepositoryItems}
-                helperText="The destination repository that the deployment will be created in."
+                helperText={`The ${targetRepositoryPackageDescriptorLowercase} repository the package will be created in.`}
               />
-            ) : (
+            )}
+            {!cloneToDownstreamRepository && (
               <Select
-                label="Base Blueprint"
+                label={upstreamRepositoryPackageDescriptor}
                 onChange={value => setBasePackageName(value)}
                 selected={basePackageName}
                 items={selectUpstreamRepositoryItems}
-                helperText={`The blueprint the ${targetRepositoryPackageDescriptorLowercase} will be based off of.`}
+                helperText={`The ${upstreamRepositoryPackageDescriptorLowercase} the ${targetRepositoryPackageDescriptorLowercase} will be based off of.`}
               />
             )}
             <TextField
@@ -356,7 +402,7 @@ export const AddPackagePage = () => {
               name="name"
               onChange={e => setNewPackageName(e.target.value)}
               fullWidth
-              helperText={`The name of the new ${targetRepositoryPackageDescriptorLowercase} to create.`}
+              helperText={`The name of the ${targetRepositoryPackageDescriptorLowercase} to create.`}
             />
           </div>
         </SimpleStepperStep>

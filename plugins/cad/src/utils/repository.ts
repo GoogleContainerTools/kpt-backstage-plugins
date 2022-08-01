@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { KubernetesKeyValueObject } from '../types/KubernetesResource';
 import {
   Repository,
   RepositoryContent,
@@ -23,6 +24,16 @@ import {
   RepositoryType,
   RepositoryUpstream,
 } from '../types/Repository';
+
+const CATELOG_BLUEPRINT_REPOSITORY_LABEL =
+  'kpt.dev/catalog-blueprint-repository';
+
+export enum ContentSummary {
+  CATALOG_BLUEPRINT = 'Catalog Blueprint',
+  BLUEPRINT = 'Blueprint',
+  DEPLOYMENT = 'Deployment',
+  FUNCTION = 'Function',
+}
 
 export const isFunctionRepository = (repository: Repository): boolean => {
   return repository.spec.content === RepositoryContent.FUNCTION;
@@ -36,16 +47,44 @@ export const isBlueprintRepository = (repository: Repository): boolean => {
   return isPackageRepository(repository) && !repository.spec.deployment;
 };
 
+export const isCatalogBlueprintRepository = (
+  repository: Repository,
+): boolean => {
+  return (
+    isBlueprintRepository(repository) &&
+    !!repository.metadata.labels?.[CATELOG_BLUEPRINT_REPOSITORY_LABEL]
+  );
+};
+
+export const isDeployableBlueprintRepository = (
+  repository: Repository,
+): boolean => {
+  return (
+    isBlueprintRepository(repository) &&
+    !repository.metadata.labels?.[CATELOG_BLUEPRINT_REPOSITORY_LABEL]
+  );
+};
+
 export const isDeploymentRepository = (repository: Repository): boolean => {
   return isPackageRepository(repository) && !!repository.spec.deployment;
 };
 
 export const getPackageDescriptor = (repository: Repository): string => {
-  if (isBlueprintRepository(repository)) return 'Blueprint';
+  if (isCatalogBlueprintRepository(repository)) return 'Catalog Blueprint';
+  if (isDeployableBlueprintRepository(repository)) return 'Blueprint';
   if (isDeploymentRepository(repository)) return 'Deployment';
   if (isFunctionRepository(repository)) return 'Function';
 
   return 'Unknown';
+};
+
+export const getUpstreamPackageDescriptor = (
+  repository: Repository,
+): string => {
+  if (isDeployableBlueprintRepository(repository)) return 'Catalog Blueprint';
+  if (isDeploymentRepository(repository)) return 'Blueprint';
+
+  return 'Upstream Package';
 };
 
 export const getRepositoryTitle = (repository: Repository): string => {
@@ -55,16 +94,27 @@ export const getRepositoryTitle = (repository: Repository): string => {
 export const getRepositoryResource = (
   name: string,
   description: string,
-  content: RepositoryContent,
+  contentSummary: ContentSummary,
   git?: RepositoryGitDetails,
   oci?: RepositoryOciDetails,
   upstream?: RepositoryUpstream,
-  isDeployment?: boolean,
 ): Repository => {
   const namespace = 'default';
 
+  const content: RepositoryContent =
+    contentSummary === ContentSummary.FUNCTION
+      ? RepositoryContent.FUNCTION
+      : RepositoryContent.PACKAGE;
+  const deployment =
+    contentSummary === ContentSummary.DEPLOYMENT ? true : undefined;
+
   const type = git ? RepositoryType.GIT : RepositoryType.OCI;
-  const deployment = isDeployment ? true : undefined;
+
+  const labels: KubernetesKeyValueObject = {};
+
+  if (contentSummary === ContentSummary.CATALOG_BLUEPRINT) {
+    labels[CATELOG_BLUEPRINT_REPOSITORY_LABEL] = 'true';
+  }
 
   const resource: Repository = {
     apiVersion: 'config.porch.kpt.dev/v1alpha1',
@@ -72,6 +122,7 @@ export const getRepositoryResource = (
     metadata: {
       name,
       namespace,
+      labels,
     },
     spec: {
       description,

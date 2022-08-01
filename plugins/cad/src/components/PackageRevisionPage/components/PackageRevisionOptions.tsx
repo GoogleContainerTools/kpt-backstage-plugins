@@ -19,6 +19,7 @@ import { useRouteRef } from '@backstage/core-plugin-api';
 import { Button as MaterialButton } from '@material-ui/core';
 import React, { Fragment } from 'react';
 import {
+  clonePackageRouteRef,
   deployPackageRouteRef,
   editPackageRouteRef,
   packageRouteRef,
@@ -35,7 +36,8 @@ import {
   isLatestPublishedRevision,
 } from '../../../utils/packageRevision';
 import {
-  isBlueprintRepository,
+  isCatalogBlueprintRepository,
+  isDeployableBlueprintRepository,
   isDeploymentRepository,
 } from '../../../utils/repository';
 import { PackageRevisionPageMode } from '../PackageRevisionPage';
@@ -160,6 +162,7 @@ const PublishedPackageRevisionOptions = ({
   disabled,
 }: PackageRevisionOptionsProps) => {
   const packageRef = useRouteRef(packageRouteRef);
+  const clonePackageRef = useRouteRef(clonePackageRouteRef);
   const deployPackageRef = useRouteRef(deployPackageRouteRef);
 
   const packageName = packageRevision.metadata.name;
@@ -203,43 +206,21 @@ const PublishedPackageRevisionOptions = ({
   }
 
   const showDeploy =
-    isBlueprintRepository(repositorySummary.repository) &&
+    isDeployableBlueprintRepository(repositorySummary.repository) &&
     canCloneOrDeploy(packageRevision);
 
-  if (latestRevision !== latestPublishedRevision) {
-    return (
-      <Fragment>
-        <Button
-          to={packageRef({
-            repositoryName,
-            packageName: latestRevision.metadata.name,
-          })}
-          color="primary"
-          variant="outlined"
-        >
-          View {latestRevision.spec.lifecycle} Revision
-        </Button>
+  const showClone =
+    isCatalogBlueprintRepository(repositorySummary.repository) &&
+    canCloneOrDeploy(packageRevision);
 
-        {showDeploy && (
-          <Button
-            to={deployPackageRef({ repositoryName, packageName })}
-            color="primary"
-            variant="contained"
-            disabled={disabled}
-          >
-            Deploy
-          </Button>
-        )}
-      </Fragment>
-    );
-  }
+  const isNewerUnpublishedRevision = latestRevision !== latestPublishedRevision;
 
   const showCreateSync =
     isDeploymentRepository(repositorySummary.repository) && rootSync === null;
 
   return (
     <Fragment>
-      {isUpgradeAvailable && (
+      {isUpgradeAvailable && !isNewerUnpublishedRevision && (
         <MaterialButton
           variant="outlined"
           color="primary"
@@ -250,14 +231,29 @@ const PublishedPackageRevisionOptions = ({
         </MaterialButton>
       )}
 
-      <MaterialButton
-        variant="outlined"
-        color="primary"
-        onClick={() => onClick(RevisionOption.CREATE_NEW_REVISION)}
-        disabled={disabled}
-      >
-        Create New Revision
-      </MaterialButton>
+      {!isNewerUnpublishedRevision && (
+        <MaterialButton
+          variant="outlined"
+          color="primary"
+          onClick={() => onClick(RevisionOption.CREATE_NEW_REVISION)}
+          disabled={disabled}
+        >
+          Create New Revision
+        </MaterialButton>
+      )}
+
+      {isNewerUnpublishedRevision && (
+        <Button
+          to={packageRef({
+            repositoryName,
+            packageName: latestRevision.metadata.name,
+          })}
+          color="primary"
+          variant="outlined"
+        >
+          View {latestRevision.spec.lifecycle} Revision
+        </Button>
+      )}
 
       {showCreateSync && (
         <MaterialButton
@@ -268,6 +264,17 @@ const PublishedPackageRevisionOptions = ({
         >
           Create Sync
         </MaterialButton>
+      )}
+
+      {showClone && (
+        <Button
+          to={clonePackageRef({ repositoryName, packageName })}
+          color="primary"
+          variant="contained"
+          disabled={disabled}
+        >
+          Clone
+        </Button>
       )}
 
       {showDeploy && (

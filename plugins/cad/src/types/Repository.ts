@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { KubernetesKeyValueObject } from './KubernetesResource';
+
 export type ListRepositories = {
   kind: string;
   apiVersion: string;
@@ -30,6 +32,7 @@ export type Repository = {
 export type RepositoryMetadata = {
   name: string;
   namespace: string;
+  labels?: KubernetesKeyValueObject;
 };
 
 export type RepositorySpec = {

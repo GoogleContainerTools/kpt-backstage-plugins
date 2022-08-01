@@ -33,7 +33,8 @@ import { RepositoryContent } from '../../types/Repository';
 import { RepositorySummary } from '../../types/RepositorySummary';
 import { showRegisteredFunctionRepositories } from '../../utils/featureFlags';
 import {
-  isBlueprintRepository,
+  isCatalogBlueprintRepository,
+  isDeployableBlueprintRepository,
   isDeploymentRepository,
   isFunctionRepository,
 } from '../../utils/repository';
@@ -79,7 +80,24 @@ const getBlueprintsTab = (
   label: 'Blueprints',
   content: createRepositoriesTable(
     'Blueprint',
-    fitlerRepositorySummary(allRepositorySummaries, isBlueprintRepository),
+    fitlerRepositorySummary(
+      allRepositorySummaries,
+      isDeployableBlueprintRepository,
+    ),
+    RepositoryContent.PACKAGE,
+  ),
+});
+
+const getAbstractBlueprintsTab = (
+  allRepositorySummaries: RepositorySummary[],
+): TabProps => ({
+  label: 'Catalog Blueprints',
+  content: createRepositoriesTable(
+    'Catalog Blueprint',
+    fitlerRepositorySummary(
+      allRepositorySummaries,
+      isCatalogBlueprintRepository,
+    ),
     RepositoryContent.PACKAGE,
   ),
 });
@@ -101,6 +119,7 @@ const getRepositoryTabs = (
   const tabs: TabProps[] = [
     getDeploymentsTab(allRepositories),
     getBlueprintsTab(allRepositories),
+    getAbstractBlueprintsTab(allRepositories),
   ];
 
   if (showRegisteredFunctionRepositories()) {
