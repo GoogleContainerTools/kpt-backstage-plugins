@@ -70,10 +70,12 @@ export const isDeploymentRepository = (repository: Repository): boolean => {
 };
 
 export const getPackageDescriptor = (repository: Repository): string => {
-  if (isCatalogBlueprintRepository(repository)) return 'Catalog Blueprint';
-  if (isDeployableBlueprintRepository(repository)) return 'Blueprint';
-  if (isDeploymentRepository(repository)) return 'Deployment';
-  if (isFunctionRepository(repository)) return 'Function';
+  if (isCatalogBlueprintRepository(repository))
+    return ContentSummary.CATALOG_BLUEPRINT;
+  if (isDeployableBlueprintRepository(repository))
+    return ContentSummary.BLUEPRINT;
+  if (isDeploymentRepository(repository)) return ContentSummary.DEPLOYMENT;
+  if (isFunctionRepository(repository)) return ContentSummary.FUNCTION;
 
   return 'Unknown';
 };
@@ -81,8 +83,9 @@ export const getPackageDescriptor = (repository: Repository): string => {
 export const getUpstreamPackageDescriptor = (
   repository: Repository,
 ): string => {
-  if (isDeployableBlueprintRepository(repository)) return 'Catalog Blueprint';
-  if (isDeploymentRepository(repository)) return 'Blueprint';
+  if (isDeployableBlueprintRepository(repository))
+    return ContentSummary.CATALOG_BLUEPRINT;
+  if (isDeploymentRepository(repository)) return ContentSummary.BLUEPRINT;
 
   return 'Upstream Package';
 };

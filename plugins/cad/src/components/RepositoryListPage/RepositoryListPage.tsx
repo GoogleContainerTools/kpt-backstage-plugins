@@ -33,10 +33,8 @@ import { RepositoryContent } from '../../types/Repository';
 import { RepositorySummary } from '../../types/RepositorySummary';
 import { showRegisteredFunctionRepositories } from '../../utils/featureFlags';
 import {
-  isCatalogBlueprintRepository,
-  isDeployableBlueprintRepository,
-  isDeploymentRepository,
   isFunctionRepository,
+  isPackageRepository,
 } from '../../utils/repository';
 import {
   fitlerRepositorySummary,
@@ -56,48 +54,20 @@ const createRepositoriesTable = (
   content: RepositoryContent,
 ): JSX.Element => (
   <RepositoriesTable
-    title={`${descriptor}s Repository`}
+    title={`${descriptor} Repositories`}
     packageDescriptor={descriptor}
     repositories={repositories}
     repositoryContent={content}
   />
 );
 
-const getDeploymentsTab = (
+const getPackagesTab = (
   allRepositorySummaries: RepositorySummary[],
 ): TabProps => ({
-  label: 'Deployments',
+  label: 'Packages',
   content: createRepositoriesTable(
-    'Deployment',
-    fitlerRepositorySummary(allRepositorySummaries, isDeploymentRepository),
-    RepositoryContent.PACKAGE,
-  ),
-});
-
-const getBlueprintsTab = (
-  allRepositorySummaries: RepositorySummary[],
-): TabProps => ({
-  label: 'Blueprints',
-  content: createRepositoriesTable(
-    'Blueprint',
-    fitlerRepositorySummary(
-      allRepositorySummaries,
-      isDeployableBlueprintRepository,
-    ),
-    RepositoryContent.PACKAGE,
-  ),
-});
-
-const getAbstractBlueprintsTab = (
-  allRepositorySummaries: RepositorySummary[],
-): TabProps => ({
-  label: 'Catalog Blueprints',
-  content: createRepositoriesTable(
-    'Catalog Blueprint',
-    fitlerRepositorySummary(
-      allRepositorySummaries,
-      isCatalogBlueprintRepository,
-    ),
+    'Package',
+    fitlerRepositorySummary(allRepositorySummaries, isPackageRepository),
     RepositoryContent.PACKAGE,
   ),
 });
@@ -116,11 +86,7 @@ const getFunctionsTab = (
 const getRepositoryTabs = (
   allRepositories: RepositorySummary[],
 ): TabProps[] => {
-  const tabs: TabProps[] = [
-    getDeploymentsTab(allRepositories),
-    getBlueprintsTab(allRepositories),
-    getAbstractBlueprintsTab(allRepositories),
-  ];
+  const tabs: TabProps[] = [getPackagesTab(allRepositories)];
 
   if (showRegisteredFunctionRepositories()) {
     tabs.push(getFunctionsTab(allRepositories));
