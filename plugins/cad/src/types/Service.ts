@@ -35,7 +35,7 @@ export type ServiceSpec = {
   externalTrafficPolicy?: string;
   sessionAffinity?: string;
   selector?: KubernetesKeyValueObject;
-  ports?: ServicePort[];
+  ports: ServicePort[];
   clusterIP?: string;
 };
 
