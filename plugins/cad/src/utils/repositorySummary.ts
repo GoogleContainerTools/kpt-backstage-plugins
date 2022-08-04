@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { ConfigAsDataApi } from '../apis';
 import { PackageRevision } from '../types/PackageRevision';
 import {
   Repository,
@@ -28,12 +27,10 @@ import { isBlueprintRepository } from './repository';
 
 type RepositoryDetails = RepositoryUpstream;
 
-export const listRepositorySummaries = async (
-  api: ConfigAsDataApi,
-): Promise<RepositorySummary[]> => {
-  const { items: repositories } = await api.listRepositories();
-
-  const repositorySummaries: RepositorySummary[] = repositories.map(
+export const getRepositorySummaries = (
+  allRepositories: Repository[],
+): RepositorySummary[] => {
+  const repositorySummaries: RepositorySummary[] = allRepositories.map(
     repository => ({ repository: repository, downstreamRepositories: [] }),
   );
 
@@ -50,7 +47,7 @@ export const listRepositorySummaries = async (
     const repository = repositorySummary.repository;
 
     if (repository.spec.upstream) {
-      repositorySummary.upstreamRepository = repositories.find(
+      repositorySummary.upstreamRepository = allRepositories.find(
         r =>
           repository.spec.upstream &&
           getRepoString(r.spec) === getRepoString(repository.spec.upstream),
@@ -58,7 +55,7 @@ export const listRepositorySummaries = async (
     }
 
     if (isBlueprintRepository(repository)) {
-      repositorySummary.downstreamRepositories = repositories.filter(
+      repositorySummary.downstreamRepositories = allRepositories.filter(
         r =>
           r.spec.upstream &&
           getRepoString(r.spec.upstream) === getRepoString(repository.spec),
@@ -69,11 +66,10 @@ export const listRepositorySummaries = async (
   return repositorySummaries;
 };
 
-export const getRepositorySummary = async (
-  api: ConfigAsDataApi,
+export const getRepositorySummary = (
+  repositorySummaries: RepositorySummary[],
   name: string,
-): Promise<RepositorySummary> => {
-  const repositorySummaries = await listRepositorySummaries(api);
+): RepositorySummary => {
   const repositorySummary = repositorySummaries.find(
     summary => summary.repository.metadata.name === name,
   );

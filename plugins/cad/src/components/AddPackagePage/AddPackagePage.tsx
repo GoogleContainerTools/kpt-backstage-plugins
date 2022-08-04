@@ -50,7 +50,10 @@ import {
   isDeployableBlueprintRepository,
   isDeploymentRepository,
 } from '../../utils/repository';
-import { getRepositorySummary } from '../../utils/repositorySummary';
+import {
+  getRepositorySummaries,
+  getRepositorySummary,
+} from '../../utils/repositorySummary';
 import { sortByLabel } from '../../utils/selectItem';
 import { toLowerCase } from '../../utils/string';
 import { Select } from '../Controls/Select';
@@ -131,13 +134,14 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
   );
 
   const { loading, error } = useAsync(async (): Promise<void> => {
-    const [{ items: thisRepositories }, thisRepositorySummary] =
-      await Promise.all([
-        api.listRepositories(),
-        getRepositorySummary(api, repositoryName),
-      ]);
+    const { items: thisAllRepositories } = await api.listRepositories();
+    const repositorySummaries = getRepositorySummaries(thisAllRepositories);
+    const thisRepositorySummary = getRepositorySummary(
+      repositorySummaries,
+      repositoryName,
+    );
 
-    setAllRepositories(thisRepositories);
+    setAllRepositories(thisAllRepositories);
     setRepositorySummary(thisRepositorySummary);
   });
 

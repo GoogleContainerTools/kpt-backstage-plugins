@@ -67,7 +67,10 @@ import {
   getPackageDescriptor,
   isDeploymentRepository,
 } from '../../utils/repository';
-import { getRepositorySummary } from '../../utils/repositorySummary';
+import {
+  getRepositorySummaries,
+  getRepositorySummary,
+} from '../../utils/repositorySummary';
 import { toLowerCase } from '../../utils/string';
 import { ConfirmationDialog, Select } from '../Controls';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
@@ -149,8 +152,10 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const configSyncEnabled = isConfigSyncEnabled();
 
   const loadRepositorySummary = async (): Promise<void> => {
+    const { items: allRepositories } = await api.listRepositories();
+    const repositorySummaries = getRepositorySummaries(allRepositories);
     const thisRepositorySummary = await getRepositorySummary(
-      api,
+      repositorySummaries,
       repositoryName,
     );
     setRepositorySummary(thisRepositorySummary);
