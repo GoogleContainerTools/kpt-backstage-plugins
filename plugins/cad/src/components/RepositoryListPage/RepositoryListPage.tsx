@@ -38,7 +38,7 @@ import {
 } from '../../utils/repository';
 import {
   fitlerRepositorySummary,
-  listRepositorySummaries,
+  getRepositorySummaries,
   populatePackageSummaries,
 } from '../../utils/repositorySummary';
 import { RepositoriesTable } from './components/RepositoriesTable';
@@ -105,7 +105,8 @@ export const RepositoryListPage = () => {
     loading,
     error,
   } = useAsync(async () => {
-    const repositorySummaries = await listRepositorySummaries(api);
+    const { items: allRepositories } = await api.listRepositories();
+    const repositorySummaries = getRepositorySummaries(allRepositories);
 
     try {
       const allPackageRevisions = await api.listPackageRevisions();

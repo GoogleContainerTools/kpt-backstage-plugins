@@ -45,7 +45,10 @@ import {
   isFunctionRepository,
   isPackageRepository,
 } from '../../utils/repository';
-import { getRepositorySummary } from '../../utils/repositorySummary';
+import {
+  getRepositorySummaries,
+  getRepositorySummary,
+} from '../../utils/repositorySummary';
 import { RepositoriesLink } from '../Links';
 import { AdvancedRepositoryOptions } from './components/AdvancedRepositoryOptions';
 import { FunctionsTable } from './components/FunctionsTable';
@@ -69,8 +72,11 @@ export const RepositoryPage = () => {
 
   const { loading: repositoryLoading, error: repositoryError } =
     useAsync(async (): Promise<void> => {
+      const { items: allRepositories } = await api.listRepositories();
+      const repositorySummaries = getRepositorySummaries(allRepositories);
+
       const thisRepositorySummary = await getRepositorySummary(
-        api,
+        repositorySummaries,
         repositoryName,
       );
       setRepositorySummary(thisRepositorySummary);
