@@ -18,6 +18,7 @@ import React from 'react';
 import { getApplyReplacementsStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/applyReplacements';
 import { getClusterIssuerStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/clusterIssuer';
 import { getConfigMapStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/configMap';
+import { getCustomResourceDefinitionStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/customResourceDefinition';
 import { getDeploymentStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/deployment';
 import { getIngressStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/ingress';
 import { getIngressClassStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/ingressClass';
@@ -48,6 +49,9 @@ const getCustomMetadataFn = (
   groupVersionKind: string,
 ): CustomMetadataFn | undefined => {
   switch (groupVersionKind) {
+    case 'apiextensions.k8s.io/v1/CustomResourceDefinition':
+      return getCustomResourceDefinitionStructuredMetadata;
+
     case 'apps/v1/Deployment':
       return getDeploymentStructuredMetadata;
 
