@@ -235,7 +235,9 @@ export const diffPackageResource = (
       };
     }
 
-    const thisDiff = diffLines(originalResource.yaml, currentResource.yaml);
+    const thisDiff = diffLines(originalResource.yaml, currentResource.yaml, {
+      ignoreWhitespace: true,
+    });
     const linesAdded = sum(thisDiff.filter(d => !!d.added).map(d => d.count));
     const linesRemoved = sum(
       thisDiff.filter(d => !!d.removed).map(d => d.count),
