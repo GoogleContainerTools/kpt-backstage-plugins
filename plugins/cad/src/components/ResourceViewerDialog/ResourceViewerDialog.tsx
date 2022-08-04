@@ -38,11 +38,12 @@ type ResourceViewerProps = {
 
 const useStyles = makeStyles({
   container: {
-    width: '600px',
+    width: '620px',
     minHeight: '300px',
     maxHeight: '50vh',
     marginBottom: '10px',
     overflowY: 'scroll',
+    whiteSpace: 'pre',
   },
 });
 
