@@ -15,7 +15,7 @@
  */
 
 import { KubernetesResource } from '../../../../../../types/KubernetesResource';
-import { Service } from '../../../../../../types/Service';
+import { Service, ServicePort } from '../../../../../../types/Service';
 import { Metadata } from '../StructuredMetadata';
 
 export const getServiceStructuredMetadata = (
@@ -23,25 +23,24 @@ export const getServiceStructuredMetadata = (
 ): Metadata => {
   const service = resource as Service;
 
-  const customMetadata: Metadata = {
+  const getExposedPortsDescription = (ports: ServicePort[]) => {
+    const getPortDescription = (port: ServicePort): string => {
+      const namePrefix = port.name ? `${port.name}: ` : '';
+      const portAndProtocol = `${port.protocol ?? 'TCP'} ${port.port}`;
+      const targetPort = port.targetPort ? `→ ${port.targetPort}` : '';
+
+      return `${namePrefix} ${portAndProtocol} ${targetPort}`;
+    };
+
+    return ports.map(getPortDescription);
+  };
+
+  return {
     type: service.spec.type,
     externalTrafficPolicy: service.spec.externalTrafficPolicy,
     sessionAffinity: service.spec.sessionAffinity,
     selector: service.spec.selector,
     clusterIP: service.spec.clusterIP,
+    exposedPorts: getExposedPortsDescription(service.spec.ports ?? []),
   };
-
-  if (service.spec.ports) {
-    for (const port of service.spec.ports) {
-      const name = port.name || 'Port';
-
-      customMetadata[name] = [
-        `${port.protocol ?? 'TCP'} ${port.port} ${
-          port.targetPort ? ` to ${port.targetPort}` : undefined
-        }`,
-      ];
-    }
-  }
-
-  return customMetadata;
 };
