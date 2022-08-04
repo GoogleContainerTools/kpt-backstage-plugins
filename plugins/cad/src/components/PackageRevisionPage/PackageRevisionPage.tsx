@@ -35,6 +35,7 @@ import {
   PackageRevisionLifecycle,
 } from '../../types/PackageRevision';
 import { PackageRevisionResourcesMap } from '../../types/PackageRevisionResource';
+import { Repository } from '../../types/Repository';
 import { RepositorySummary } from '../../types/RepositorySummary';
 import { RootSync } from '../../types/RootSync';
 import {
@@ -64,6 +65,7 @@ import {
   getPackageRevisionResourcesResource,
 } from '../../utils/packageRevisionResources';
 import {
+  findRepository,
   getPackageDescriptor,
   isDeploymentRepository,
 } from '../../utils/repository';
@@ -125,6 +127,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
   const packageRef = useRouteRef(packageRouteRef);
 
+  const allRepositories = useRef<Repository[]>([]);
   const [repositorySummary, setRepositorySummary] =
     useState<RepositorySummary>();
   const [packageRevision, setPackageRevision] = useState<PackageRevision>();
@@ -152,12 +155,14 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const configSyncEnabled = isConfigSyncEnabled();
 
   const loadRepositorySummary = async (): Promise<void> => {
-    const { items: allRepositories } = await api.listRepositories();
-    const repositorySummaries = getRepositorySummaries(allRepositories);
+    const { items: thisAllRepositories } = await api.listRepositories();
+    const repositorySummaries = getRepositorySummaries(thisAllRepositories);
     const thisRepositorySummary = await getRepositorySummary(
       repositorySummaries,
       repositoryName,
     );
+
+    allRepositories.current = thisAllRepositories;
     setRepositorySummary(thisRepositorySummary);
   };
 
@@ -181,6 +186,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     const thisSortedRevisions = filterPackageRevisions(
       thisPackageRevisions,
       thisPackageRevision.spec.packageName,
+      thisPackageRevision.spec.repository,
     ).sort(sortByPackageNameAndRevisionComparison);
 
     const thisRevisionSummaries = thisSortedRevisions.map(revision => {
@@ -219,30 +225,41 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     const upstream = getUpstreamPackageRevisionDetails(thisPackageRevision);
 
     if (upstream) {
-      const upstreamPackage = findPackageRevision(
-        thisPackageRevisions,
-        upstream.packageName,
-        upstream.revision,
-      );
+      const upstreamRepository = findRepository(allRepositories.current, {
+        repositoryUrl: upstream.repositoryUrl,
+      });
 
-      if (upstreamPackage) {
-        diffItems.push({
-          label: `Upstream (${getPackageRevisionTitle(upstreamPackage)})`,
-          value: upstreamPackage.metadata.name,
-        });
+      if (upstreamRepository) {
+        const upstreamRepositoryName = upstreamRepository.metadata.name;
 
-        if (isLatestPublishedRevision(thisPackageRevision)) {
-          const allUpstreamRevisions = filterPackageRevisions(
-            thisPackageRevisions,
-            upstream.packageName,
-          );
-          latestPublishedUpstream.current =
-            findLatestPublishedRevision(allUpstreamRevisions);
+        const upstreamPackage = findPackageRevision(
+          thisPackageRevisions,
+          upstream.packageName,
+          upstream.revision,
+          upstreamRepositoryName,
+        );
 
-          if (
-            upstream.revision !== latestPublishedUpstream.current?.spec.revision
-          ) {
-            upgradeAvailable = true;
+        if (upstreamPackage) {
+          diffItems.push({
+            label: `Upstream (${getPackageRevisionTitle(upstreamPackage)})`,
+            value: upstreamPackage.metadata.name,
+          });
+
+          if (isLatestPublishedRevision(thisPackageRevision)) {
+            const allUpstreamRevisions = filterPackageRevisions(
+              thisPackageRevisions,
+              upstream.packageName,
+              upstreamRepositoryName,
+            );
+            latestPublishedUpstream.current =
+              findLatestPublishedRevision(allUpstreamRevisions);
+
+            if (
+              upstream.revision !==
+              latestPublishedUpstream.current?.spec.revision
+            ) {
+              upgradeAvailable = true;
+            }
           }
         }
       }
