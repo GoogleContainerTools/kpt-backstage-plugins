@@ -21,6 +21,7 @@ import { getConfigMapStructuredMetadata } from './FirstClassViewers/StructuredMe
 import { getDeploymentStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/deployment';
 import { getIngressStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/ingress';
 import { getIngressClassStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/ingressClass';
+import { getJobStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/job';
 import { getKptfileStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/kptfile';
 import { getPersistentVolumeClaimStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/persistentVolumeClaim';
 import { getResourceQuotaStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/resourceQuota';
@@ -52,6 +53,9 @@ const getCustomMetadataFn = (
 
     case 'apps/v1/StatefulSet':
       return getStatefulSetStructuredMetadata;
+
+    case 'batch/v1/Job':
+      return getJobStructuredMetadata;
 
     case 'cert-manager.io/v1/ClusterIssuer':
       return getClusterIssuerStructuredMetadata;
