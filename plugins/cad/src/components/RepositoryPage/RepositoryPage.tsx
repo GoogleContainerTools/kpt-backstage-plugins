@@ -24,12 +24,13 @@ import {
 import { useApi, useRouteRef } from '@backstage/core-plugin-api';
 import { Typography } from '@material-ui/core';
 import Alert from '@material-ui/lab/Alert';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../apis';
 import { addPackageRouteRef } from '../../routes';
 import { Function } from '../../types/Function';
+import { Repository } from '../../types/Repository';
 import { RepositorySummary } from '../../types/RepositorySummary';
 import { RootSync } from '../../types/RootSync';
 import { isConfigSyncEnabled } from '../../utils/featureFlags';
@@ -61,6 +62,7 @@ export const RepositoryPage = () => {
 
   const addPackageRef = useRouteRef(addPackageRouteRef);
 
+  const allRepositories = useRef<Repository[]>([]);
   const [repositorySummary, setRepositorySummary] =
     useState<RepositorySummary>();
   const [packageSummaries, setPackageSummaries] = useState<PackageSummary[]>(
@@ -72,13 +74,15 @@ export const RepositoryPage = () => {
 
   const { loading: repositoryLoading, error: repositoryError } =
     useAsync(async (): Promise<void> => {
-      const { items: allRepositories } = await api.listRepositories();
-      const repositorySummaries = getRepositorySummaries(allRepositories);
+      const { items: thisAllRepositories } = await api.listRepositories();
+      const repositorySummaries = getRepositorySummaries(thisAllRepositories);
 
       const thisRepositorySummary = await getRepositorySummary(
         repositorySummaries,
         repositoryName,
       );
+
+      allRepositories.current = thisAllRepositories;
       setRepositorySummary(thisRepositorySummary);
     }, [repositoryName]);
 
@@ -108,6 +112,7 @@ export const RepositoryPage = () => {
           const thisPackageSummaries = getPackageSummaries(
             allPackageRevisions,
             [repositorySummary],
+            allRepositories.current,
           );
 
           if (isDeploymentRepository(thisRepository)) {

@@ -29,6 +29,7 @@ import {
   isNotAPublishedRevision,
   sortByPackageNameAndRevisionComparison,
 } from './packageRevision';
+import { findRepository } from './repository';
 
 export type PackageSummary = {
   repository: Repository;
@@ -47,6 +48,7 @@ export const getPackageSummariesForRepository = (
   packageRevisions: PackageRevision[],
   allPackageRevisions: PackageRevision[],
   repository: Repository,
+  allRepositories: Repository[],
 ): PackageSummary[] => {
   const latestPackageRevisions = packageRevisions.filter(
     packageRevision =>
@@ -89,20 +91,33 @@ export const getPackageSummariesForRepository = (
         thisPackageSummary.upstreamPackageName = upstream.packageName;
         thisPackageSummary.upstreamPackageRevision = upstream.revision;
 
-        thisPackageSummary.upstreamRevision = findPackageRevision(
-          allPackageRevisions,
-          upstream.packageName,
-          upstream.revision,
-        );
+        const upstreamRepository = findRepository(allRepositories, {
+          repositoryUrl: upstream.repositoryUrl,
+        });
 
-        thisPackageSummary.upstreamLatestPublishedRevision =
-          findLatestPublishedRevision(
-            filterPackageRevisions(allPackageRevisions, upstream.packageName),
+        if (upstreamRepository) {
+          const upstreamRepositoryName = upstreamRepository.metadata.name;
+
+          thisPackageSummary.upstreamRevision = findPackageRevision(
+            allPackageRevisions,
+            upstream.packageName,
+            upstream.revision,
+            upstreamRepositoryName,
           );
 
-        thisPackageSummary.isUpgradeAvailable =
-          thisPackageSummary.upstreamLatestPublishedRevision?.spec.revision !==
-          upstream.revision;
+          thisPackageSummary.upstreamLatestPublishedRevision =
+            findLatestPublishedRevision(
+              filterPackageRevisions(
+                allPackageRevisions,
+                upstream.packageName,
+                upstreamRepositoryName,
+              ),
+            );
+
+          thisPackageSummary.isUpgradeAvailable =
+            thisPackageSummary.upstreamLatestPublishedRevision?.spec
+              .revision !== upstream.revision;
+        }
       }
 
       return thisPackageSummary;
@@ -115,6 +130,7 @@ export const getPackageSummariesForRepository = (
 export const getPackageSummaries = (
   packageRevisions: PackageRevision[],
   repositorySummaries: RepositorySummary[],
+  allRepositories: Repository[],
 ): PackageSummary[] => {
   const packageSummaries = [];
 
@@ -128,6 +144,7 @@ export const getPackageSummaries = (
       repositoryPackageRevisions,
       packageRevisions,
       repositorySummary.repository,
+      allRepositories,
     );
 
     packageSummaries.push(...repositoryPackageSummaries);

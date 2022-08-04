@@ -88,6 +88,7 @@ export const populatePackageSummaries = (
   const allPackageSummaries = getPackageSummaries(
     packageRevisions,
     repositorySummaries,
+    repositorySummaries.map(summary => summary.repository),
   );
 
   repositorySummaries.forEach(repositorySummary => {

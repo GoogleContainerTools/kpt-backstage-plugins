@@ -43,6 +43,7 @@ const getNextRevision = (revision: string): string => {
 };
 
 type UpstreamPackageRevisionDetails = {
+  repositoryUrl: string;
   packageName: string;
   revision: string;
 };
@@ -58,11 +59,13 @@ export const getPackageRevisionTitle = (
 export const getUpstreamPackageRevisionDetails = (
   packageRevision: PackageRevision,
 ): UpstreamPackageRevisionDetails | undefined => {
-  if (packageRevision.status?.upstreamLock?.git?.ref) {
-    const [packageName, revision] =
-      packageRevision.status.upstreamLock.git.ref.split('/');
+  const upstreamLock = packageRevision.status?.upstreamLock;
 
-    return { packageName, revision };
+  if (upstreamLock?.git) {
+    const repositoryUrl = upstreamLock.git.repo;
+    const [packageName, revision] = upstreamLock.git.ref.split('/');
+
+    return { repositoryUrl, packageName, revision };
   }
 
   return undefined;
@@ -91,9 +94,11 @@ export const findPackageRevision = (
   packageRevisions: PackageRevision[],
   packageName: string,
   revision: string,
+  repositoryName: string,
 ): PackageRevision | undefined => {
   return packageRevisions.find(
     packageRevision =>
+      packageRevision.spec.repository === repositoryName &&
       packageRevision.spec.packageName === packageName &&
       packageRevision.spec.revision === revision,
   );
@@ -102,10 +107,12 @@ export const findPackageRevision = (
 export const filterPackageRevisions = (
   packageRevisions: PackageRevision[],
   packageName: string,
+  repositoryName: string,
 ): PackageRevision[] => {
   return packageRevisions.filter(
     packageRevision =>
       packageRevision.spec.packageName === packageName &&
+      packageRevision.spec.repository === repositoryName &&
       Number.isFinite(getRevisionNumber(packageRevision.spec.revision)),
   );
 };

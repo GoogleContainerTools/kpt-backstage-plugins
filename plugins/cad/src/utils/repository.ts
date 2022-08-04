@@ -94,6 +94,19 @@ export const getRepositoryTitle = (repository: Repository): string => {
   return repository.metadata.name;
 };
 
+export const findRepository = (
+  allRepositories: Repository[],
+  { repositoryUrl }: { repositoryUrl?: string },
+): Repository | undefined => {
+  if (repositoryUrl) {
+    return allRepositories.find(
+      repository => repository.spec.git?.repo === repositoryUrl,
+    );
+  }
+
+  throw new Error('No repository find criteria specified');
+};
+
 export const getRepositoryResource = (
   name: string,
   description: string,
