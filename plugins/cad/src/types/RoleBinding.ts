@@ -41,4 +41,5 @@ export type RoleBindingSubject = {
   kind: string;
   name: string;
   apiGroup?: string;
+  namespace?: string;
 };
