@@ -26,25 +26,34 @@ export const getRoleStructuredMetadata = (
   const customMetadata: Metadata = {};
 
   for (const [index, rule] of role.rules.entries()) {
-    const name = role.rules.length > 1 ? `Rule ${index + 1}` : 'Rule';
-    customMetadata[name] = [];
+    const name =
+      role.rules.length > 1 ? `permissions${index + 1}` : 'permissions';
 
-    const describeRuleArray = (label: string, array: string[]): string =>
-      `${label}: ${array.join(', ')}`;
+    const mapAsterix =
+      (description: string) =>
+      (value: string): string =>
+        value === '*' ? description : value;
 
-    if (rule.apiGroups) {
-      customMetadata[name].push(
-        describeRuleArray(`API Groups`, rule.apiGroups),
-      );
-    }
+    const groups = (rule.apiGroups ?? ['*'])
+      .map(mapAsterix('all groups'))
+      .map(apiGroup => apiGroup || 'core');
+    const resources = (rule.resources ?? ['*']).map(
+      mapAsterix('all resources'),
+    );
+    const verbs = (rule.verbs ?? ['*']).map(mapAsterix('all verbs'));
 
-    if (rule.resources) {
-      customMetadata[name].push(describeRuleArray('Resources', rule.resources));
-    }
+    const groupsList = groups.join(', ');
+    const resourcesList = resources.join(', ');
+    const verbsList = verbs.join(', ');
+    const resoureNamesList =
+      (rule.resourceNames ?? []).length > 0
+        ? `- ${rule.resourceNames?.join(', ')}`
+        : ``;
 
-    if (rule.verbs) {
-      customMetadata[name].push(describeRuleArray('Verbs', rule.verbs));
-    }
+    customMetadata[name] = [
+      `${groupsList} ${resourcesList} ${resoureNamesList}`,
+      `→ ${verbsList}`,
+    ];
   }
 
   return customMetadata;
