@@ -20,7 +20,7 @@ export type Role = {
   kind: string;
   apiVersion: string;
   metadata: RoleMetadata;
-  rules: RoleRule[];
+  rules: PolicyRule[];
 };
 
 export type RoleMetadata = {
@@ -30,8 +30,9 @@ export type RoleMetadata = {
   annotations?: KubernetesKeyValueObject;
 };
 
-export type RoleRule = {
+export type PolicyRule = {
   apiGroups?: string[];
   resources?: string[];
+  resourceNames?: string[];
   verbs?: string[];
 };

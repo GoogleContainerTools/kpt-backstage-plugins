@@ -19,7 +19,7 @@ import AddIcon from '@material-ui/icons/Add';
 import { last, omit } from 'lodash';
 import React, { ChangeEvent, useEffect, useState } from 'react';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
-import { Role, RoleRule } from '../../../../../types/Role';
+import { Role, PolicyRule } from '../../../../../types/Role';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { KeyValueEditorAccordion } from '../Controls/KeyValueEditorAccordion';
 import { SingleTextFieldAccordion } from '../Controls/SingleTextFieldAccordion';
@@ -40,7 +40,7 @@ type State = {
   labels: KubernetesKeyValueObject;
 };
 
-export type RoleRuleView = RoleRule & {
+export type RoleRuleView = PolicyRule & {
   key: number;
 };
 
@@ -54,7 +54,7 @@ export const RoleEditor = ({ yaml, onUpdatedYaml }: RoleEditorProps) => {
     namespace: resourceYaml.metadata.namespace ?? '',
   });
 
-  const mapRuleToView = (rule: RoleRule, idx: number): RoleRuleView => ({
+  const mapRuleToView = (rule: PolicyRule, idx: number): RoleRuleView => ({
     key: idx,
     ...rule,
   });
@@ -73,7 +73,7 @@ export const RoleEditor = ({ yaml, onUpdatedYaml }: RoleEditorProps) => {
     };
 
   useEffect(() => {
-    const mapToRule = (rule: RoleRuleView): RoleRule => omit(rule, 'key');
+    const mapToRule = (rule: RoleRuleView): PolicyRule => omit(rule, 'key');
 
     resourceYaml.metadata.name = state.name;
     resourceYaml.metadata.namespace = state.namespace || undefined;
