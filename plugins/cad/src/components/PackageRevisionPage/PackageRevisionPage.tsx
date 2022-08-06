@@ -18,14 +18,13 @@ import {
   Breadcrumbs,
   ContentHeader,
   Progress,
-  SelectItem,
   Tabs,
 } from '@backstage/core-components';
 import { useApi, useRouteRef } from '@backstage/core-plugin-api';
 import { makeStyles, Typography } from '@material-ui/core';
 import Alert, { Color } from '@material-ui/lab/Alert';
 import { cloneDeep } from 'lodash';
-import React, { Fragment, useEffect, useRef, useState } from 'react';
+import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../apis';
@@ -74,7 +73,7 @@ import {
   getRepositorySummary,
 } from '../../utils/repositorySummary';
 import { toLowerCase } from '../../utils/string';
-import { ConfirmationDialog, Select } from '../Controls';
+import { ConfirmationDialog } from '../Controls';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
 import { AdvancedPackageRevisionOptions } from './components/AdvancedPackageRevisionOptions';
 import {
@@ -82,13 +81,10 @@ import {
   RevisionOption,
 } from './components/PackageRevisionOptions';
 import {
-  PackageRevisionResourcesTable,
-  ResourcesTableMode,
-} from './components/PackageRevisionResourcesTable';
-import {
   PackageRevisionsTable,
   RevisionSummary,
 } from './components/PackageRevisionsTable';
+import { ResourcesTabContent } from './components/ResourcesTabContent';
 import { processUpdatedResourcesMap } from './updatedResourcesMap/processUpdatedResourcesMap';
 
 export enum PackageRevisionPageMode {
@@ -131,8 +127,11 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const [repositorySummary, setRepositorySummary] =
     useState<RepositorySummary>();
   const [packageRevision, setPackageRevision] = useState<PackageRevision>();
-  const [revisionSummaries, setRevisionSummaries] =
-    useState<RevisionSummary[]>();
+  const [upstreamPackageRevision, setUpstreamPackageRevision] =
+    useState<PackageRevision>();
+  const [revisionSummaries, setRevisionSummaries] = useState<RevisionSummary[]>(
+    [],
+  );
   const [resourcesMap, setResourcesMap] = useState<PackageRevisionResourcesMap>(
     {},
   );
@@ -141,18 +140,17 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const [userInitiatedApiRequest, setUserInitiatedApiRequest] =
     useState<boolean>(false);
 
-  const [baseResourcesMap, setBaseResourcesMap] =
-    useState<PackageRevisionResourcesMap>();
-  const [selectDiffItems, setSelectDiffItems] = useState<SelectItem[]>([]);
-  const [diffSelection, setDiffSelection] = useState<string>('none');
-
   const [openRestoreDialog, setOpenRestoreDialog] = useState<boolean>(false);
-
   const [isUpgradeAvailable, setIsUpgradeAvailable] = useState<boolean>(false);
 
   const latestPublishedUpstream = useRef<PackageRevision>();
 
   const configSyncEnabled = isConfigSyncEnabled();
+
+  const packageRevisions = useMemo(
+    () => revisionSummaries.map(revisionSummary => revisionSummary.revision),
+    [revisionSummaries],
+  );
 
   const loadRepositorySummary = async (): Promise<void> => {
     const { items: thisAllRepositories } = await api.listRepositories();
@@ -205,21 +203,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     setPackageRevision(thisPackageRevision);
     setResourcesMap(thisResources.spec.resources);
 
-    const diffItems: SelectItem[] = [
-      { label: 'Hide comparison', value: 'none' },
-    ];
-
-    const currentRevisionIdx = thisSortedRevisions.indexOf(thisPackageRevision);
-
-    for (let i = currentRevisionIdx + 1; i < thisSortedRevisions.length; i++) {
-      const previousPackageRevision = thisSortedRevisions[i];
-
-      diffItems.push({
-        label: `Previous Revision (${previousPackageRevision.spec.revision})`,
-        value: previousPackageRevision.metadata.name,
-      });
-    }
-
     let upgradeAvailable = false;
 
     const upstream = getUpstreamPackageRevisionDetails(thisPackageRevision);
@@ -232,19 +215,16 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       if (upstreamRepository) {
         const upstreamRepositoryName = upstreamRepository.metadata.name;
 
-        const upstreamPackage = findPackageRevision(
+        const thisUpstreamPackage = findPackageRevision(
           thisPackageRevisions,
           upstream.packageName,
           upstream.revision,
           upstreamRepositoryName,
         );
 
-        if (upstreamPackage) {
-          diffItems.push({
-            label: `Upstream (${getPackageRevisionTitle(upstreamPackage)})`,
-            value: upstreamPackage.metadata.name,
-          });
+        setUpstreamPackageRevision(thisUpstreamPackage);
 
+        if (thisUpstreamPackage) {
           if (isLatestPublishedRevision(thisPackageRevision)) {
             const allUpstreamRevisions = filterPackageRevisions(
               thisPackageRevisions,
@@ -266,43 +246,12 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     }
 
     setIsUpgradeAvailable(upgradeAvailable);
-    setSelectDiffItems(diffItems);
-
-    const isPublished =
-      thisPackageRevision.spec.lifecycle === PackageRevisionLifecycle.PUBLISHED;
-
-    if (isPublished) {
-      setDiffSelection('none');
-    } else {
-      const updateDiffSelection =
-        !packageRevision ||
-        packageRevision.metadata.name !== thisPackageRevision.metadata.name;
-
-      if (updateDiffSelection) {
-        setDiffSelection((diffItems[1]?.value as string) || 'none');
-      }
-    }
   };
 
   const { loading, error } = useAsync(
     async () => Promise.all([loadRepositorySummary(), loadPackageRevision()]),
     [repositoryName, packageName, mode],
   );
-
-  useEffect(() => {
-    if (!diffSelection || diffSelection === 'none') {
-      setBaseResourcesMap(undefined);
-    } else {
-      const setUpstream = async (): Promise<void> => {
-        const upstreamResources = await api.getPackageRevisionResources(
-          diffSelection,
-        );
-        setBaseResourcesMap(upstreamResources.spec.resources);
-      };
-
-      setUpstream();
-    }
-  }, [api, diffSelection]);
 
   const isLatestPublishedPackageRevision =
     packageRevision && isLatestPublishedRevision(packageRevision);
@@ -374,9 +323,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const repository = repositorySummary.repository;
   const packageDescriptor = getPackageDescriptor(repository);
   const packageRevisionTitle = getPackageRevisionTitle(packageRevision);
-  const packageRevisions = revisionSummaries.map(
-    revisionSummary => revisionSummary.revision,
-  );
 
   const rejectProposedPackage = async (): Promise<void> => {
     const targetPackageRevision = cloneDeep(packageRevision);
@@ -613,11 +559,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     navigate(packageRef({ repositoryName, packageName }));
   };
 
-  const resourcesTableMode =
-    mode === PackageRevisionPageMode.EDIT
-      ? ResourcesTableMode.EDIT
-      : ResourcesTableMode.VIEW;
-
   const handleUpdatedResourcesMap = async (
     latestResources: PackageRevisionResourcesMap,
   ): Promise<void> => {
@@ -683,6 +624,8 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     }
   };
 
+  const isViewMode = mode === PackageRevisionPageMode.VIEW;
+
   const getUpgradeAlertText = (): string => {
     const latestRevision = packageRevisions[0];
 
@@ -711,7 +654,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     return `${baseUpgradeText} Use the 'Upgrade to Latest Blueprint' button to create a revision that pulls in changes from the upgraded blueprint.`;
   };
 
-  const isViewMode = mode === PackageRevisionPageMode.VIEW;
+  const alertMessages = isUpgradeAvailable ? [getUpgradeAlertText()] : [];
 
   return (
     <div>
@@ -766,29 +709,15 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
           {
             label: 'Resources',
             content: (
-              <Fragment>
-                {isUpgradeAvailable && (
-                  <Fragment>
-                    <Alert severity="info" style={{ marginBottom: '16px' }}>
-                      {getUpgradeAlertText()}
-                    </Alert>
-                  </Fragment>
-                )}
-                <PackageRevisionResourcesTable
-                  resourcesMap={resourcesMap}
-                  baseResourcesMap={baseResourcesMap}
-                  mode={resourcesTableMode}
-                  onUpdatedResourcesMap={handleUpdatedResourcesMap}
-                />
-                <br />
-                <Select
-                  label="Compare Revision"
-                  onChange={value => setDiffSelection(value)}
-                  selected={diffSelection}
-                  items={selectDiffItems}
-                  helperText="Compare revision to a previous revision or upstream blueprint."
-                />
-              </Fragment>
+              <ResourcesTabContent
+                packageName={packageName}
+                resourcesMap={resourcesMap}
+                packageRevisions={packageRevisions}
+                onUpdatedResourcesMap={handleUpdatedResourcesMap}
+                mode={mode}
+                upstreamPackageRevision={upstreamPackageRevision}
+                alertMessages={alertMessages}
+              />
             ),
           },
           {
