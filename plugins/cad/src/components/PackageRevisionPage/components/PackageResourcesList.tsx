@@ -180,10 +180,7 @@ export const PackageResourcesList = ({
         resource.yaml,
       );
     } else if (!originalResource && resource) {
-      updatedResourcesMap = addResourceToResourcesMap(
-        resourcesMap,
-        resource.yaml,
-      );
+      updatedResourcesMap = addResourceToResourcesMap(resourcesMap, resource);
     }
 
     if (!updatedResourcesMap) {

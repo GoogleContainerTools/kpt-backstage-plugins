@@ -286,7 +286,7 @@ export const PackageRevisionResourcesTable = ({
 
     const yaml = dumpYaml(resourceJson);
 
-    const thisSelectedResource = { yaml };
+    const thisSelectedResource = { component, yaml };
 
     openResourceDialog(Dialog.EDITOR, thisSelectedResource);
   };

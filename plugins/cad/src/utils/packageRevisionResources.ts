@@ -152,15 +152,23 @@ const getResourcesForFile = (
 
 export const addResourceToResourcesMap = (
   resourcesMap: PackageRevisionResourcesMap,
-  newResourceYaml: string,
+  packageResource: PackageResource,
 ): PackageRevisionResourcesMap => {
-  const resourceYaml = loadYaml(newResourceYaml) as KubernetesResource;
-  const resourceKind = resourceYaml.kind;
+  if (!packageResource.filename) {
+    const resourceYaml = loadYaml(packageResource.yaml) as KubernetesResource;
+    const resourceKind = resourceYaml.kind;
 
-  const filename = `${kebabCase(resourceKind)}.yaml`;
+    packageResource.filename = `${kebabCase(resourceKind)}.yaml`;
+
+    if (packageResource.component) {
+      packageResource.filename = `${packageResource.component}/${packageResource.filename}`;
+    }
+  }
+
+  const filename = packageResource.filename;
 
   const fileResourcesYaml = getResourcesForFile(resourcesMap, filename);
-  fileResourcesYaml.push(newResourceYaml);
+  fileResourcesYaml.push(packageResource.yaml);
 
   const fullYaml = createMultiResourceYaml(fileResourcesYaml);
 
