@@ -31,10 +31,7 @@ import {
 } from '../../../utils/packageRevision';
 import { Select } from '../../Controls';
 import { PackageRevisionPageMode } from '../PackageRevisionPage';
-import {
-  PackageRevisionResourcesTable,
-  ResourcesTableMode,
-} from './PackageRevisionResourcesTable';
+import { PackageResourcesList } from './PackageResourcesList';
 
 type ResourcesTabContentProps = {
   packageName: string;
@@ -139,11 +136,6 @@ export const ResourcesTabContent = ({
     }
   }, [api, diffSelection]);
 
-  const resourcesTableMode =
-    mode === PackageRevisionPageMode.EDIT
-      ? ResourcesTableMode.EDIT
-      : ResourcesTableMode.VIEW;
-
   return (
     <Fragment>
       <Fragment>
@@ -157,10 +149,10 @@ export const ResourcesTabContent = ({
           </Alert>
         ))}
       </Fragment>
-      <PackageRevisionResourcesTable
+      <PackageResourcesList
         resourcesMap={resourcesMap}
         baseResourcesMap={baseResourcesMap}
-        mode={resourcesTableMode}
+        mode={mode}
         onUpdatedResourcesMap={onUpdatedResourcesMap}
       />
       <br />
