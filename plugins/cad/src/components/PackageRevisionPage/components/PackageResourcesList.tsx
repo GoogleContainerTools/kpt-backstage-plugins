@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { makeStyles } from '@material-ui/core';
+import { uniq } from 'lodash';
 import React, { Fragment } from 'react';
 import { PackageRevisionResourcesMap } from '../../../types/PackageRevisionResource';
 import {
@@ -55,8 +57,6 @@ const sortResources = (allResources: ResourceRow[]): void => {
     };
 
     const resourceComponent = (resource: ResourceRow): string => {
-      if (resource.component === 'base') return '';
-
       return resource.component;
     };
 
@@ -131,12 +131,20 @@ const addDiffDetails = (
   }
 };
 
+const useStyles = makeStyles({
+  alert: {
+    marginBottom: '24px',
+  },
+});
+
 export const PackageResourcesList = ({
   resourcesMap,
   baseResourcesMap,
   onUpdatedResourcesMap,
   mode,
 }: PackageResourcesListProps) => {
+  const classes = useStyles();
+
   const packageResources = getPackageResourcesFromResourcesMap(
     resourcesMap,
   ) as ResourceRow[];
@@ -185,6 +193,10 @@ export const PackageResourcesList = ({
     onUpdatedResourcesMap(updatedResourcesMap);
   };
 
+  const uniqueComponents = uniq(
+    allResources.map(resource => resource.component),
+  );
+
   const resourcesTableMode =
     mode === PackageRevisionPageMode.EDIT
       ? ResourcesTableMode.EDIT
@@ -192,12 +204,18 @@ export const PackageResourcesList = ({
 
   return (
     <Fragment>
-      <PackageRevisionResourcesTable
-        allResources={allResources}
-        mode={resourcesTableMode}
-        showDiff={!!baseResourcesMap}
-        onUpdatedResource={onUpdatedResource}
-      />
+      {uniqueComponents.map(component => (
+        <div key={component} className={classes.alert}>
+          <PackageRevisionResourcesTable
+            title={`${component || 'root'} resources`}
+            allResources={allResources}
+            component={component}
+            mode={resourcesTableMode}
+            showDiff={!!baseResourcesMap}
+            onUpdatedResource={onUpdatedResource}
+          />
+        </div>
+      ))}
     </Fragment>
   );
 };
