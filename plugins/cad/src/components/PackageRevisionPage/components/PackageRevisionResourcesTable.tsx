@@ -19,26 +19,18 @@ import { errorApiRef, useApi } from '@backstage/core-plugin-api';
 import { Button, Divider, Menu, MenuItem } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
-import { startCase } from 'lodash';
+import { cloneDeep, startCase } from 'lodash';
 import React, { Fragment, useRef, useState } from 'react';
 import {
   KubernetesKeyValueObject,
   KubernetesResource,
 } from '../../../types/KubernetesResource';
-import { PackageRevisionResourcesMap } from '../../../types/PackageRevisionResource';
-import {
-  addResourceToResourcesMap,
-  diffPackageResources,
-  getPackageResourcesFromResourcesMap,
-  PackageResource,
-  removeResourceFromResourcesMap,
-  ResourceDiffStatus,
-  updateResourceInResourcesMap,
-} from '../../../utils/packageRevisionResources';
+import { PackageResource } from '../../../utils/packageRevisionResources';
 import { dumpYaml } from '../../../utils/yaml';
 import { IconButton } from '../../Controls';
 import { ResourceEditorDialog } from '../../ResourceEditorDialog';
 import { ResourceViewerDialog } from '../../ResourceViewerDialog';
+import { ResourceRow } from './PackageResourcesList';
 
 export enum ResourcesTableMode {
   VIEW = 'view',
@@ -53,17 +45,13 @@ enum Dialog {
 }
 
 type PackageRevisionResourcesTableProps = {
-  resourcesMap: PackageRevisionResourcesMap;
-  baseResourcesMap?: PackageRevisionResourcesMap;
+  allResources: ResourceRow[];
   mode: ResourcesTableMode;
-  onUpdatedResourcesMap?: (resourcesMap: PackageRevisionResourcesMap) => void;
-};
-
-type ResourceRow = PackageResource & {
-  diffSummary: string;
-  isDeleted: boolean;
-  originalResource?: PackageResource;
-  currentResource?: PackageResource;
+  showDiff: boolean;
+  onUpdatedResource: (
+    originalResource?: PackageResource,
+    resource?: PackageResource,
+  ) => void;
 };
 
 type KubernetesGKV = {
@@ -81,10 +69,10 @@ type DialogResource = {
 };
 
 export const PackageRevisionResourcesTable = ({
-  resourcesMap,
-  baseResourcesMap,
+  allResources,
   mode,
-  onUpdatedResourcesMap,
+  showDiff,
+  onUpdatedResource,
 }: PackageRevisionResourcesTableProps) => {
   const [openDialog, setOpenDialog] = useState<Dialog>(Dialog.NONE);
   const selectedDialogResource = useRef<DialogResource>();
@@ -156,16 +144,9 @@ export const PackageRevisionResourcesTable = ({
   };
 
   const deleteResource = (resource: ResourceRow): void => {
-    if (!onUpdatedResourcesMap) {
-      throw new Error('onUpdatedResourcesMap is not defined');
+    if (resource.originalResource) {
+      onUpdatedResource(resource.originalResource, undefined);
     }
-
-    const latestResourcesMap = removeResourceFromResourcesMap(
-      resourcesMap,
-      resource,
-    );
-
-    onUpdatedResourcesMap(latestResourcesMap);
   };
 
   const renderRowOptions = (resourceRow: ResourceRow): JSX.Element[] => {
@@ -225,111 +206,11 @@ export const PackageRevisionResourcesTable = ({
     { render: resourceRow => <div>{renderRowOptions(resourceRow)}</div> },
   ];
 
-  if (baseResourcesMap) {
+  if (showDiff) {
     columns[4] = { title: 'Diff', render: renderDiffColumn };
   }
 
-  const packageResources = getPackageResourcesFromResourcesMap(
-    resourcesMap,
-  ) as ResourceRow[];
-
-  const allResources: ResourceRow[] = packageResources.map(r => ({
-    ...r,
-    currentResource: r,
-  }));
-
-  allResources.sort((resource1, resource2) => {
-    const resourceScore = (resource: ResourceRow): number => {
-      if (resource.kind === 'Kptfile') return 1000;
-      if (resource.kind === 'Namespace') return 100;
-
-      return 0;
-    };
-
-    const resourceComponent = (resource: ResourceRow): string => {
-      if (resource.component === 'base') return '';
-
-      return resource.component;
-    };
-
-    const resourceQualifiedName = (resource: ResourceRow): string =>
-      (resource.namespace || ' ') + resource.kind + resource.name;
-
-    if (resourceComponent(resource1) !== resourceComponent(resource2)) {
-      return resourceComponent(resource1) > resourceComponent(resource2)
-        ? 1
-        : -1;
-    }
-
-    if (resourceScore(resource1) === resourceScore(resource2)) {
-      return resourceQualifiedName(resource1) > resourceQualifiedName(resource2)
-        ? 1
-        : -1;
-    }
-
-    return resourceScore(resource1) < resourceScore(resource2) ? 1 : -1;
-  });
-
-  if (baseResourcesMap) {
-    const baseResources = (
-      baseResourcesMap
-        ? getPackageResourcesFromResourcesMap(baseResourcesMap)
-        : []
-    ) as ResourceRow[];
-
-    const resourcesDiff = diffPackageResources(baseResources, allResources);
-
-    for (const resourceDiff of resourcesDiff) {
-      if (resourceDiff.diffStatus === ResourceDiffStatus.REMOVED) {
-        allResources.push({
-          ...resourceDiff.originalResource,
-          diffSummary: 'Removed',
-          isDeleted: true,
-          yaml: '',
-          originalResource: resourceDiff.originalResource,
-        });
-      }
-
-      const diffResource =
-        resourceDiff.currentResource ?? resourceDiff.originalResource;
-      const thisResource = allResources.find(
-        resource => resource.id === diffResource.id,
-      );
-
-      if (!thisResource) {
-        throw new Error(
-          'Resource exists within diff, however the resource is not found in allResources',
-        );
-      }
-
-      thisResource.originalResource = resourceDiff.originalResource;
-
-      switch (resourceDiff.diffStatus) {
-        case ResourceDiffStatus.ADDED:
-          thisResource.diffSummary = 'Added';
-          break;
-
-        case ResourceDiffStatus.REMOVED:
-          thisResource.diffSummary = 'Removed';
-          break;
-
-        case ResourceDiffStatus.UPDATED:
-          thisResource.diffSummary = `Diff (+${resourceDiff.linesAdded}, -${resourceDiff.linesRemoved})`;
-          break;
-        case ResourceDiffStatus.UNCHANGED:
-          break;
-
-        default:
-          throw new Error('Unknown diff status');
-      }
-    }
-  }
-
   const saveUpdatedYaml = (yaml: string): void => {
-    if (!onUpdatedResourcesMap) {
-      throw new Error('onUpdatedResourcesMap is not defined');
-    }
-
     if (!selectedDialogResource.current) {
       throw new Error('selectedDialogResource is not defined');
     }
@@ -338,19 +219,15 @@ export const PackageRevisionResourcesTable = ({
       !!selectedDialogResource.current.filename;
 
     if (isExistingResource) {
-      const originalResource = selectedDialogResource.current as ResourceRow;
+      const originalResource =
+        selectedDialogResource.current as any as PackageResource;
+      const updatedResource = cloneDeep(originalResource);
+      updatedResource.yaml = yaml;
 
-      const latestResourcesMap = updateResourceInResourcesMap(
-        resourcesMap,
-        originalResource,
-        yaml,
-      );
-
-      onUpdatedResourcesMap(latestResourcesMap);
+      onUpdatedResource(originalResource, updatedResource);
     } else {
-      const latestResourcesMap = addResourceToResourcesMap(resourcesMap, yaml);
-
-      onUpdatedResourcesMap(latestResourcesMap);
+      const newResource = { yaml } as any as PackageResource;
+      onUpdatedResource(undefined, newResource);
     }
   };
 
@@ -448,6 +325,10 @@ export const PackageRevisionResourcesTable = ({
     }
     return <div />;
   };
+
+  const packageResources = allResources
+    .map(resource => resource.originalResource)
+    .filter(resource => !!resource) as PackageResource[];
 
   return (
     <Fragment>
