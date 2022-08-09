@@ -16,6 +16,15 @@
 
 import React, { Fragment } from 'react';
 import { PackageRevisionResourcesMap } from '../../../types/PackageRevisionResource';
+import {
+  addResourceToResourcesMap,
+  diffPackageResources,
+  getPackageResourcesFromResourcesMap,
+  PackageResource,
+  removeResourceFromResourcesMap,
+  ResourceDiffStatus,
+  updateResourceInResourcesMap,
+} from '../../../utils/packageRevisionResources';
 import { PackageRevisionPageMode } from '../PackageRevisionPage';
 import {
   PackageRevisionResourcesTable,
@@ -29,12 +38,153 @@ type PackageResourcesListProps = {
   mode: PackageRevisionPageMode;
 };
 
+export type ResourceRow = PackageResource & {
+  diffSummary: string;
+  isDeleted: boolean;
+  originalResource?: PackageResource;
+  currentResource?: PackageResource;
+};
+
+const sortResources = (allResources: ResourceRow[]): void => {
+  allResources.sort((resource1, resource2) => {
+    const resourceScore = (resource: ResourceRow): number => {
+      if (resource.kind === 'Kptfile') return 1000;
+      if (resource.kind === 'Namespace') return 100;
+
+      return 0;
+    };
+
+    const resourceComponent = (resource: ResourceRow): string => {
+      if (resource.component === 'base') return '';
+
+      return resource.component;
+    };
+
+    const resourceQualifiedName = (resource: ResourceRow): string =>
+      (resource.namespace || ' ') + resource.kind + resource.name;
+
+    if (resourceComponent(resource1) !== resourceComponent(resource2)) {
+      return resourceComponent(resource1) > resourceComponent(resource2)
+        ? 1
+        : -1;
+    }
+
+    if (resourceScore(resource1) === resourceScore(resource2)) {
+      return resourceQualifiedName(resource1) > resourceQualifiedName(resource2)
+        ? 1
+        : -1;
+    }
+
+    return resourceScore(resource1) < resourceScore(resource2) ? 1 : -1;
+  });
+};
+
+const addDiffDetails = (
+  allResources: ResourceRow[],
+  baseResources: PackageResource[],
+): void => {
+  const resourcesDiff = diffPackageResources(baseResources, allResources);
+
+  for (const resourceDiff of resourcesDiff) {
+    if (resourceDiff.diffStatus === ResourceDiffStatus.REMOVED) {
+      allResources.push({
+        ...resourceDiff.originalResource,
+        diffSummary: 'Removed',
+        isDeleted: true,
+        yaml: '',
+        originalResource: resourceDiff.originalResource,
+      });
+    }
+
+    const diffResource =
+      resourceDiff.currentResource ?? resourceDiff.originalResource;
+    const thisResource = allResources.find(
+      resource => resource.id === diffResource.id,
+    );
+
+    if (!thisResource) {
+      throw new Error(
+        'Resource exists within diff, however the resource is not found in allResources',
+      );
+    }
+
+    thisResource.originalResource = resourceDiff.originalResource;
+
+    switch (resourceDiff.diffStatus) {
+      case ResourceDiffStatus.ADDED:
+        thisResource.diffSummary = 'Added';
+        break;
+
+      case ResourceDiffStatus.REMOVED:
+        thisResource.diffSummary = 'Removed';
+        break;
+
+      case ResourceDiffStatus.UPDATED:
+        thisResource.diffSummary = `Diff (+${resourceDiff.linesAdded}, -${resourceDiff.linesRemoved})`;
+        break;
+      case ResourceDiffStatus.UNCHANGED:
+        break;
+
+      default:
+        throw new Error('Unknown diff status');
+    }
+  }
+};
+
 export const PackageResourcesList = ({
   resourcesMap,
   baseResourcesMap,
   onUpdatedResourcesMap,
   mode,
 }: PackageResourcesListProps) => {
+  const packageResources = getPackageResourcesFromResourcesMap(
+    resourcesMap,
+  ) as ResourceRow[];
+
+  const allResources: ResourceRow[] = packageResources.map(resource => ({
+    ...resource,
+    currentResource: resource,
+  }));
+
+  sortResources(allResources);
+
+  if (baseResourcesMap) {
+    const baseResources = getPackageResourcesFromResourcesMap(baseResourcesMap);
+
+    addDiffDetails(allResources, baseResources);
+  }
+
+  const onUpdatedResource = (
+    originalResource?: PackageResource,
+    resource?: PackageResource,
+  ): void => {
+    let updatedResourcesMap: PackageRevisionResourcesMap | undefined;
+
+    if (originalResource && !resource) {
+      updatedResourcesMap = removeResourceFromResourcesMap(
+        resourcesMap,
+        originalResource,
+      );
+    } else if (originalResource && resource) {
+      updatedResourcesMap = updateResourceInResourcesMap(
+        resourcesMap,
+        originalResource,
+        resource.yaml,
+      );
+    } else if (!originalResource && resource) {
+      updatedResourcesMap = addResourceToResourcesMap(
+        resourcesMap,
+        resource.yaml,
+      );
+    }
+
+    if (!updatedResourcesMap) {
+      throw new Error('Resources map never updated');
+    }
+
+    onUpdatedResourcesMap(updatedResourcesMap);
+  };
+
   const resourcesTableMode =
     mode === PackageRevisionPageMode.EDIT
       ? ResourcesTableMode.EDIT
@@ -43,10 +193,10 @@ export const PackageResourcesList = ({
   return (
     <Fragment>
       <PackageRevisionResourcesTable
-        resourcesMap={resourcesMap}
-        baseResourcesMap={baseResourcesMap}
+        allResources={allResources}
         mode={resourcesTableMode}
-        onUpdatedResourcesMap={onUpdatedResourcesMap}
+        showDiff={!!baseResourcesMap}
+        onUpdatedResource={onUpdatedResource}
       />
     </Fragment>
   );
