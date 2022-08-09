@@ -45,7 +45,9 @@ enum Dialog {
 }
 
 type PackageRevisionResourcesTableProps = {
+  title: string;
   allResources: ResourceRow[];
+  component: string;
   mode: ResourcesTableMode;
   showDiff: boolean;
   onUpdatedResource: (
@@ -69,7 +71,9 @@ type DialogResource = {
 };
 
 export const PackageRevisionResourcesTable = ({
+  title,
   allResources,
+  component,
   mode,
   showDiff,
   onUpdatedResource,
@@ -81,6 +85,10 @@ export const PackageRevisionResourcesTable = ({
   const [addResourceAnchorEl, setAddResourceAnchorEl] =
     React.useState<null | HTMLElement>(null);
   const addResourceMenuOpen = Boolean(addResourceAnchorEl);
+
+  const resources = allResources.filter(
+    resource => resource.component === component,
+  );
 
   const addResourcesGVKs: KubernetesGKV[] = [
     {
@@ -144,8 +152,8 @@ export const PackageRevisionResourcesTable = ({
   };
 
   const deleteResource = (resource: ResourceRow): void => {
-    if (resource.originalResource) {
-      onUpdatedResource(resource.originalResource, undefined);
+    if (resource.currentResource) {
+      onUpdatedResource(resource.currentResource, undefined);
     }
   };
 
@@ -198,7 +206,6 @@ export const PackageRevisionResourcesTable = ({
   };
 
   const columns: TableColumn<ResourceRow>[] = [
-    { title: 'Component', field: 'component' },
     { title: 'Kind', field: 'kind' },
     { title: 'Name', field: 'name' },
     { title: 'Namespace', field: 'namespace' },
@@ -207,7 +214,7 @@ export const PackageRevisionResourcesTable = ({
   ];
 
   if (showDiff) {
-    columns[4] = { title: 'Diff', render: renderDiffColumn };
+    columns[3] = { title: 'Diff', render: renderDiffColumn };
   }
 
   const saveUpdatedYaml = (yaml: string): void => {
@@ -226,7 +233,7 @@ export const PackageRevisionResourcesTable = ({
 
       onUpdatedResource(originalResource, updatedResource);
     } else {
-      const newResource = { yaml } as any as PackageResource;
+      const newResource = { component, yaml } as any as PackageResource;
       onUpdatedResource(undefined, newResource);
     }
   };
@@ -238,7 +245,7 @@ export const PackageRevisionResourcesTable = ({
       resourceGVK;
 
     const getNamespace = (): string | undefined =>
-      allResources.find(r => r.kind === 'Namespace')?.name;
+      resources.find(r => r.kind === 'Namespace')?.name;
 
     const name = defaultName || 'default';
     const namespace = namespaceScoped ? getNamespace() : undefined;
@@ -326,7 +333,7 @@ export const PackageRevisionResourcesTable = ({
     return <div />;
   };
 
-  const packageResources = allResources
+  const packageResources = resources
     .map(resource => resource.originalResource)
     .filter(resource => !!resource) as PackageResource[];
 
@@ -356,10 +363,10 @@ export const PackageRevisionResourcesTable = ({
       />
 
       <Table<ResourceRow>
-        title="Resources"
+        title={title}
         options={{ search: false, paging: false }}
         columns={columns}
-        data={allResources}
+        data={resources}
         onRowClick={(_, row) => {
           if (row) {
             if (isEditMode && row.isDeleted) {

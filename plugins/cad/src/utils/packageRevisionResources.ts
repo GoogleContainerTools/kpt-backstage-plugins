@@ -127,7 +127,7 @@ export const getPackageResourcesFromResourcesMap = (
 
       return {
         id: uniqueId,
-        component: filename.substring(0, filename.lastIndexOf('/')) || 'base',
+        component: filename.substring(0, filename.lastIndexOf('/')),
         filename: filename,
         kind: k8sResource.kind,
         name: k8sResource.metadata.name,
