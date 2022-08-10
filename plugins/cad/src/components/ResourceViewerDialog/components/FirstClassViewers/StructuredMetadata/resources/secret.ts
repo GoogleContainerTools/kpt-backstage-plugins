@@ -14,26 +14,17 @@
  * limitations under the License.
  */
 
-import { KubernetesKeyValueObject } from './KubernetesResource';
+import { KubernetesResource } from '../../../../../../types/KubernetesResource';
+import { Secret } from '../../../../../../types/Secret';
+import { Metadata } from '../StructuredMetadata';
 
-export type ListSecrets = {
-  kind: string;
-  apiVersion: string;
-  items: Secret[];
-};
+export const getSecretStructuredMetadata = (
+  resource: KubernetesResource,
+): Metadata => {
+  const secret = resource as Secret;
 
-export type Secret = {
-  kind: string;
-  apiVersion: string;
-  metadata: SecretMetadata;
-  type: string;
-  data: KubernetesKeyValueObject;
-  immutable?: boolean;
-};
-
-export type SecretMetadata = {
-  name: string;
-  namespace: string;
-  labels?: KubernetesKeyValueObject;
-  annotations?: KubernetesKeyValueObject;
+  return {
+    type: `${secret.type} ${secret.immutable ? '(immutable)' : ''}`,
+    secrets: secret.data ?? 'none',
+  };
 };

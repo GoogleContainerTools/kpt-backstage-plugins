@@ -28,6 +28,7 @@ import { getPersistentVolumeClaimStructuredMetadata } from './FirstClassViewers/
 import { getResourceQuotaStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/resourceQuota';
 import { getRoleStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/role';
 import { getRoleBindingStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/roleBinding';
+import { getSecretStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/secret';
 import { getServiceStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/service';
 import { getSetLabelsStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/setLabels';
 import { getStarlarkRunStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/starlarkRun';
@@ -98,6 +99,9 @@ const getCustomMetadataFn = (
 
     case 'v1/ResourceQuota':
       return getResourceQuotaStructuredMetadata;
+
+    case 'v1/Secret':
+      return getSecretStructuredMetadata;
 
     case 'v1/Service':
       return getServiceStructuredMetadata;
