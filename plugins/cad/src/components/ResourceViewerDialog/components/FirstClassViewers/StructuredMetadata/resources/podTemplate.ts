@@ -45,9 +45,21 @@ export const getPodTemplatedStructuredMetadata = (
     const name =
       templateContainers.length > 1 ? `container${index + 1}` : 'container';
 
+    const image = container.image ?? '';
+
+    const containerConfiguration: string[] = [];
+    if (container.command) {
+      containerConfiguration.push(`command: ${container.command.join(' ')}`);
+    }
+    if (container.args) {
+      containerConfiguration.push(`args: ${container.args.join(' ')}`);
+    }
+
     const containerDetails: string[] = [
       `name: ${container.name}`,
-      `image: ${container.image}`,
+      `image: ${image.split(':')[0]}`,
+      `image tag: ${image.split(':')[1] ?? ''}`,
+      ...containerConfiguration,
       ...(container.ports ?? []).map(getPortDescription),
       ...(container.volumeMounts ?? []).map(getVolumeMountDescription),
     ];
@@ -65,6 +77,12 @@ export const getPodTemplatedStructuredMetadata = (
       }
       if (volume.persistentVolumeClaim) {
         return `${volume.persistentVolumeClaim?.claimName} persistent volume claim`;
+      }
+      if (volume.emptyDir) {
+        return 'empty directory';
+      }
+      if (volume.secret) {
+        return `${volume.secret.secretName} secret`;
       }
       return '';
     };
