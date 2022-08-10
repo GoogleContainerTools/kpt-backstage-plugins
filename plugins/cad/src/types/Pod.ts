@@ -38,6 +38,8 @@ export type Volume = {
   name: string;
   persistentVolumeClaim?: PersistentVolumeClaimVolumeSource;
   configMap?: ConfigMapVolumeSource;
+  emptyDir?: EmptyDirVolumeSource;
+  secret?: SecretVolumeSource;
 };
 
 export type PersistentVolumeClaimVolumeSource = {
@@ -48,9 +50,17 @@ export type ConfigMapVolumeSource = {
   name: string;
 };
 
+export type EmptyDirVolumeSource = {};
+
+export type SecretVolumeSource = {
+  secretName?: string;
+};
+
 export type Container = {
   name: string;
   image?: string;
+  command?: string[];
+  args?: string[];
   ports?: ContainerPort[];
   volumeMounts?: VolumeMount[];
 };
