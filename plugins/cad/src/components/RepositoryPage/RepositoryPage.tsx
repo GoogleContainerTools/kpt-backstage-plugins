@@ -51,9 +51,9 @@ import {
   getRepositorySummary,
 } from '../../utils/repositorySummary';
 import { RepositoriesLink } from '../Links';
+import { PackagesTable } from '../PackagesTable';
 import { AdvancedRepositoryOptions } from './components/AdvancedRepositoryOptions';
 import { FunctionsTable } from './components/FunctionsTable';
-import { PackagesTable } from './components/PackagesTable';
 import { RelatedRepositoryContent } from './components/RelatedRepositoryContent';
 
 export const RepositoryPage = () => {
@@ -178,11 +178,15 @@ export const RepositoryPage = () => {
     }
 
     if (isPackageRepository(repositorySummary.repository)) {
+      const showSyncStatusColumn = isDeploymentRepository(
+        repositorySummary.repository,
+      );
+
       return (
         <PackagesTable
           title={`${packageDescriptor}s`}
-          repository={thisRepository}
           packages={packageSummaries}
+          showSyncStatusColumn={showSyncStatusColumn}
         />
       );
     }
