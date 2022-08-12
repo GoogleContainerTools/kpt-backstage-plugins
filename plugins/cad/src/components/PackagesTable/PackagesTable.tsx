@@ -18,25 +18,23 @@ import { Table, TableColumn } from '@backstage/core-components';
 import { useRouteRef } from '@backstage/core-plugin-api';
 import React, { Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { packageRouteRef } from '../../../routes';
+import { packageRouteRef } from '../../routes';
 import {
   PackageRevision,
   PackageRevisionLifecycle,
-} from '../../../types/PackageRevision';
-import { Repository } from '../../../types/Repository';
-import { getSyncStatus, SyncStatus } from '../../../utils/configSync';
-import { formatCreationTimestamp } from '../../../utils/formatDate';
-import { PackageSummary } from '../../../utils/packageSummary';
-import { isDeploymentRepository } from '../../../utils/repository';
-import { IconButton, PackageIcon } from '../../Controls';
-import { PackageLink } from '../../Links';
-import { SyncStatusVisual } from './SyncStatusVisual';
+} from '../../types/PackageRevision';
+import { getSyncStatus, SyncStatus } from '../../utils/configSync';
+import { formatCreationTimestamp } from '../../utils/formatDate';
+import { PackageSummary } from '../../utils/packageSummary';
+import { IconButton, PackageIcon } from '../Controls';
+import { PackageLink } from '../Links';
+import { SyncStatusVisual } from './components/SyncStatusVisual';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 
 type PackagesTableProps = {
   title: string;
-  repository: Repository;
   packages: PackageSummary[];
+  showSyncStatusColumn?: boolean;
 };
 
 type UnpublishedPackageRevision = {
@@ -68,31 +66,22 @@ type NavigateToPackageRevision = (revision: PackageRevision) => void;
 const renderStatusColumn = (row: PackageRow): JSX.Element => {
   const unpublishedRevision = row.unpublished;
 
-  const elements: JSX.Element[] = [];
-
-  if (row.isUpgradeAvailable) {
-    elements.push(
-      <IconButton title="Upgrade available">
-        <ArrowUpwardIcon />
-      </IconButton>,
-    );
-  }
-
-  if (unpublishedRevision) {
-    elements.push(
-      <IconButton
-        title={`${unpublishedRevision.lifecycle} revision`}
-        stopPropagation
-        onClick={() => unpublishedRevision.navigate()}
-      >
-        <PackageIcon lifecycle={unpublishedRevision.lifecycle} />
-      </IconButton>,
-    );
-  }
-
   return (
     <div style={{ position: 'absolute', transform: 'translateY(-50%)' }}>
-      {...elements}
+      {row.isUpgradeAvailable && (
+        <IconButton title="Upgrade available">
+          <ArrowUpwardIcon />
+        </IconButton>
+      )}
+      {unpublishedRevision && (
+        <IconButton
+          title={`${unpublishedRevision.lifecycle} revision`}
+          stopPropagation
+          onClick={() => unpublishedRevision.navigate()}
+        >
+          <PackageIcon lifecycle={unpublishedRevision.lifecycle} />
+        </IconButton>
+      )}
     </div>
   );
 };
@@ -115,7 +104,7 @@ const renderSyncColumn = (row: PackageRow): JSX.Element => (
 );
 
 const getTableColumns = (
-  includeSyncsColumn: boolean,
+  includeSyncStatusColumn: boolean,
 ): TableColumn<PackageRow>[] => {
   const columns: TableColumn<PackageRow>[] = [
     {
@@ -130,7 +119,7 @@ const getTableColumns = (
     { title: 'Created', field: 'created' },
   ];
 
-  if (includeSyncsColumn) {
+  if (includeSyncStatusColumn) {
     columns.splice(columns.length - 1, 0, {
       title: 'Sync Status',
       render: renderSyncColumn,
@@ -217,8 +206,8 @@ const mapPackageSummariesToRows = (
 
 export const PackagesTable = ({
   title,
-  repository,
   packages,
+  showSyncStatusColumn,
 }: PackagesTableProps) => {
   const navigate = useNavigate();
 
@@ -233,8 +222,7 @@ export const PackagesTable = ({
     navigate(packageRef({ repositoryName, packageName }));
   };
 
-  const includeSyncsColumn = isDeploymentRepository(repository);
-  const columns = getTableColumns(includeSyncsColumn);
+  const columns = getTableColumns(!!showSyncStatusColumn);
 
   const data = mapPackageSummariesToRows(packages, navigateToPackageRevision);
 
