@@ -27,13 +27,15 @@ import { getSyncStatus, SyncStatus } from '../../utils/configSync';
 import { formatCreationTimestamp } from '../../utils/formatDate';
 import { PackageSummary } from '../../utils/packageSummary';
 import { IconButton, PackageIcon } from '../Controls';
-import { PackageLink } from '../Links';
+import { PackageLink, RepositoryLink } from '../Links';
 import { SyncStatusVisual } from './components/SyncStatusVisual';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
+import { Repository } from '../../types/Repository';
 
 type PackagesTableProps = {
   title: string;
   packages: PackageSummary[];
+  showRepositoryColumn?: boolean;
   showSyncStatusColumn?: boolean;
 };
 
@@ -56,9 +58,14 @@ type PackageRow = {
   created: string;
   upstreamPackageDisplayName?: string;
   upstreamPackageRevision?: PackageRevision;
+  repository: Repository;
   navigate: () => void;
   unpublished?: UnpublishedPackageRevision;
   isUpgradeAvailable?: boolean;
+};
+
+type ConditionalTableColumn<T extends object = {}> = TableColumn<T> & {
+  showColumn?: boolean;
 };
 
 type NavigateToPackageRevision = (revision: PackageRevision) => void;
@@ -86,6 +93,10 @@ const renderStatusColumn = (row: PackageRow): JSX.Element => {
   );
 };
 
+const renderRepositoryColumn = (row: PackageRow): JSX.Element => {
+  return <RepositoryLink repository={row.repository} stopPropagation />;
+};
+
 const renderBlueprintColumn = (row: PackageRow): JSX.Element => {
   if (row.upstreamPackageRevision) {
     return (
@@ -104,27 +115,35 @@ const renderSyncColumn = (row: PackageRow): JSX.Element => (
 );
 
 const getTableColumns = (
+  includeRepositoryColumn: boolean,
   includeSyncStatusColumn: boolean,
 ): TableColumn<PackageRow>[] => {
-  const columns: TableColumn<PackageRow>[] = [
+  const columnDefinitions: ConditionalTableColumn<PackageRow>[] = [
     {
       title: 'Status',
       width: '80px',
       render: renderStatusColumn,
     },
+    {
+      title: 'Repository',
+      render: renderRepositoryColumn,
+      showColumn: includeRepositoryColumn,
+    },
     { title: 'Name', field: 'packageName' },
     { title: 'Revision', field: 'revision' },
     { title: 'Lifecycle', field: 'lifecycle' },
     { title: 'Blueprint', render: renderBlueprintColumn },
+    {
+      title: 'Sync Status',
+      render: renderSyncColumn,
+      showColumn: includeSyncStatusColumn,
+    },
     { title: 'Created', field: 'created' },
   ];
 
-  if (includeSyncStatusColumn) {
-    columns.splice(columns.length - 1, 0, {
-      title: 'Sync Status',
-      render: renderSyncColumn,
-    });
-  }
+  const columns = columnDefinitions.filter(
+    column => column.showColumn !== false,
+  );
 
   return columns;
 };
@@ -187,6 +206,7 @@ const mapToPackageSummaryRow = (
       ? `${packageSummary.upstreamPackageName} ${packageSummary.upstreamPackageRevision}`
       : undefined,
     isUpgradeAvailable: packageSummary.isUpgradeAvailable,
+    repository: packageSummary.repository,
     upstreamPackageRevision: packageSummary.upstreamRevision,
     unpublished: mapToUnpublishedRevision(
       packageSummary,
@@ -207,6 +227,7 @@ const mapPackageSummariesToRows = (
 export const PackagesTable = ({
   title,
   packages,
+  showRepositoryColumn,
   showSyncStatusColumn,
 }: PackagesTableProps) => {
   const navigate = useNavigate();
@@ -222,7 +243,10 @@ export const PackagesTable = ({
     navigate(packageRef({ repositoryName, packageName }));
   };
 
-  const columns = getTableColumns(!!showSyncStatusColumn);
+  const columns = getTableColumns(
+    !!showRepositoryColumn,
+    !!showSyncStatusColumn,
+  );
 
   const data = mapPackageSummariesToRows(packages, navigateToPackageRevision);
 

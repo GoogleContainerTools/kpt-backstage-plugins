@@ -35,6 +35,12 @@ export enum ContentSummary {
   FUNCTION = 'Function',
 }
 
+export const PackageContentSummaryOrder = [
+  ContentSummary.DEPLOYMENT,
+  ContentSummary.BLUEPRINT,
+  ContentSummary.CATALOG_BLUEPRINT,
+];
+
 export const isFunctionRepository = (repository: Repository): boolean => {
   return repository.spec.content === RepositoryContent.FUNCTION;
 };
