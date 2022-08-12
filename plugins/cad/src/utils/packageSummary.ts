@@ -29,7 +29,7 @@ import {
   isNotAPublishedRevision,
   sortByPackageNameAndRevisionComparison,
 } from './packageRevision';
-import { findRepository } from './repository';
+import { findRepository, getPackageDescriptor } from './repository';
 
 export type PackageSummary = {
   repository: Repository;
@@ -38,9 +38,11 @@ export type PackageSummary = {
   unpublishedRevision?: PackageRevision;
   upstreamRevision?: PackageRevision;
   upstreamPackageName?: string;
+  upstreamRepositoryName?: string;
   upstreamPackageRevision?: string;
   upstreamLatestPublishedRevision?: PackageRevision;
   isUpgradeAvailable?: boolean;
+  packageDescriptor: string;
   sync?: RootSync;
 };
 
@@ -77,11 +79,14 @@ export const getPackageSummariesForRepository = (
         ? latestRevision
         : undefined;
 
+      const packageDescriptor = getPackageDescriptor(repository);
+
       const thisPackageSummary: PackageSummary = {
         repository,
         latestRevision,
         latestPublishedRevision,
         unpublishedRevision,
+        packageDescriptor,
       };
 
       const useRevision = latestPublishedRevision ?? latestRevision;
@@ -97,6 +102,7 @@ export const getPackageSummariesForRepository = (
 
         if (upstreamRepository) {
           const upstreamRepositoryName = upstreamRepository.metadata.name;
+          thisPackageSummary.upstreamRepositoryName = upstreamRepositoryName;
 
           thisPackageSummary.upstreamRevision = findPackageRevision(
             allPackageRevisions,

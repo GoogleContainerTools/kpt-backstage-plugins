@@ -64,6 +64,10 @@ import {
   getPackageRevisionResourcesResource,
 } from '../../utils/packageRevisionResources';
 import {
+  getPackageSummaries,
+  PackageSummary,
+} from '../../utils/packageSummary';
+import {
   findRepository,
   getPackageDescriptor,
   isDeploymentRepository,
@@ -76,6 +80,7 @@ import { toLowerCase } from '../../utils/string';
 import { ConfirmationDialog } from '../Controls';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
 import { AdvancedPackageRevisionOptions } from './components/AdvancedPackageRevisionOptions';
+import { DownstreamTabContent } from './components/DownstreamTabContent';
 import {
   PackageRevisionOptions,
   RevisionOption,
@@ -94,6 +99,15 @@ export enum PackageRevisionPageMode {
 
 type PackageRevisionPageProps = {
   mode: PackageRevisionPageMode;
+};
+
+type TabProps = {
+  label: string;
+  content: JSX.Element;
+};
+
+type ConditionalTabProps = TabProps & {
+  showTab?: boolean;
 };
 
 const useStyles = makeStyles({
@@ -129,6 +143,10 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const [packageRevision, setPackageRevision] = useState<PackageRevision>();
   const [upstreamPackageRevision, setUpstreamPackageRevision] =
     useState<PackageRevision>();
+  const [downstreamPackageSummaries, setDownstreamPackageSummaries] = useState<
+    PackageSummary[]
+  >([]);
+
   const [revisionSummaries, setRevisionSummaries] = useState<RevisionSummary[]>(
     [],
   );
@@ -244,6 +262,18 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
         }
       }
     }
+
+    const downstreamPackages = getPackageSummaries(
+      thisPackageRevisions,
+      getRepositorySummaries(allRepositories.current),
+      allRepositories.current,
+    ).filter(
+      summary =>
+        summary.upstreamPackageName === thisPackageRevision.spec.packageName &&
+        summary.upstreamRepositoryName === thisPackageRevision.spec.repository,
+    );
+
+    setDownstreamPackageSummaries(downstreamPackages);
 
     setIsUpgradeAvailable(upgradeAvailable);
   };
@@ -656,6 +686,10 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
   const alertMessages = isUpgradeAvailable ? [getUpgradeAlertText()] : [];
 
+  const getDisplayTabs = (tabs: ConditionalTabProps[]): TabProps[] => {
+    return tabs.filter(tab => tab.showTab !== false);
+  };
+
   return (
     <div>
       <Breadcrumbs>
@@ -705,7 +739,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       />
 
       <Tabs
-        tabs={[
+        tabs={getDisplayTabs([
           {
             label: 'Resources',
             content: (
@@ -730,6 +764,17 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
             ),
           },
           {
+            label: 'Downstream',
+            content: (
+              <DownstreamTabContent
+                packageDescriptor={packageDescriptor}
+                downstreamPackages={downstreamPackageSummaries}
+              />
+            ),
+            showTab:
+              !isDeploymentPackage || downstreamPackageSummaries.length > 0,
+          },
+          {
             label: 'Advanced',
             content: (
               <AdvancedPackageRevisionOptions
@@ -739,7 +784,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
               />
             ),
           },
-        ]}
+        ])}
       />
     </div>
   );
