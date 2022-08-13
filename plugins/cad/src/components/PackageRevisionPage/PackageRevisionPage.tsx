@@ -90,6 +90,7 @@ import {
   RevisionSummary,
 } from './components/PackageRevisionsTable';
 import { ResourcesTabContent } from './components/ResourcesTabContent';
+import { RelatedPackagesContent } from './components/RelatedPackagesContent';
 import { processUpdatedResourcesMap } from './updatedResourcesMap/processUpdatedResourcesMap';
 
 export enum PackageRevisionPageMode {
@@ -141,6 +142,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const [repositorySummary, setRepositorySummary] =
     useState<RepositorySummary>();
   const [packageRevision, setPackageRevision] = useState<PackageRevision>();
+  const [upstreamRepository, setUpstreamRepository] = useState<Repository>();
   const [upstreamPackageRevision, setUpstreamPackageRevision] =
     useState<PackageRevision>();
   const [downstreamPackageSummaries, setDownstreamPackageSummaries] = useState<
@@ -222,27 +224,27 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     setResourcesMap(thisResources.spec.resources);
 
     let upgradeAvailable = false;
+    let thisUpstreamRepository: Repository | undefined = undefined;
+    let thisUpstreamPackageRevision: PackageRevision | undefined = undefined;
 
     const upstream = getUpstreamPackageRevisionDetails(thisPackageRevision);
 
     if (upstream) {
-      const upstreamRepository = findRepository(allRepositories.current, {
+      thisUpstreamRepository = findRepository(allRepositories.current, {
         repositoryUrl: upstream.repositoryUrl,
       });
 
-      if (upstreamRepository) {
-        const upstreamRepositoryName = upstreamRepository.metadata.name;
+      if (thisUpstreamRepository) {
+        const upstreamRepositoryName = thisUpstreamRepository.metadata.name;
 
-        const thisUpstreamPackage = findPackageRevision(
+        thisUpstreamPackageRevision = findPackageRevision(
           thisPackageRevisions,
           upstream.packageName,
           upstream.revision,
           upstreamRepositoryName,
         );
 
-        setUpstreamPackageRevision(thisUpstreamPackage);
-
-        if (thisUpstreamPackage) {
+        if (thisUpstreamPackageRevision) {
           if (isLatestPublishedRevision(thisPackageRevision)) {
             const allUpstreamRevisions = filterPackageRevisions(
               thisPackageRevisions,
@@ -274,7 +276,8 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     );
 
     setDownstreamPackageSummaries(downstreamPackages);
-
+    setUpstreamRepository(thisUpstreamRepository);
+    setUpstreamPackageRevision(thisUpstreamPackageRevision);
     setIsUpgradeAvailable(upgradeAvailable);
   };
 
@@ -686,6 +689,9 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
   const alertMessages = isUpgradeAvailable ? [getUpgradeAlertText()] : [];
 
+  const showDownstreamPackages =
+    !isDeploymentPackage || downstreamPackageSummaries.length > 0;
+
   const getDisplayTabs = (tabs: ConditionalTabProps[]): TabProps[] => {
     return tabs.filter(tab => tab.showTab !== false);
   };
@@ -704,6 +710,13 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
       <ContentHeader title={packageRevisionTitle}>
         <div className={classes.packageRevisionOptions}>
+          <RelatedPackagesContent
+            upstreamRepository={upstreamRepository}
+            upstreamPackageRevision={upstreamPackageRevision}
+            downstreamPackages={downstreamPackageSummaries}
+            showDownstream={showDownstreamPackages}
+          />
+
           {getPackageLifecycleDescription()}
 
           {getCurrentSyncStatus()}
@@ -771,8 +784,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
                 downstreamPackages={downstreamPackageSummaries}
               />
             ),
-            showTab:
-              !isDeploymentPackage || downstreamPackageSummaries.length > 0,
+            showTab: showDownstreamPackages,
           },
           {
             label: 'Advanced',
