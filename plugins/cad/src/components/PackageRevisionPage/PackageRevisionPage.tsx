@@ -143,8 +143,8 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     useState<RepositorySummary>();
   const [packageRevision, setPackageRevision] = useState<PackageRevision>();
   const [upstreamRepository, setUpstreamRepository] = useState<Repository>();
-  const [upstreamPackageRevision, setUpstreamPackageRevision] =
-    useState<PackageRevision>();
+  const [upstreamRevisionSummary, setUpstreamRevisionSummary] =
+    useState<RevisionSummary>();
   const [downstreamPackageSummaries, setDownstreamPackageSummaries] = useState<
     PackageSummary[]
   >([]);
@@ -188,11 +188,11 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     const asyncPackageRevisions = api.listPackageRevisions();
     const asyncAllPackageResources = api.listPackageRevisionResources();
 
-    const [thisPackageRevisions, { items: thisAllPacakgesResources }] =
+    const [thisPackageRevisions, { items: thisAllPackagesResources }] =
       await Promise.all([asyncPackageRevisions, asyncAllPackageResources]);
 
     const thisResources = getPackageRevisionResources(
-      thisAllPacakgesResources,
+      thisAllPackagesResources,
       packageName,
     );
 
@@ -210,7 +210,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     const thisRevisionSummaries: RevisionSummary[] = thisSortedRevisions.map(
       revision => {
         const revisionResourcesMap = getPackageRevisionResources(
-          thisAllPacakgesResources,
+          thisAllPackagesResources,
           revision.metadata.name,
         ).spec.resources;
 
@@ -229,7 +229,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
     let upgradeAvailable = false;
     let thisUpstreamRepository: Repository | undefined = undefined;
-    let thisUpstreamPackageRevision: PackageRevision | undefined = undefined;
+    let thisUpstreamRevisionSummary: RevisionSummary | undefined = undefined;
 
     const upstream = getUpstreamPackageRevisionDetails(thisPackageRevision);
 
@@ -241,14 +241,14 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       if (thisUpstreamRepository) {
         const upstreamRepositoryName = thisUpstreamRepository.metadata.name;
 
-        thisUpstreamPackageRevision = findPackageRevision(
+        const upstreamPackageRevision = findPackageRevision(
           thisPackageRevisions,
           upstream.packageName,
           upstream.revision,
           upstreamRepositoryName,
         );
 
-        if (thisUpstreamPackageRevision) {
+        if (upstreamPackageRevision) {
           if (isLatestPublishedRevision(thisPackageRevision)) {
             const allUpstreamRevisions = filterPackageRevisions(
               thisPackageRevisions,
@@ -265,6 +265,16 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
               upgradeAvailable = true;
             }
           }
+
+          const upstreamResourcesMap = getPackageRevisionResources(
+            thisAllPackagesResources,
+            upstreamPackageRevision.metadata.name,
+          ).spec.resources;
+
+          thisUpstreamRevisionSummary = getRevisionSummary(
+            upstreamPackageRevision,
+            upstreamResourcesMap,
+          );
         }
       }
     }
@@ -280,8 +290,8 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     );
 
     setDownstreamPackageSummaries(downstreamPackages);
+    setUpstreamRevisionSummary(thisUpstreamRevisionSummary);
     setUpstreamRepository(thisUpstreamRepository);
-    setUpstreamPackageRevision(thisUpstreamPackageRevision);
     setIsUpgradeAvailable(upgradeAvailable);
   };
 
@@ -716,7 +726,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
         <div className={classes.packageRevisionOptions}>
           <RelatedPackagesContent
             upstreamRepository={upstreamRepository}
-            upstreamPackageRevision={upstreamPackageRevision}
+            upstreamPackageRevision={upstreamRevisionSummary?.revision}
             downstreamPackages={downstreamPackageSummaries}
             showDownstream={showDownstreamPackages}
           />
@@ -763,10 +773,10 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
               <ResourcesTabContent
                 packageName={packageName}
                 resourcesMap={resourcesMap}
-                packageRevisions={packageRevisions}
+                revisions={revisionSummaries}
                 onUpdatedResourcesMap={handleUpdatedResourcesMap}
                 mode={mode}
-                upstreamPackageRevision={upstreamPackageRevision}
+                upstreamRevision={upstreamRevisionSummary}
                 alertMessages={alertMessages}
               />
             ),
