@@ -19,23 +19,16 @@ import { useRouteRef } from '@backstage/core-plugin-api';
 import React, { Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { packageRouteRef } from '../../../routes';
-import {
-  PackageRevision,
-  PackageRevisionLifecycle,
-} from '../../../types/PackageRevision';
+import { PackageRevisionLifecycle } from '../../../types/PackageRevision';
 import { Repository } from '../../../types/Repository';
 import { formatCreationTimestamp } from '../../../utils/formatDate';
 import {
   diffPackageResources,
-  PackageResource,
+  getPackageResourcesFromResourcesMap,
   ResourceDiffStatus,
 } from '../../../utils/packageRevisionResources';
+import { RevisionSummary } from '../../../utils/revisionSummary';
 import { IconButton, PackageIcon } from '../../Controls';
-
-export type RevisionSummary = {
-  revision: PackageRevision;
-  resources: PackageResource[];
-};
 
 type PackageRevisionsTableProps = {
   repository: Repository;
@@ -101,8 +94,8 @@ const getResourcesChangesSummary = (
   }
 
   const resourcesDiff = diffPackageResources(
-    prevSummary.resources,
-    summary.resources,
+    getPackageResourcesFromResourcesMap(prevSummary.resourcesMap),
+    getPackageResourcesFromResourcesMap(summary.resourcesMap),
   );
   const findResourceCount = (status: ResourceDiffStatus): number => {
     return resourcesDiff.filter(diff => diff.diffStatus === status).length;
@@ -134,7 +127,7 @@ const mapToPackageRevisionRow = (
   index: number,
   allSummaries: RevisionSummary[],
 ): PackageRevisionRow => {
-  const revision = summary.revision;
+  const { revision, resourcesMap } = summary;
   const previousSummary = allSummaries[index + 1];
   const creationTimestamp = formatCreationTimestamp(
     revision.metadata.creationTimestamp,
@@ -148,7 +141,7 @@ const mapToPackageRevisionRow = (
     revision: revision.spec.revision,
     lifecycle: revision.spec.lifecycle,
     created: creationTimestamp,
-    resourcesCount: summary.resources.length,
+    resourcesCount: getPackageResourcesFromResourcesMap(resourcesMap).length,
     changesSummary: getResourcesChangesSummary(summary, previousSummary),
   };
 };

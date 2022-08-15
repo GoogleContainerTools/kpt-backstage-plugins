@@ -59,7 +59,6 @@ import {
   sortByPackageNameAndRevisionComparison,
 } from '../../utils/packageRevision';
 import {
-  getPackageResourcesFromResourcesMap,
   getPackageRevisionResources,
   getPackageRevisionResourcesResource,
 } from '../../utils/packageRevisionResources';
@@ -85,13 +84,14 @@ import {
   PackageRevisionOptions,
   RevisionOption,
 } from './components/PackageRevisionOptions';
-import {
-  PackageRevisionsTable,
-  RevisionSummary,
-} from './components/PackageRevisionsTable';
+import { PackageRevisionsTable } from './components/PackageRevisionsTable';
 import { ResourcesTabContent } from './components/ResourcesTabContent';
 import { RelatedPackagesContent } from './components/RelatedPackagesContent';
 import { processUpdatedResourcesMap } from './updatedResourcesMap/processUpdatedResourcesMap';
+import {
+  getRevisionSummary,
+  RevisionSummary,
+} from '../../utils/revisionSummary';
 
 export enum PackageRevisionPageMode {
   EDIT = 'edit',
@@ -207,17 +207,21 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       thisPackageRevision.spec.repository,
     ).sort(sortByPackageNameAndRevisionComparison);
 
-    const thisRevisionSummaries = thisSortedRevisions.map(revision => {
-      const revisionResourcesMap = getPackageRevisionResources(
-        thisAllPacakgesResources,
-        revision.metadata.name,
-      ).spec.resources;
+    const thisRevisionSummaries: RevisionSummary[] = thisSortedRevisions.map(
+      revision => {
+        const revisionResourcesMap = getPackageRevisionResources(
+          thisAllPacakgesResources,
+          revision.metadata.name,
+        ).spec.resources;
 
-      const resources =
-        getPackageResourcesFromResourcesMap(revisionResourcesMap);
+        const revisionSummary = getRevisionSummary(
+          revision,
+          revisionResourcesMap,
+        );
 
-      return { revision, resources };
-    });
+        return revisionSummary;
+      },
+    );
 
     setRevisionSummaries(thisRevisionSummaries);
     setPackageRevision(thisPackageRevision);
