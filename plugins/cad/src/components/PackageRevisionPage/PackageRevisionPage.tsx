@@ -145,7 +145,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const [upstreamRepository, setUpstreamRepository] = useState<Repository>();
   const [upstreamRevisionSummary, setUpstreamRevisionSummary] =
     useState<RevisionSummary>();
-
   const [downstreamPackageSummaries, setDownstreamPackageSummaries] = useState<
     PackageSummary[]
   >([]);
