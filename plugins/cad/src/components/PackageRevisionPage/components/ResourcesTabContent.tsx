@@ -14,21 +14,16 @@
  * limitations under the License.
  */
 
-import { SelectItem } from '@backstage/core-components';
-import { useApi } from '@backstage/core-plugin-api';
 import { makeStyles } from '@material-ui/core';
 import Alert from '@material-ui/lab/Alert';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
-import { configAsDataApiRef } from '../../../apis';
-import {
-  PackageRevision,
-  PackageRevisionLifecycle,
-} from '../../../types/PackageRevision';
+import { PackageRevisionLifecycle } from '../../../types/PackageRevision';
 import { PackageRevisionResourcesMap } from '../../../types/PackageRevisionResource';
 import {
   getPackageRevision,
   getPackageRevisionTitle,
 } from '../../../utils/packageRevision';
+import { RevisionSummary } from '../../../utils/revisionSummary';
 import { Select } from '../../Controls';
 import { PackageRevisionPageMode } from '../PackageRevisionPage';
 import { PackageResourcesList } from './PackageResourcesList';
@@ -36,11 +31,17 @@ import { PackageResourcesList } from './PackageResourcesList';
 type ResourcesTabContentProps = {
   packageName: string;
   resourcesMap: PackageRevisionResourcesMap;
-  packageRevisions: PackageRevision[];
-  upstreamPackageRevision?: PackageRevision;
+  revisions: RevisionSummary[];
+  upstreamRevision?: RevisionSummary;
   onUpdatedResourcesMap: (resourcesMap: PackageRevisionResourcesMap) => void;
   alertMessages: string[];
   mode: PackageRevisionPageMode;
+};
+
+type DiffSelectItem = {
+  value: string;
+  label: string;
+  resourcesMap: PackageRevisionResourcesMap;
 };
 
 const useStyles = makeStyles({
@@ -49,51 +50,64 @@ const useStyles = makeStyles({
   },
 });
 
+const HIDE_COMPARISON_SELECT_ITEM: DiffSelectItem = {
+  label: 'Hide comparison',
+  value: 'none',
+  resourcesMap: {},
+};
+
 export const ResourcesTabContent = ({
   packageName,
   resourcesMap,
-  packageRevisions,
-  upstreamPackageRevision,
+  revisions,
+  upstreamRevision,
   onUpdatedResourcesMap,
   alertMessages,
   mode,
 }: ResourcesTabContentProps) => {
-  const api = useApi(configAsDataApiRef);
   const classes = useStyles();
 
-  const [selectDiffItems, setSelectDiffItems] = useState<SelectItem[]>([]);
-  const [diffSelection, setDiffSelection] = useState<string>('none');
+  const [selectDiffItems, setSelectDiffItems] = useState<DiffSelectItem[]>([
+    HIDE_COMPARISON_SELECT_ITEM,
+  ]);
+  const [diffSelection, setDiffSelection] = useState<DiffSelectItem>(
+    HIDE_COMPARISON_SELECT_ITEM,
+  );
   const [baseResourcesMap, setBaseResourcesMap] =
     useState<PackageRevisionResourcesMap>();
 
   const lastPackageRevisionNameDiffSet = useRef<string>('');
 
   useEffect(() => {
+    const packageRevisions = revisions.map(r => r.revision);
     const packageRevision = getPackageRevision(packageRevisions, packageName);
 
-    const getDiffSelectItems = (): SelectItem[] => {
+    const getDiffSelectItems = (): DiffSelectItem[] => {
       const mapPreviousToSelectItem = (
-        thisPackageRevision: PackageRevision,
-      ): SelectItem => ({
-        label: `Previous Revision (${thisPackageRevision.spec.revision})`,
-        value: thisPackageRevision.metadata.name,
+        revisionSummary: RevisionSummary,
+      ): DiffSelectItem => ({
+        label: `Previous Revision (${revisionSummary.revision.spec.revision})`,
+        value: revisionSummary.revision.metadata.name,
+        resourcesMap: revisionSummary.resourcesMap,
       });
 
       const mapUpstreamToSelectItem = (
-        thisPackageRevision: PackageRevision,
-      ): SelectItem => ({
-        label: `Upstream (${getPackageRevisionTitle(thisPackageRevision)})`,
-        value: thisPackageRevision.metadata.name,
+        revisionSummary: RevisionSummary,
+      ): DiffSelectItem => ({
+        label: `Upstream (${getPackageRevisionTitle(
+          revisionSummary.revision,
+        )})`,
+        value: revisionSummary.revision.metadata.name,
+        resourcesMap: revisionSummary.resourcesMap,
       });
 
       const currentRevisionIdx = packageRevisions.indexOf(packageRevision);
-      const previousRevisions = packageRevisions.slice(currentRevisionIdx + 1);
-      const upstreamRevisions = upstreamPackageRevision
-        ? [upstreamPackageRevision]
-        : [];
 
-      const diffItems: SelectItem[] = [
-        { label: 'Hide comparison', value: 'none' },
+      const previousRevisions = revisions.slice(currentRevisionIdx + 1);
+      const upstreamRevisions = upstreamRevision ? [upstreamRevision] : [];
+
+      const diffItems: DiffSelectItem[] = [
+        HIDE_COMPARISON_SELECT_ITEM,
         ...previousRevisions.map(mapPreviousToSelectItem),
         ...upstreamRevisions.map(mapUpstreamToSelectItem),
       ];
@@ -108,33 +122,26 @@ export const ResourcesTabContent = ({
       packageRevision.spec.lifecycle === PackageRevisionLifecycle.PUBLISHED;
 
     if (isPublished) {
-      setDiffSelection('none');
+      setDiffSelection(HIDE_COMPARISON_SELECT_ITEM);
     } else {
       const updateDiffSelection =
         packageRevision.metadata.name !==
         lastPackageRevisionNameDiffSet.current;
 
       if (updateDiffSelection) {
-        setDiffSelection((diffItems[1]?.value as string) || 'none');
+        setDiffSelection(diffItems[1] ?? HIDE_COMPARISON_SELECT_ITEM);
         lastPackageRevisionNameDiffSet.current = packageRevision.metadata.name;
       }
     }
-  }, [packageName, packageRevisions, upstreamPackageRevision]);
+  }, [packageName, revisions, upstreamRevision]);
 
   useEffect(() => {
-    if (!diffSelection || diffSelection === 'none') {
+    if (!diffSelection || diffSelection === HIDE_COMPARISON_SELECT_ITEM) {
       setBaseResourcesMap(undefined);
     } else {
-      const setUpstream = async (): Promise<void> => {
-        const upstreamResources = await api.getPackageRevisionResources(
-          diffSelection,
-        );
-        setBaseResourcesMap(upstreamResources.spec.resources);
-      };
-
-      setUpstream();
+      setBaseResourcesMap(diffSelection.resourcesMap);
     }
-  }, [api, diffSelection]);
+  }, [diffSelection]);
 
   return (
     <Fragment>
@@ -155,11 +162,16 @@ export const ResourcesTabContent = ({
         mode={mode}
         onUpdatedResourcesMap={onUpdatedResourcesMap}
       />
-      <br />
       <Select
         label="Compare Revision"
-        onChange={value => setDiffSelection(value)}
-        selected={diffSelection}
+        onChange={value =>
+          setDiffSelection(
+            selectDiffItems.find(
+              selectItem => selectItem.value === value,
+            ) as DiffSelectItem,
+          )
+        }
+        selected={diffSelection.value}
         items={selectDiffItems}
         helperText="Compare revision to a previous revision or upstream blueprint."
       />
