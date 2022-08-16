@@ -28,13 +28,18 @@ import { Select } from '../../Controls';
 import { PackageRevisionPageMode } from '../PackageRevisionPage';
 import { PackageResourcesList } from './PackageResourcesList';
 
+export type AlertMessage = {
+  key: string;
+  message: JSX.Element;
+};
+
 type ResourcesTabContentProps = {
   packageName: string;
   resourcesMap: PackageRevisionResourcesMap;
   revisions: RevisionSummary[];
   upstreamRevision?: RevisionSummary;
   onUpdatedResourcesMap: (resourcesMap: PackageRevisionResourcesMap) => void;
-  alertMessages: string[];
+  alertMessages: AlertMessage[];
   mode: PackageRevisionPageMode;
 };
 
@@ -146,13 +151,13 @@ export const ResourcesTabContent = ({
   return (
     <Fragment>
       <Fragment>
-        {alertMessages.map((alertMessage, index) => (
+        {alertMessages.map(alertMessage => (
           <Alert
             className={classes.alert}
             severity="info"
-            key={`alert-${index}`}
+            key={`alert-${alertMessage.key}`}
           >
-            {alertMessage}
+            {alertMessage.message}
           </Alert>
         ))}
       </Fragment>
