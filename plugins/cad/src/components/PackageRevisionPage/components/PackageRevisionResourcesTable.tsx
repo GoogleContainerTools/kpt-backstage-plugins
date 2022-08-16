@@ -334,7 +334,7 @@ export const PackageRevisionResourcesTable = ({
   };
 
   const packageResources = resources
-    .map(resource => resource.originalResource)
+    .map(resource => resource.currentResource)
     .filter(resource => !!resource) as PackageResource[];
 
   return (
