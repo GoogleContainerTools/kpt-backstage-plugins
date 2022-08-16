@@ -85,7 +85,10 @@ import {
   RevisionOption,
 } from './components/PackageRevisionOptions';
 import { PackageRevisionsTable } from './components/PackageRevisionsTable';
-import { ResourcesTabContent } from './components/ResourcesTabContent';
+import {
+  AlertMessage,
+  ResourcesTabContent,
+} from './components/ResourcesTabContent';
 import { RelatedPackagesContent } from './components/RelatedPackagesContent';
 import { processUpdatedResourcesMap } from './updatedResourcesMap/processUpdatedResourcesMap';
 import {
@@ -673,7 +676,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
   const isViewMode = mode === PackageRevisionPageMode.VIEW;
 
-  const getUpgradeAlertText = (): string => {
+  const getUpgradeMessage = (): AlertMessage => {
     const latestRevision = packageRevisions[0];
 
     const blueprintName = `${latestPublishedUpstream.current?.spec.packageName} blueprint`;
@@ -681,6 +684,8 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
     const latestRevisionUpstream =
       getUpstreamPackageRevisionDetails(latestRevision);
+
+    let message = `${baseUpgradeText} Use the 'Upgrade to Latest Blueprint' button to create a revision that pulls in changes from the upgraded blueprint.`;
 
     if (latestRevision !== packageRevision) {
       const isLatestRevisionUpgraded =
@@ -692,16 +697,21 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       } ${toLowerCase(latestRevision.spec.lifecycle)} revision`;
 
       if (isLatestRevisionUpgraded) {
-        return `${baseUpgradeText} The ${pendingRevisionName} includes changes from the upgraded ${blueprintName}.`;
+        message = `${baseUpgradeText} The ${pendingRevisionName} includes changes from the upgraded ${blueprintName}.`;
+      } else {
+        message = `${baseUpgradeText} The ${pendingRevisionName} does not include changes from the upgraded ${blueprintName}. The revision must be either published or deleted first before changes from the upgraded ${blueprintName} can be pulled in.`;
       }
-
-      return `${baseUpgradeText} The ${pendingRevisionName} does not include changes from the upgraded ${blueprintName}. The revision must be either published or deleted first before changes from the upgraded ${blueprintName} can be pulled in.`;
     }
 
-    return `${baseUpgradeText} Use the 'Upgrade to Latest Blueprint' button to create a revision that pulls in changes from the upgraded blueprint.`;
+    const upgradeMessage: AlertMessage = {
+      key: 'upgrade-available',
+      message: <Fragment>{message}</Fragment>,
+    };
+
+    return upgradeMessage;
   };
 
-  const alertMessages = isUpgradeAvailable ? [getUpgradeAlertText()] : [];
+  const alertMessages = isUpgradeAvailable ? [getUpgradeMessage()] : [];
 
   const showDownstreamPackages =
     !isDeploymentPackage || downstreamPackageSummaries.length > 0;
