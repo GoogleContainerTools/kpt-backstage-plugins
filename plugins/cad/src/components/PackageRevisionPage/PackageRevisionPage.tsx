@@ -23,7 +23,7 @@ import {
 import { useApi, useRouteRef } from '@backstage/core-plugin-api';
 import { makeStyles, Typography } from '@material-ui/core';
 import Alert, { Color } from '@material-ui/lab/Alert';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, uniq } from 'lodash';
 import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
@@ -132,6 +132,52 @@ const useStyles = makeStyles({
     marginBottom: '16px',
   },
 });
+
+const getDownstreamUpgradesAvailableMessage = (
+  downstreamPackagesPendingUpgrade: PackageSummary[],
+  packageDescriptor: string,
+): AlertMessage => {
+  const packagesCount = downstreamPackagesPendingUpgrade.length;
+  const descriptors = uniq(
+    downstreamPackagesPendingUpgrade.map(
+      downstream => downstream.packageDescriptor,
+    ),
+  );
+  const downstreamDescriptor =
+    (descriptors.length === 1 ? toLowerCase(descriptors[0]) : 'package') +
+    (packagesCount > 1 ? 's' : '');
+  const need = packagesCount > 1 ? 'need' : 'needs';
+
+  const packagesList = downstreamPackagesPendingUpgrade.map(
+    (downstreamPackage, index) => (
+      <Fragment key={downstreamPackage.latestRevision.metadata.name}>
+        <PackageLink
+          packageRevision={
+            downstreamPackage.latestPublishedRevision ??
+            downstreamPackage.latestRevision
+          }
+        />
+        {index !== packagesCount - 1 && packagesCount > 2 && (
+          <Fragment>, </Fragment>
+        )}
+        {index === packagesCount - 2 && <Fragment> and </Fragment>}
+      </Fragment>
+    ),
+  );
+
+  const alertMessage: AlertMessage = {
+    key: 'downstream-upgrades-available',
+    message: (
+      <Fragment>
+        The {packagesList} {downstreamDescriptor} {need} to be upgraded to bring
+        the {downstreamDescriptor} up to date with the latest changes in this{' '}
+        {toLowerCase(packageDescriptor)}.
+      </Fragment>
+    ),
+  };
+
+  return alertMessage;
+};
 
 export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const { repositoryName, packageName } = useParams();
@@ -712,6 +758,21 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   };
 
   const alertMessages = isUpgradeAvailable ? [getUpgradeMessage()] : [];
+
+  if (isLatestPublishedPackageRevision) {
+    const downstreamPackagesPendingUpgrade = downstreamPackageSummaries.filter(
+      summary => summary.isUpgradeAvailable,
+    );
+
+    if (downstreamPackagesPendingUpgrade.length > 0) {
+      alertMessages.push(
+        getDownstreamUpgradesAvailableMessage(
+          downstreamPackagesPendingUpgrade,
+          packageDescriptor,
+        ),
+      );
+    }
+  }
 
   const showDownstreamPackages =
     !isDeploymentPackage || downstreamPackageSummaries.length > 0;
