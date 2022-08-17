@@ -15,6 +15,7 @@
  */
 
 import React from 'react';
+import { getAPIServiceStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/apiService';
 import { getApplyReplacementsStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/applyReplacements';
 import { getClusterIssuerStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/clusterIssuer';
 import { getConfigMapStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/configMap';
@@ -52,6 +53,9 @@ const getCustomMetadataFn = (
   switch (groupVersionKind) {
     case 'apiextensions.k8s.io/v1/CustomResourceDefinition':
       return getCustomResourceDefinitionStructuredMetadata;
+
+    case 'apiregistration.k8s.io/v1/APIService':
+      return getAPIServiceStructuredMetadata;
 
     case 'apps/v1/Deployment':
       return getDeploymentStructuredMetadata;
