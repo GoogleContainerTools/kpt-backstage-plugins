@@ -20,6 +20,7 @@ import { getApplyReplacementsStructuredMetadata } from './FirstClassViewers/Stru
 import { getClusterIssuerStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/clusterIssuer';
 import { getConfigMapStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/configMap';
 import { getCustomResourceDefinitionStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/customResourceDefinition';
+import { getDefaultStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/default';
 import { getDeploymentStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/deployment';
 import { getIngressStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/ingress';
 import { getIngressClassStructuredMetadata } from './FirstClassViewers/StructuredMetadata/resources/ingressClass';
@@ -111,9 +112,8 @@ const getCustomMetadataFn = (
       return getServiceStructuredMetadata;
 
     default:
+      return getDefaultStructuredMetadata;
   }
-
-  return undefined;
 };
 
 export const FirstClassViewerSelector = ({
