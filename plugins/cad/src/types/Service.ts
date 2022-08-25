@@ -33,9 +33,10 @@ export type ServiceMetadata = {
 export type ServiceSpec = {
   type?: string;
   externalTrafficPolicy?: string;
+  externalName?: string;
   sessionAffinity?: string;
   selector?: KubernetesKeyValueObject;
-  ports: ServicePort[];
+  ports?: ServicePort[];
   clusterIP?: string;
 };
 
@@ -45,4 +46,5 @@ export type ServicePort = {
   protocol?: string;
   port?: number;
   targetPort?: number | string;
+  nodePort?: number;
 };
