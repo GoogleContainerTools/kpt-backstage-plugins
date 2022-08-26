@@ -17,7 +17,7 @@
 import { SelectItem } from '@backstage/core-components';
 import { Button, TextField } from '@material-ui/core';
 import DeleteIcon from '@material-ui/icons/Delete';
-import { clone, isNaN, isNumber } from 'lodash';
+import { clone, isNaN } from 'lodash';
 import React, { Fragment, useRef } from 'react';
 import { ContainerPort, PodTemplateSpec } from '../../../../../../types/Pod';
 import { Select } from '../../../../../Controls/Select';
