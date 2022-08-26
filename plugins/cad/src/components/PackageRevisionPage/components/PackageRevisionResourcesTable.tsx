@@ -118,6 +118,11 @@ export const PackageRevisionResourcesTable = ({
     },
     {
       apiVersion: 'v1',
+      kind: 'Service',
+      namespaceScoped: true,
+    },
+    {
+      apiVersion: 'v1',
       kind: 'ServiceAccount',
       namespaceScoped: true,
     },
