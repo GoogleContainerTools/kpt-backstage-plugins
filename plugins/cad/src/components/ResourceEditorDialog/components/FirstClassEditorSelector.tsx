@@ -25,6 +25,7 @@ import { ResourceQuotaEditor } from './FirstClassEditors/ResourceQuotaEditor';
 import { RoleBindingEditor } from './FirstClassEditors/RoleBindingEditor';
 import { RoleEditor } from './FirstClassEditors/RoleEditor';
 import { ServiceAccountEditor } from './FirstClassEditors/ServiceAccountEditor';
+import { ServiceEditor } from './FirstClassEditors/ServiceEditor';
 import { SetLabelsEditor } from './FirstClassEditors/SetLabelsEditor';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
@@ -88,6 +89,15 @@ export const FirstClassEditorSelector = ({
 
     case 'v1/ResourceQuota':
       return <ResourceQuotaEditor yaml={yaml} onUpdatedYaml={onUpdatedYaml} />;
+
+    case 'v1/Service':
+      return (
+        <ServiceEditor
+          yaml={yaml}
+          onUpdatedYaml={onUpdatedYaml}
+          packageResources={packageResources}
+        />
+      );
 
     case 'v1/ServiceAccount':
       return <ServiceAccountEditor yaml={yaml} onUpdatedYaml={onUpdatedYaml} />;
