@@ -32,8 +32,7 @@ import { sortByLabel } from '../../../../../utils/selectItem';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { Select } from '../../../../Controls/Select';
 import { EditorAccordion } from '../Controls/EditorAccordion';
-import { KeyValueEditorAccordion } from '../Controls/KeyValueEditorAccordion';
-import { SingleTextFieldAccordion } from '../Controls/SingleTextFieldAccordion';
+import { ResourceMetadataAccordion } from '../Controls/ResourceMetadataAccordion';
 import { useEditorStyles } from '../styles';
 import { ServicePortEditorAccordion } from './components/ServicePortEditorAccordion';
 
@@ -47,9 +46,9 @@ type ServiceEditorProps = {
 
 type State = {
   name: string;
-  namespace: string;
-  annotations: KubernetesKeyValueObject;
-  labels: KubernetesKeyValueObject;
+  namespace?: string;
+  annotations?: KubernetesKeyValueObject;
+  labels?: KubernetesKeyValueObject;
   type: string;
   selector: string;
   externalTrafficPolicy: string;
@@ -112,9 +111,9 @@ export const ServiceEditor = ({
 
   const createResourceState = (): State => ({
     name: resourceYaml.metadata.name,
-    annotations: resourceYaml.metadata.annotations ?? {},
-    labels: resourceYaml.metadata.labels ?? {},
-    namespace: resourceYaml.metadata.namespace ?? '',
+    annotations: resourceYaml.metadata.annotations,
+    labels: resourceYaml.metadata.labels,
+    namespace: resourceYaml.metadata.namespace,
     selector:
       (workloadSelectItems.find(
         s =>
@@ -172,7 +171,7 @@ export const ServiceEditor = ({
       omit(servicePortView, servicePortOmitKeys);
 
     resourceYaml.metadata.name = state.name;
-    resourceYaml.metadata.namespace = state.namespace || undefined;
+    resourceYaml.metadata.namespace = state.namespace;
     resourceYaml.metadata.labels = state.labels;
     resourceYaml.metadata.annotations = state.annotations;
     resourceYaml.spec.type = state.type;
@@ -189,13 +188,6 @@ export const ServiceEditor = ({
     resourceYaml.spec.externalName = isExternalNameRelevant
       ? state.externalName
       : undefined;
-
-    if (state.annotations && Object.keys(state.annotations).length === 0) {
-      delete resourceYaml.metadata.annotations;
-    }
-    if (state.labels && Object.keys(state.labels).length === 0) {
-      delete resourceYaml.metadata.labels;
-    }
 
     onUpdatedYaml(dumpYaml(resourceYaml));
   }, [
@@ -232,38 +224,15 @@ export const ServiceEditor = ({
 
   return (
     <div className={classes.root}>
-      <SingleTextFieldAccordion
-        title="Name"
-        expanded={expanded === 'name'}
-        onChange={handleChange('name')}
-        value={state.name}
-        onValueUpdated={value => setState(s => ({ ...s, name: value }))}
+      <ResourceMetadataAccordion
+        expanded={expanded === 'metadata'}
+        onChange={handleChange('metadata')}
+        value={state}
+        onUpdate={v => {
+          setState(s => ({ ...s, ...v }));
+        }}
       />
-      <SingleTextFieldAccordion
-        title="Namespace"
-        expanded={expanded === 'namespace'}
-        onChange={handleChange('namespace')}
-        value={state.namespace}
-        onValueUpdated={value => setState(s => ({ ...s, namespace: value }))}
-      />
-      <KeyValueEditorAccordion
-        title="Annotations"
-        expanded={expanded === 'annotations'}
-        onChange={handleChange('annotations')}
-        keyValueObject={state.annotations}
-        onUpdatedKeyValueObject={data =>
-          setState(s => ({ ...s, annotations: data }))
-        }
-      />
-      <KeyValueEditorAccordion
-        title="Labels"
-        expanded={expanded === 'labels'}
-        onChange={handleChange('labels')}
-        keyValueObject={state.labels}
-        onUpdatedKeyValueObject={data =>
-          setState(s => ({ ...s, labels: data }))
-        }
-      />
+
       <EditorAccordion
         title="Service"
         description={getServiceDescription()}

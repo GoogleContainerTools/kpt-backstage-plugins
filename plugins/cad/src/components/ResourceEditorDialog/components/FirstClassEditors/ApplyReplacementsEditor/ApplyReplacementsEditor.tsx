@@ -33,8 +33,7 @@ import { sortByLabel } from '../../../../../utils/selectItem';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { Select } from '../../../../Controls/Select';
 import { EditorAccordion } from '../Controls/EditorAccordion';
-import { KeyValueEditorAccordion } from '../Controls/KeyValueEditorAccordion';
-import { SingleTextFieldAccordion } from '../Controls/SingleTextFieldAccordion';
+import { ResourceMetadataAccordion } from '../Controls/ResourceMetadataAccordion';
 import { useEditorStyles } from '../styles';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
@@ -47,8 +46,8 @@ type ApplyReplacementsEditorProps = {
 
 type State = {
   name: string;
-  annotations: KubernetesKeyValueObject;
-  labels: KubernetesKeyValueObject;
+  annotations?: KubernetesKeyValueObject;
+  labels?: KubernetesKeyValueObject;
 };
 
 type ReplacementState = {
@@ -211,8 +210,8 @@ export const ApplyReplacementsEditor = ({
 
   const createResourceState = (): State => ({
     name: resourceYaml.metadata.name,
-    annotations: resourceYaml.metadata.annotations ?? {},
-    labels: resourceYaml.metadata.labels ?? {},
+    annotations: resourceYaml.metadata.annotations,
+    labels: resourceYaml.metadata.labels,
   });
 
   const createReplacementState = (
@@ -302,13 +301,6 @@ export const ApplyReplacementsEditor = ({
       },
     ];
 
-    if (state.annotations && Object.keys(state.annotations).length === 0) {
-      delete resourceYaml.metadata.annotations;
-    }
-    if (state.labels && Object.keys(state.labels).length === 0) {
-      delete resourceYaml.metadata.labels;
-    }
-
     onUpdatedYaml(dumpYaml(resourceYaml));
   }, [state, sourceState, targetState, onUpdatedYaml, resourceYaml]);
 
@@ -319,31 +311,16 @@ export const ApplyReplacementsEditor = ({
 
   return (
     <div className={classes.root}>
-      <SingleTextFieldAccordion
-        title="Name"
-        expanded={expanded === 'name'}
-        onChange={handleChange('name')}
-        value={state.name}
-        onValueUpdated={value => setState(s => ({ ...s, name: value }))}
+      <ResourceMetadataAccordion
+        clusterScopedResource
+        expanded={expanded === 'metadata'}
+        onChange={handleChange('metadata')}
+        value={state}
+        onUpdate={v => {
+          setState(s => ({ ...s, ...v }));
+        }}
       />
-      <KeyValueEditorAccordion
-        title="Annotations"
-        expanded={expanded === 'annotations'}
-        onChange={handleChange('annotations')}
-        keyValueObject={state.annotations}
-        onUpdatedKeyValueObject={data =>
-          setState(s => ({ ...s, annotations: data }))
-        }
-      />
-      <KeyValueEditorAccordion
-        title="Labels"
-        expanded={expanded === 'labels'}
-        onChange={handleChange('labels')}
-        keyValueObject={state.labels}
-        onUpdatedKeyValueObject={data =>
-          setState(s => ({ ...s, labels: data }))
-        }
-      />
+
       <EditorAccordion
         title="Source"
         description={`${sourceState.resourceKind} ${sourceState.resourceName}`}
