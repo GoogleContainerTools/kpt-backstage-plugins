@@ -18,8 +18,7 @@ import React, { ChangeEvent, useEffect, useState } from 'react';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
 import { ServiceAccount } from '../../../../../types/ServiceAccount';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
-import { KeyValueEditorAccordion } from '../Controls/KeyValueEditorAccordion';
-import { SingleTextFieldAccordion } from '../Controls/SingleTextFieldAccordion';
+import { ResourceMetadataAccordion } from '../Controls/ResourceMetadataAccordion';
 import { useEditorStyles } from '../styles';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
@@ -31,9 +30,9 @@ type ResourceEditorProps = {
 
 type State = {
   name: string;
-  namespace: string;
-  annotations: KubernetesKeyValueObject;
-  labels: KubernetesKeyValueObject;
+  namespace?: string;
+  annotations?: KubernetesKeyValueObject;
+  labels?: KubernetesKeyValueObject;
 };
 
 export const ServiceAccountEditor = ({
@@ -44,9 +43,9 @@ export const ServiceAccountEditor = ({
 
   const createResourceState = (): State => ({
     name: resourceYaml.metadata.name,
-    annotations: resourceYaml.metadata.annotations ?? {},
-    labels: resourceYaml.metadata.labels ?? {},
-    namespace: resourceYaml.metadata.namespace ?? '',
+    annotations: resourceYaml.metadata.annotations,
+    labels: resourceYaml.metadata.labels,
+    namespace: resourceYaml.metadata.namespace,
   });
 
   const [state, setState] = useState<State>(createResourceState());
@@ -61,53 +60,22 @@ export const ServiceAccountEditor = ({
 
   useEffect(() => {
     resourceYaml.metadata.name = state.name;
-    resourceYaml.metadata.namespace = state.namespace || undefined;
+    resourceYaml.metadata.namespace = state.namespace;
     resourceYaml.metadata.labels = state.labels;
     resourceYaml.metadata.annotations = state.annotations;
-
-    if (state.annotations && Object.keys(state.annotations).length === 0) {
-      delete resourceYaml.metadata.annotations;
-    }
-    if (state.labels && Object.keys(state.labels).length === 0) {
-      delete resourceYaml.metadata.labels;
-    }
 
     onUpdatedYaml(dumpYaml(resourceYaml));
   }, [state, onUpdatedYaml, resourceYaml]);
 
   return (
     <div className={classes.root}>
-      <SingleTextFieldAccordion
-        title="Name"
-        expanded={expanded === 'name'}
-        onChange={handleChange('name')}
-        value={state.name}
-        onValueUpdated={value => setState(s => ({ ...s, name: value }))}
-      />
-      <SingleTextFieldAccordion
-        title="Namespace"
-        expanded={expanded === 'namespace'}
-        onChange={handleChange('namespace')}
-        value={state.namespace}
-        onValueUpdated={value => setState(s => ({ ...s, namespace: value }))}
-      />
-      <KeyValueEditorAccordion
-        title="Annotations"
-        expanded={expanded === 'annotations'}
-        onChange={handleChange('annotations')}
-        keyValueObject={state.annotations}
-        onUpdatedKeyValueObject={data =>
-          setState(s => ({ ...s, annotations: data }))
-        }
-      />
-      <KeyValueEditorAccordion
-        title="Labels"
-        expanded={expanded === 'labels'}
-        onChange={handleChange('labels')}
-        keyValueObject={state.labels}
-        onUpdatedKeyValueObject={data =>
-          setState(s => ({ ...s, labels: data }))
-        }
+      <ResourceMetadataAccordion
+        expanded={expanded === 'metadata'}
+        onChange={handleChange('metadata')}
+        value={state}
+        onUpdate={v => {
+          setState(s => ({ ...s, ...v }));
+        }}
       />
     </div>
   );
