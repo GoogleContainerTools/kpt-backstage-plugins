@@ -19,6 +19,7 @@ import React from 'react';
 import { PackageResource } from '../../../utils/packageRevisionResources';
 import { ApplyReplacementsEditor } from './FirstClassEditors/ApplyReplacementsEditor';
 import { ConfigMapEditor } from './FirstClassEditors/ConfigMapEditor';
+import { IngressEditor } from './FirstClassEditors/IngressEditor';
 import { KptfileEditor } from './FirstClassEditors/KptfileEditor';
 import { NamespaceEditor } from './FirstClassEditors/NamespaceEditor';
 import { ResourceQuotaEditor } from './FirstClassEditors/ResourceQuotaEditor';
@@ -63,6 +64,15 @@ export const FirstClassEditorSelector = ({
     case 'kpt.dev/v1/Kptfile':
       return (
         <KptfileEditor
+          yaml={yaml}
+          onUpdatedYaml={onUpdatedYaml}
+          packageResources={packageResources}
+        />
+      );
+
+    case 'networking.k8s.io/v1/Ingress':
+      return (
+        <IngressEditor
           yaml={yaml}
           onUpdatedYaml={onUpdatedYaml}
           packageResources={packageResources}

@@ -31,29 +31,29 @@ export type IngressMetadata = {
 };
 
 export type IngressSpec = {
-  tls?: IngressTls[];
+  tls?: IngressTLS[];
   ingressClassName?: string;
   defaultBackend?: IngressBackend;
   rules?: IngressRule[];
 };
 
-export type IngressTls = {
-  hosts: string[];
-  secretName: string;
+export type IngressTLS = {
+  hosts?: string[];
+  secretName?: string;
 };
 
 export type IngressRule = {
   host?: string;
-  http?: IngressRuleHttp;
+  http?: HTTPIngressRuleValue;
 };
 
-export type IngressRuleHttp = {
-  paths: IngressRuleHttpPath[];
+export type HTTPIngressRuleValue = {
+  paths: HTTPIngressPath[];
 };
 
-export type IngressRuleHttpPath = {
+export type HTTPIngressPath = {
   pathType: string;
-  path: string;
+  path?: string;
   backend: IngressBackend;
 };
 
@@ -64,11 +64,12 @@ export type IngressBackend = {
 
 export type IngressServiceBackend = {
   name: string;
-  port: IngressRuleHttppathBackendServicePort;
+  port: ServiceBackendPort;
 };
 
-export type IngressRuleHttppathBackendServicePort = {
-  number: number;
+export type ServiceBackendPort = {
+  name?: string;
+  number?: number;
 };
 
 export type IngressResourceBackend = {
