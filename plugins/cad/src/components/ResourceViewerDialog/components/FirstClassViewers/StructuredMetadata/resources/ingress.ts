@@ -31,7 +31,7 @@ export const getIngressStructuredMetadata = (
     for (const [index, tls] of ingress.spec.tls.entries()) {
       const name = ingress.spec.tls.length > 1 ? `TLS ${index + 1}` : 'TLS';
       customMetadata[name] = [
-        `${tls.hosts.join(', ')}`,
+        `${tls.hosts?.join(', ') ?? '*'}`,
         `Secret Name: ${tls.secretName}`,
       ];
     }
@@ -40,7 +40,7 @@ export const getIngressStructuredMetadata = (
   const getBackendDescription = (backend: IngressBackend): string => {
     if (backend.service) {
       const service = backend.service;
-      return `${service.name}:${service.port.number}`;
+      return `${service.name}:${service.port.name || service.port.number}`;
     }
     if (backend.resource) {
       const backendResource = backend.resource;
