@@ -19,6 +19,7 @@ import { TextField } from '@material-ui/core';
 import React, { ChangeEvent, Fragment, useEffect, useState } from 'react';
 import {
   ApplyReplacement,
+  ApplyReplacementMetadata,
   ReplacementOptions,
   ReplacementResourceSelector,
   ReplacementSource,
@@ -32,8 +33,7 @@ import { PackageResource } from '../../../../../utils/packageRevisionResources';
 import { sortByLabel } from '../../../../../utils/selectItem';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { Select } from '../../../../Controls/Select';
-import { EditorAccordion } from '../Controls/EditorAccordion';
-import { ResourceMetadataAccordion } from '../Controls/ResourceMetadataAccordion';
+import { EditorAccordion, ResourceMetadataAccordion } from '../Controls';
 import { useEditorStyles } from '../styles';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
@@ -45,9 +45,7 @@ type ApplyReplacementsEditorProps = {
 };
 
 type State = {
-  name: string;
-  annotations?: KubernetesKeyValueObject;
-  labels?: KubernetesKeyValueObject;
+  metadata: ApplyReplacementMetadata;
 };
 
 type ReplacementState = {
@@ -209,9 +207,7 @@ export const ApplyReplacementsEditor = ({
   };
 
   const createResourceState = (): State => ({
-    name: resourceYaml.metadata.name,
-    annotations: resourceYaml.metadata.annotations,
-    labels: resourceYaml.metadata.labels,
+    metadata: resourceYaml.metadata,
   });
 
   const createReplacementState = (
@@ -291,9 +287,7 @@ export const ApplyReplacementsEditor = ({
       };
     }
 
-    resourceYaml.metadata.name = state.name;
-    resourceYaml.metadata.labels = state.labels;
-    resourceYaml.metadata.annotations = state.annotations;
+    resourceYaml.metadata = state.metadata;
     resourceYaml.replacements = [
       {
         source: replacementSource,
@@ -315,9 +309,9 @@ export const ApplyReplacementsEditor = ({
         clusterScopedResource
         expanded={expanded === 'metadata'}
         onChange={handleChange('metadata')}
-        value={state}
-        onUpdate={v => {
-          setState(s => ({ ...s, ...v }));
+        value={state.metadata}
+        onUpdate={metadata => {
+          setState(s => ({ ...s, metadata }));
         }}
       />
 

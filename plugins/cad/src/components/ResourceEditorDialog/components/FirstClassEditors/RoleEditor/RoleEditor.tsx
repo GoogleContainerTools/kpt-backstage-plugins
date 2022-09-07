@@ -18,10 +18,9 @@ import { Button } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import { last, omit } from 'lodash';
 import React, { ChangeEvent, useEffect, useState } from 'react';
-import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
-import { Role, PolicyRule } from '../../../../../types/Role';
+import { Role, PolicyRule, RoleMetadata } from '../../../../../types/Role';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
-import { ResourceMetadataAccordion } from '../Controls/ResourceMetadataAccordion';
+import { ResourceMetadataAccordion } from '../Controls';
 import { useEditorStyles } from '../styles';
 import { RoleRuleEditorAccordion } from './components/RoleRuleEditorAccordion';
 
@@ -33,10 +32,7 @@ type RoleEditorProps = {
 };
 
 type State = {
-  name: string;
-  namespace?: string;
-  annotations?: KubernetesKeyValueObject;
-  labels?: KubernetesKeyValueObject;
+  metadata: RoleMetadata;
 };
 
 export type RoleRuleView = PolicyRule & {
@@ -47,10 +43,7 @@ export const RoleEditor = ({ yaml, onUpdatedYaml }: RoleEditorProps) => {
   const resourceYaml = loadYaml(yaml) as Role;
 
   const createResourceState = (): State => ({
-    name: resourceYaml.metadata.name,
-    annotations: resourceYaml.metadata.annotations,
-    labels: resourceYaml.metadata.labels,
-    namespace: resourceYaml.metadata.namespace ?? '',
+    metadata: resourceYaml.metadata,
   });
 
   const mapRuleToView = (rule: PolicyRule, idx: number): RoleRuleView => ({
@@ -74,10 +67,7 @@ export const RoleEditor = ({ yaml, onUpdatedYaml }: RoleEditorProps) => {
   useEffect(() => {
     const mapToRule = (rule: RoleRuleView): PolicyRule => omit(rule, 'key');
 
-    resourceYaml.metadata.name = state.name;
-    resourceYaml.metadata.namespace = state.namespace;
-    resourceYaml.metadata.labels = state.labels;
-    resourceYaml.metadata.annotations = state.annotations;
+    resourceYaml.metadata = state.metadata;
     resourceYaml.rules = rules.map(mapToRule);
 
     onUpdatedYaml(dumpYaml(resourceYaml));
@@ -99,9 +89,9 @@ export const RoleEditor = ({ yaml, onUpdatedYaml }: RoleEditorProps) => {
       <ResourceMetadataAccordion
         expanded={expanded === 'metadata'}
         onChange={handleChange('metadata')}
-        value={state}
-        onUpdate={v => {
-          setState(s => ({ ...s, ...v }));
+        value={state.metadata}
+        onUpdate={metadata => {
+          setState(s => ({ ...s, metadata }));
         }}
       />
 

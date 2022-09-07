@@ -25,17 +25,16 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
 import {
   RoleBinding,
+  RoleBindingMetadata,
   RoleBindingSubject,
 } from '../../../../../types/RoleBinding';
 import { PackageResource } from '../../../../../utils/packageRevisionResources';
 import { sortByLabel } from '../../../../../utils/selectItem';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { Select } from '../../../../Controls/Select';
-import { EditorAccordion } from '../Controls/EditorAccordion';
-import { ResourceMetadataAccordion } from '../Controls/ResourceMetadataAccordion';
+import { EditorAccordion, ResourceMetadataAccordion } from '../Controls';
 import { useEditorStyles } from '../styles';
 import { SubjectEditorAccordion } from './components/SubjectEditorAccordion';
 
@@ -48,10 +47,7 @@ type RoleBindingEditorProps = {
 };
 
 type State = {
-  name: string;
-  namespace?: string;
-  annotations?: KubernetesKeyValueObject;
-  labels?: KubernetesKeyValueObject;
+  metadata: RoleBindingMetadata;
   roleRefKind: string;
   roleRefName: string;
   roleRefApiGroup: string;
@@ -81,10 +77,7 @@ export const RoleBindingEditor = ({
   );
 
   const createResourceState = (): State => ({
-    name: resourceYaml.metadata.name,
-    annotations: resourceYaml.metadata.annotations,
-    labels: resourceYaml.metadata.labels,
-    namespace: resourceYaml.metadata.namespace,
+    metadata: resourceYaml.metadata,
     roleRefKind: resourceYaml.roleRef?.kind ?? '',
     roleRefName: resourceYaml.roleRef?.name ?? '',
     roleRefApiGroup: resourceYaml.roleRef?.apiGroup ?? '',
@@ -127,10 +120,7 @@ export const RoleBindingEditor = ({
       subjectView: RoleBindingSubjectView,
     ): RoleBindingSubject => omit(subjectView, 'key');
 
-    resourceYaml.metadata.name = state.name;
-    resourceYaml.metadata.namespace = state.namespace;
-    resourceYaml.metadata.labels = state.labels;
-    resourceYaml.metadata.annotations = state.annotations;
+    resourceYaml.metadata = state.metadata;
     resourceYaml.roleRef = {
       ...resourceYaml.roleRef,
       kind: state.roleRefKind,
@@ -167,9 +157,9 @@ export const RoleBindingEditor = ({
       <ResourceMetadataAccordion
         expanded={expanded === 'metadata'}
         onChange={handleChange('metadata')}
-        value={state}
-        onUpdate={v => {
-          setState(s => ({ ...s, ...v }));
+        value={state.metadata}
+        onUpdate={metadata => {
+          setState(s => ({ ...s, metadata }));
         }}
       />
 

@@ -16,11 +16,12 @@
 
 import { TextField } from '@material-ui/core';
 import React, { ChangeEvent, Fragment, useEffect, useState } from 'react';
-import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
-import { ResourceQuota } from '../../../../../types/ResourceQuota';
+import {
+  ResourceQuota,
+  ResourceQuotaMetadata,
+} from '../../../../../types/ResourceQuota';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
-import { EditorAccordion } from '../Controls/EditorAccordion';
-import { ResourceMetadataAccordion } from '../Controls/ResourceMetadataAccordion';
+import { EditorAccordion, ResourceMetadataAccordion } from '../Controls';
 import { useEditorStyles } from '../styles';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
@@ -31,10 +32,7 @@ type ResourceQuotaEditorProps = {
 };
 
 type State = {
-  name: string;
-  namespace?: string;
-  annotations?: KubernetesKeyValueObject;
-  labels?: KubernetesKeyValueObject;
+  metadata: ResourceQuotaMetadata;
   requestsCpu: string;
   requestsMemory: string;
   limitsCpu: string;
@@ -52,10 +50,7 @@ export const ResourceQuotaEditor = ({
   const useMemoryRequestsPrefix = !specHard?.memory;
 
   const createResourceState = (): State => ({
-    name: resourceYaml.metadata.name,
-    annotations: resourceYaml.metadata.annotations,
-    labels: resourceYaml.metadata.labels,
-    namespace: resourceYaml.metadata.namespace,
+    metadata: resourceYaml.metadata,
     requestsCpu: specHard?.cpu ?? specHard?.['requests.cpu'] ?? '',
     requestsMemory: specHard?.memory ?? specHard?.['requests.memory'] ?? '',
     limitsCpu: resourceYaml.spec?.hard?.['limits.cpu'] ?? '',
@@ -73,10 +68,7 @@ export const ResourceQuotaEditor = ({
     };
 
   useEffect(() => {
-    resourceYaml.metadata.name = state.name;
-    resourceYaml.metadata.namespace = state.namespace;
-    resourceYaml.metadata.labels = state.labels;
-    resourceYaml.metadata.annotations = state.annotations;
+    resourceYaml.metadata = state.metadata;
     resourceYaml.spec = resourceYaml.spec ?? {};
     resourceYaml.spec.hard = {
       ...resourceYaml.spec.hard,
@@ -112,9 +104,9 @@ export const ResourceQuotaEditor = ({
       <ResourceMetadataAccordion
         expanded={expanded === 'metadata'}
         onChange={handleChange('metadata')}
-        value={state}
-        onUpdate={v => {
-          setState(s => ({ ...s, ...v }));
+        value={state.metadata}
+        onUpdate={metadata => {
+          setState(s => ({ ...s, metadata }));
         }}
       />
 

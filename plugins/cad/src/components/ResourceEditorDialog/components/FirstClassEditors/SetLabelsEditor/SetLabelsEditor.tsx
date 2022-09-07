@@ -16,10 +16,12 @@
 
 import React, { ChangeEvent, useEffect, useState } from 'react';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
-import { SetLabels } from '../../../../../types/SetLabels';
+import { SetLabels, SetLabelsMetadata } from '../../../../../types/SetLabels';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
-import { KeyValueEditorAccordion } from '../Controls/KeyValueEditorAccordion';
-import { ResourceMetadataAccordion } from '../Controls/ResourceMetadataAccordion';
+import {
+  KeyValueEditorAccordion,
+  ResourceMetadataAccordion,
+} from '../Controls';
 import { useEditorStyles } from '../styles';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
@@ -30,9 +32,7 @@ type ResourceEditorProps = {
 };
 
 type State = {
-  name: string;
-  annotations?: KubernetesKeyValueObject;
-  labels?: KubernetesKeyValueObject;
+  metadata: SetLabelsMetadata;
   setLabels: KubernetesKeyValueObject;
 };
 
@@ -43,9 +43,7 @@ export const SetLabelsEditor = ({
   const resourceYaml = loadYaml(yaml) as SetLabels;
 
   const createResourceState = (): State => ({
-    name: resourceYaml.metadata.name,
-    annotations: resourceYaml.metadata.annotations,
-    labels: resourceYaml.metadata.labels,
+    metadata: resourceYaml.metadata,
     setLabels: resourceYaml.labels,
   });
 
@@ -60,9 +58,7 @@ export const SetLabelsEditor = ({
     };
 
   useEffect(() => {
-    resourceYaml.metadata.name = state.name;
-    resourceYaml.metadata.labels = state.labels;
-    resourceYaml.metadata.annotations = state.annotations;
+    resourceYaml.metadata = state.metadata;
     resourceYaml.labels = state.setLabels;
 
     onUpdatedYaml(dumpYaml(resourceYaml));
@@ -74,9 +70,9 @@ export const SetLabelsEditor = ({
         clusterScopedResource
         expanded={expanded === 'metadata'}
         onChange={handleChange('metadata')}
-        value={state}
-        onUpdate={v => {
-          setState(s => ({ ...s, ...v }));
+        value={state.metadata}
+        onUpdate={metadata => {
+          setState(s => ({ ...s, metadata }));
         }}
       />
 

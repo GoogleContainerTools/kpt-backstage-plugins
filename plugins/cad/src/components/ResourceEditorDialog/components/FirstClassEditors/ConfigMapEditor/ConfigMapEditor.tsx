@@ -15,11 +15,13 @@
  */
 
 import React, { ChangeEvent, useEffect, useState } from 'react';
-import { ConfigMap } from '../../../../../types/ConfigMap';
+import { ConfigMap, ConfigMapMetadata } from '../../../../../types/ConfigMap';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
-import { KeyValueEditorAccordion } from '../Controls/KeyValueEditorAccordion';
-import { ResourceMetadataAccordion } from '../Controls/ResourceMetadataAccordion';
+import {
+  KeyValueEditorAccordion,
+  ResourceMetadataAccordion,
+} from '../Controls';
 import { useEditorStyles } from '../styles';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
@@ -30,11 +32,8 @@ type ResourceEditorProps = {
 };
 
 type State = {
-  name: string;
-  namespace?: string;
+  metadata: ConfigMapMetadata;
   data: KubernetesKeyValueObject;
-  annotations?: KubernetesKeyValueObject;
-  labels?: KubernetesKeyValueObject;
 };
 
 export const ConfigMapEditor = ({
@@ -44,10 +43,7 @@ export const ConfigMapEditor = ({
   const resourceYaml = loadYaml(yaml) as ConfigMap;
 
   const createResourceState = (): State => ({
-    name: resourceYaml.metadata.name,
-    annotations: resourceYaml.metadata.annotations,
-    labels: resourceYaml.metadata.labels,
-    namespace: resourceYaml.metadata.namespace,
+    metadata: resourceYaml.metadata,
     data: resourceYaml.data,
   });
 
@@ -62,10 +58,7 @@ export const ConfigMapEditor = ({
     };
 
   useEffect(() => {
-    resourceYaml.metadata.name = state.name;
-    resourceYaml.metadata.namespace = state.namespace;
-    resourceYaml.metadata.labels = state.labels;
-    resourceYaml.metadata.annotations = state.annotations;
+    resourceYaml.metadata = state.metadata;
     resourceYaml.data = state.data;
 
     onUpdatedYaml(dumpYaml(resourceYaml));
@@ -76,9 +69,9 @@ export const ConfigMapEditor = ({
       <ResourceMetadataAccordion
         expanded={expanded === 'metadata'}
         onChange={handleChange('metadata')}
-        value={state}
-        onUpdate={v => {
-          setState(s => ({ ...s, ...v }));
+        value={state.metadata}
+        onUpdate={metadata => {
+          setState(s => ({ ...s, metadata }));
         }}
       />
 

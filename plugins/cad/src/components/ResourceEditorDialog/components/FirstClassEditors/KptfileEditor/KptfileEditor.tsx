@@ -22,16 +22,21 @@ import React, { ChangeEvent, useEffect, useMemo, useState } from 'react';
 import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../../../../apis';
 import { Function } from '../../../../../types/Function';
-import { Kptfile, KptfileFunction } from '../../../../../types/Kptfile';
-import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
+import {
+  Kptfile,
+  KptfileFunction,
+  KptfileMetadata,
+} from '../../../../../types/Kptfile';
 import {
   isMutatorFunction,
   isValidatorFunction,
 } from '../../../../../utils/function';
 import { PackageResource } from '../../../../../utils/packageRevisionResources';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
-import { ResourceMetadataAccordion } from '../Controls/ResourceMetadataAccordion';
-import { SingleTextFieldAccordion } from '../Controls/SingleTextFieldAccordion';
+import {
+  ResourceMetadataAccordion,
+  SingleTextFieldAccordion,
+} from '../Controls';
 import { useEditorStyles } from '../styles';
 import { KptFunctionEditorAccordion } from './components/KptFunctionEditorAccordion';
 
@@ -44,9 +49,7 @@ type KptfileEditorProps = {
 };
 
 type State = {
-  name: string;
-  annotations?: KubernetesKeyValueObject;
-  labels?: KubernetesKeyValueObject;
+  metadata: KptfileMetadata;
   description: string;
 };
 
@@ -63,9 +66,7 @@ export const KptfileEditor = ({
   const api = useApi(configAsDataApiRef);
 
   const createResourceState = (): State => ({
-    name: resourceYaml.metadata.name,
-    annotations: resourceYaml.metadata.annotations,
-    labels: resourceYaml.metadata.labels,
+    metadata: resourceYaml.metadata,
     description: resourceYaml.info?.description || '',
   });
 
@@ -120,9 +121,7 @@ export const KptfileEditor = ({
 
     if (!resourceYaml.pipeline) resourceYaml.pipeline = {};
 
-    resourceYaml.metadata.name = state.name;
-    resourceYaml.metadata.labels = state.labels;
-    resourceYaml.metadata.annotations = state.annotations;
+    resourceYaml.metadata = state.metadata;
     resourceYaml.info.description = state.description;
     resourceYaml.pipeline.mutators =
       mutators.length > 0 ? mutators.map(mapToKptFunction) : undefined;
@@ -178,9 +177,9 @@ export const KptfileEditor = ({
         clusterScopedResource
         expanded={expanded === 'metadata'}
         onChange={handleChange('metadata')}
-        value={state}
-        onUpdate={v => {
-          setState(s => ({ ...s, ...v }));
+        value={state.metadata}
+        onUpdate={metadata => {
+          setState(s => ({ ...s, metadata }));
         }}
       />
 

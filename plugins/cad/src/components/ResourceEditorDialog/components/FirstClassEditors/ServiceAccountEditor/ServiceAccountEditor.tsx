@@ -15,10 +15,12 @@
  */
 
 import React, { ChangeEvent, useEffect, useState } from 'react';
-import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
-import { ServiceAccount } from '../../../../../types/ServiceAccount';
+import {
+  ServiceAccount,
+  ServiceAccountMetadata,
+} from '../../../../../types/ServiceAccount';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
-import { ResourceMetadataAccordion } from '../Controls/ResourceMetadataAccordion';
+import { ResourceMetadataAccordion } from '../Controls';
 import { useEditorStyles } from '../styles';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
@@ -29,10 +31,7 @@ type ResourceEditorProps = {
 };
 
 type State = {
-  name: string;
-  namespace?: string;
-  annotations?: KubernetesKeyValueObject;
-  labels?: KubernetesKeyValueObject;
+  metadata: ServiceAccountMetadata;
 };
 
 export const ServiceAccountEditor = ({
@@ -42,10 +41,7 @@ export const ServiceAccountEditor = ({
   const resourceYaml = loadYaml(yaml) as ServiceAccount;
 
   const createResourceState = (): State => ({
-    name: resourceYaml.metadata.name,
-    annotations: resourceYaml.metadata.annotations,
-    labels: resourceYaml.metadata.labels,
-    namespace: resourceYaml.metadata.namespace,
+    metadata: resourceYaml.metadata,
   });
 
   const [state, setState] = useState<State>(createResourceState());
@@ -59,10 +55,7 @@ export const ServiceAccountEditor = ({
     };
 
   useEffect(() => {
-    resourceYaml.metadata.name = state.name;
-    resourceYaml.metadata.namespace = state.namespace;
-    resourceYaml.metadata.labels = state.labels;
-    resourceYaml.metadata.annotations = state.annotations;
+    resourceYaml.metadata = state.metadata;
 
     onUpdatedYaml(dumpYaml(resourceYaml));
   }, [state, onUpdatedYaml, resourceYaml]);
@@ -72,9 +65,9 @@ export const ServiceAccountEditor = ({
       <ResourceMetadataAccordion
         expanded={expanded === 'metadata'}
         onChange={handleChange('metadata')}
-        value={state}
-        onUpdate={v => {
-          setState(s => ({ ...s, ...v }));
+        value={state.metadata}
+        onUpdate={metadata => {
+          setState(s => ({ ...s, metadata }));
         }}
       />
     </div>
