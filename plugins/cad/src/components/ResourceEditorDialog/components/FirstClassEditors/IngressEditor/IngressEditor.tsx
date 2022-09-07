@@ -26,7 +26,7 @@ import {
 } from '../../../../../types/Ingress';
 import { PackageResource } from '../../../../../utils/packageRevisionResources';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
-import { ResourceMetadataAccordion } from '../Controls/ResourceMetadataAccordion';
+import { ResourceMetadataAccordion } from '../Controls';
 import { useEditorStyles } from '../styles';
 import { CustomControllerEditorAccordion } from './components/CustomControllerEditorAccordion';
 import { DefaultBackendEditorAccordion } from './components/DefaultBackendEditorAccordion';

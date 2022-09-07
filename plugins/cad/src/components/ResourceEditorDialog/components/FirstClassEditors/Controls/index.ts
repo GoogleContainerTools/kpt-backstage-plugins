@@ -16,4 +16,5 @@
 
 export { EditorAccordion } from './EditorAccordion';
 export { KeyValueEditorAccordion } from './KeyValueEditorAccordion';
+export { ResourceMetadataAccordion } from './ResourceMetadataAccordion';
 export { SingleTextFieldAccordion } from './SingleTextFieldAccordion';
