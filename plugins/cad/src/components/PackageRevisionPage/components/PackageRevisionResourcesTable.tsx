@@ -102,6 +102,11 @@ export const PackageRevisionResourcesTable = ({
       k8LocalConfig: true,
     },
     {
+      apiVersion: 'networking.k8s.io/v1',
+      kind: 'Ingress',
+      namespaceScoped: true,
+    },
+    {
       apiVersion: 'v1',
       kind: 'ConfigMap',
       namespaceScoped: true,
