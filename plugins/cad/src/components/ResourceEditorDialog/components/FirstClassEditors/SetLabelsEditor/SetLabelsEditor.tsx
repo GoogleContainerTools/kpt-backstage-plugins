@@ -18,8 +18,10 @@ import React, { ChangeEvent, useEffect, useState } from 'react';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
 import { SetLabels, SetLabelsMetadata } from '../../../../../types/SetLabels';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
-import { KeyValueEditorAccordion } from '../Controls';
-import { ResourceMetadataAccordion } from '../Controls';
+import {
+  KeyValueEditorAccordion,
+  ResourceMetadataAccordion,
+} from '../Controls';
 import { useEditorStyles } from '../styles';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
