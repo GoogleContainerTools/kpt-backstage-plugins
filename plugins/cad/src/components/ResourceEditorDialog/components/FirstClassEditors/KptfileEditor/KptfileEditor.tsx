@@ -18,7 +18,7 @@ import { useApi } from '@backstage/core-plugin-api';
 import { Button } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import { last, omit } from 'lodash';
-import React, { ChangeEvent, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../../../../apis';
 import { Function } from '../../../../../types/Function';
@@ -101,11 +101,6 @@ export const KptfileEditor = ({
 
   const [expanded, setExpanded] = useState<string>();
 
-  const handleChange =
-    (panel: string) => (_: ChangeEvent<{}>, newExpanded: boolean) => {
-      setExpanded(newExpanded ? panel : undefined);
-    };
-
   const classes = useEditorStyles();
 
   useAsync(async (): Promise<void> => {
@@ -175,28 +170,26 @@ export const KptfileEditor = ({
     <div className={classes.root}>
       <ResourceMetadataAccordion
         clusterScopedResource
-        expanded={expanded === 'metadata'}
-        onChange={handleChange('metadata')}
+        id="metadata"
+        state={[expanded, setExpanded]}
         value={state.metadata}
-        onUpdate={metadata => {
-          setState(s => ({ ...s, metadata }));
-        }}
+        onUpdate={metadata => setState(s => ({ ...s, metadata }))}
       />
 
       <SingleTextFieldAccordion
+        id="package-description"
         title="Package Description"
-        expanded={expanded === 'description'}
-        onChange={handleChange('description')}
+        state={[expanded, setExpanded]}
         value={state.description}
         onValueUpdated={value => setState(s => ({ ...s, description: value }))}
       />
 
       {mutators.map(fn => (
         <KptFunctionEditorAccordion
+          id={`mutator-${fn.key}`}
           key={`mutator-${fn.key}`}
           title="Mutator"
-          expanded={expanded === `mutator-${fn.key}`}
-          onChange={handleChange(`mutator-${fn.key}`)}
+          state={[expanded, setExpanded]}
           kptFunction={fn}
           allKptFunctions={allKptMutatorFunctions}
           packageResources={packageResources}
@@ -206,10 +199,10 @@ export const KptfileEditor = ({
 
       {validators.map(fn => (
         <KptFunctionEditorAccordion
+          id={`validator-${fn.key}`}
           key={`validator-${fn.key}`}
           title="Validator"
-          expanded={expanded === `validator-${fn.key}`}
-          onChange={handleChange(`validator-${fn.key}`)}
+          state={[expanded, setExpanded]}
           kptFunction={fn}
           allKptFunctions={allKptValidatorFunctions}
           packageResources={packageResources}

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Namespace, NamespaceMetadata } from '../../../../../types/Namespace';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { ResourceMetadataAccordion } from '../Controls';
@@ -46,11 +46,6 @@ export const NamespaceEditor = ({
 
   const classes = useEditorStyles();
 
-  const handleChange =
-    (panel: string) => (_: ChangeEvent<{}>, newExpanded: boolean) => {
-      setExpanded(newExpanded ? panel : undefined);
-    };
-
   useEffect(() => {
     resourceYaml.metadata = state.metadata;
 
@@ -61,12 +56,10 @@ export const NamespaceEditor = ({
     <div className={classes.root}>
       <ResourceMetadataAccordion
         clusterScopedResource
-        expanded={expanded === 'metadata'}
-        onChange={handleChange('metadata')}
+        id="metadata"
+        state={[expanded, setExpanded]}
         value={state.metadata}
-        onUpdate={metadata => {
-          setState(s => ({ ...s, metadata }));
-        }}
+        onUpdate={metadata => setState(s => ({ ...s, metadata }))}
       />
     </div>
   );

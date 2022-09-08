@@ -16,32 +16,27 @@
 
 import { TextField } from '@material-ui/core';
 import React, { Fragment } from 'react';
-import { EditorAccordion, OnAccordionChange } from './EditorAccordion';
+import { AccordionState, EditorAccordion } from './EditorAccordion';
 
 type OnValueUpdated = (value: string) => void;
 
 type SingleTextFieldAccordionProps = {
+  id: string;
   title: string;
-  expanded: boolean;
-  onChange: OnAccordionChange;
+  state: AccordionState;
   value: string;
   onValueUpdated: OnValueUpdated;
 };
 
 export const SingleTextFieldAccordion = ({
+  id,
   title,
-  expanded,
-  onChange,
+  state,
   value,
   onValueUpdated,
 }: SingleTextFieldAccordionProps) => {
   return (
-    <EditorAccordion
-      title={title}
-      description={value}
-      expanded={expanded}
-      onChange={onChange}
-    >
+    <EditorAccordion id={id} title={title} description={value} state={state}>
       <Fragment>
         <TextField
           label={title}

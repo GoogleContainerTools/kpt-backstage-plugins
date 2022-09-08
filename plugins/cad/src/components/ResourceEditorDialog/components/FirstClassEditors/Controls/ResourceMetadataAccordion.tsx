@@ -15,9 +15,9 @@
  */
 
 import { TextField } from '@material-ui/core';
-import React, { ChangeEvent, Fragment, useRef, useState } from 'react';
+import React, { Fragment, useRef, useState } from 'react';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
-import { EditorAccordion, OnAccordionChange } from './EditorAccordion';
+import { AccordionState, EditorAccordion } from './EditorAccordion';
 import { KeyValueEditorAccordion } from './KeyValueEditorAccordion';
 
 type OnUpdate = (value: ResourceMetadataView) => void;
@@ -30,16 +30,16 @@ type ResourceMetadataView = {
 };
 
 type ResourceMetadataAccordionProps = {
-  expanded: boolean;
-  onChange: OnAccordionChange;
+  id: string;
+  state: AccordionState;
   value: ResourceMetadataView;
   onUpdate: OnUpdate;
   clusterScopedResource?: boolean;
 };
 
 export const ResourceMetadataAccordion = ({
-  expanded: thisExpanded,
-  onChange,
+  id,
+  state,
   value,
   onUpdate,
   clusterScopedResource,
@@ -48,10 +48,6 @@ export const ResourceMetadataAccordion = ({
   const viewModel = refViewModel.current;
 
   const [expanded, setExpanded] = useState<string>();
-  const handlePanelChange =
-    (panel: string) => (_: ChangeEvent<{}>, newExpanded: boolean) => {
-      setExpanded(newExpanded ? panel : undefined);
-    };
 
   const description = `${viewModel.namespace ? `${viewModel.namespace}/` : ''}${
     viewModel.name
@@ -63,10 +59,10 @@ export const ResourceMetadataAccordion = ({
 
   return (
     <EditorAccordion
+      id={id}
       title="Resource Metadata"
       description={description}
-      expanded={thisExpanded}
-      onChange={onChange}
+      state={state}
     >
       <Fragment>
         <TextField
@@ -95,9 +91,9 @@ export const ResourceMetadataAccordion = ({
 
         <div>
           <KeyValueEditorAccordion
+            id="labels"
+            state={[expanded, setExpanded]}
             title="Labels"
-            expanded={expanded === 'labels'}
-            onChange={handlePanelChange('labels')}
             keyValueObject={viewModel.labels || {}}
             onUpdatedKeyValueObject={labels => {
               viewModel.labels =
@@ -107,9 +103,9 @@ export const ResourceMetadataAccordion = ({
           />
 
           <KeyValueEditorAccordion
+            id="annotations"
+            state={[expanded, setExpanded]}
             title="Annotations"
-            expanded={expanded === 'annotations'}
-            onChange={handlePanelChange('annotations')}
             keyValueObject={viewModel.annotations || {}}
             onUpdatedKeyValueObject={annotations => {
               viewModel.annotations =

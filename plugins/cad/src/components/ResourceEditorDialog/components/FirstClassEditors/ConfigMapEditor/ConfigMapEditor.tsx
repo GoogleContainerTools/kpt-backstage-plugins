@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ConfigMap, ConfigMapMetadata } from '../../../../../types/ConfigMap';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
@@ -52,11 +52,6 @@ export const ConfigMapEditor = ({
   const [state, setState] = useState<State>(createResourceState());
   const [expanded, setExpanded] = useState<string>();
 
-  const handleChange =
-    (panel: string) => (_: ChangeEvent<{}>, newExpanded: boolean) => {
-      setExpanded(newExpanded ? panel : undefined);
-    };
-
   useEffect(() => {
     resourceYaml.metadata = state.metadata;
     resourceYaml.data = state.data;
@@ -67,20 +62,18 @@ export const ConfigMapEditor = ({
   return (
     <div className={classes.root}>
       <ResourceMetadataAccordion
-        expanded={expanded === 'metadata'}
-        onChange={handleChange('metadata')}
+        id="metadata"
+        state={[expanded, setExpanded]}
         value={state.metadata}
-        onUpdate={metadata => {
-          setState(s => ({ ...s, metadata }));
-        }}
+        onUpdate={metadata => setState(s => ({ ...s, metadata }))}
       />
 
       <KeyValueEditorAccordion
+        id="data"
         title="Data"
-        expanded={expanded === 'data'}
-        onChange={handleChange('data')}
+        state={[expanded, setExpanded]}
         keyValueObject={state.data}
-        onUpdatedKeyValueObject={data => setState(s => ({ ...s, data: data }))}
+        onUpdatedKeyValueObject={data => setState(s => ({ ...s, data }))}
       />
     </div>
   );

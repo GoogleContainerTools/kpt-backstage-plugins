@@ -18,13 +18,7 @@ import { SelectItem } from '@backstage/core-components';
 import { Button, TextField } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import { last, omit, startCase } from 'lodash';
-import React, {
-  ChangeEvent,
-  Fragment,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
 import {
   Service,
@@ -155,11 +149,6 @@ export const ServiceEditor = ({
 
   const classes = useEditorStyles();
 
-  const handleChange =
-    (panel: string) => (_: ChangeEvent<{}>, newExpanded: boolean) => {
-      setExpanded(newExpanded ? panel : undefined);
-    };
-
   useEffect(() => {
     const servicePortOmitKeys = ['key'];
     if (state.type === 'ClusterIP') servicePortOmitKeys.push('nodePort');
@@ -219,19 +208,17 @@ export const ServiceEditor = ({
   return (
     <div className={classes.root}>
       <ResourceMetadataAccordion
-        expanded={expanded === 'metadata'}
-        onChange={handleChange('metadata')}
+        id="metadata"
         value={state.metadata}
-        onUpdate={metadata => {
-          setState(s => ({ ...s, metadata }));
-        }}
+        state={[expanded, setExpanded]}
+        onUpdate={metadata => setState(s => ({ ...s, metadata }))}
       />
 
       <EditorAccordion
+        id="service"
         title="Service"
         description={getServiceDescription()}
-        expanded={expanded === 'role'}
-        onChange={handleChange('role')}
+        state={[expanded, setExpanded]}
       >
         <Fragment>
           <Select
@@ -279,10 +266,10 @@ export const ServiceEditor = ({
         targetPodTemplateSpec &&
         servicePorts.map(servicePort => (
           <ServicePortEditorAccordion
-            key={servicePort.key}
+            id={`service-port-${servicePort.key}`}
+            key={`service-port-${servicePort.key}`}
             serviceType={state.type}
-            expanded={expanded === `service-port-${servicePort.key}`}
-            onChange={handleChange(`service-port-${servicePort.key}`)}
+            state={[expanded, setExpanded]}
             servicePort={servicePort}
             onUpdatedServicePort={onServicePortUpdated}
             targetPodTemplateSpec={targetPodTemplateSpec}

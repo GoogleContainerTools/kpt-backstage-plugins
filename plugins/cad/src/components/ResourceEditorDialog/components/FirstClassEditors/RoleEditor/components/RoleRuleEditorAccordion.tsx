@@ -20,17 +20,17 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import React, { Fragment, useRef } from 'react';
 import { MultiSelect } from '../../../../../Controls/MultiSelect';
 import {
+  AccordionState,
   EditorAccordion,
-  OnAccordionChange,
 } from '../../Controls/EditorAccordion';
 import { RoleRuleView } from '../RoleEditor';
 
 type OnUpdatedRule = (originalRule: RoleRuleView, rule?: RoleRuleView) => void;
 
 type RoleRuleEditorAccordionProps = {
+  id: string;
   title: string;
-  expanded: boolean;
-  onChange: OnAccordionChange;
+  state: AccordionState;
   rule: RoleRuleView;
   onUpdatedRule: OnUpdatedRule;
 };
@@ -48,9 +48,9 @@ const verbsSelectItems: SelectItem[] = VERBS.map(verb => ({
 }));
 
 export const RoleRuleEditorAccordion = ({
+  id,
   title,
-  expanded,
-  onChange,
+  state,
   rule,
   onUpdatedRule,
 }: RoleRuleEditorAccordionProps) => {
@@ -78,7 +78,7 @@ export const RoleRuleEditorAccordion = ({
   };
 
   return (
-    <EditorAccordion title={title} expanded={expanded} onChange={onChange}>
+    <EditorAccordion id={id} title={title} state={state}>
       <Fragment>
         <TextField
           label="API Groups"

@@ -27,8 +27,8 @@ import { PackageResource } from '../../../../../../utils/packageRevisionResource
 import { sortByLabel } from '../../../../../../utils/selectItem';
 import { Select } from '../../../../../Controls';
 import {
+  AccordionState,
   EditorAccordion,
-  OnAccordionChange,
 } from '../../Controls/EditorAccordion';
 import { useEditorStyles } from '../../styles';
 import { IngressBackendPanel } from './IngressBackendPanel';
@@ -36,8 +36,8 @@ import { IngressBackendPanel } from './IngressBackendPanel';
 type OnUpdate = (newValue?: HTTPIngressPath) => void;
 
 type HTTPPathRuleEditorAccordionProps = {
-  expanded: boolean;
-  onChange: OnAccordionChange;
+  id: string;
+  state: AccordionState;
   value: HTTPIngressPath;
   onUpdate: OnUpdate;
   serviceResources: PackageResource[];
@@ -50,8 +50,8 @@ const pathTypeSelectItems: SelectItem[] = sortByLabel(
 );
 
 export const HTTPPathRuleEditorAccordion = ({
-  expanded,
-  onChange,
+  id,
+  state,
   value: ingressPath,
   onUpdate,
   serviceResources,
@@ -77,10 +77,10 @@ export const HTTPPathRuleEditorAccordion = ({
 
   return (
     <EditorAccordion
+      id={id}
       title="HTTP Path"
       description={description}
-      expanded={expanded}
-      onChange={onChange}
+      state={state}
     >
       <Fragment>
         <Fragment>
