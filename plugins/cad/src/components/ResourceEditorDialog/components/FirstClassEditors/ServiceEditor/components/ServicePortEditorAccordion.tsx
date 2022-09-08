@@ -22,8 +22,8 @@ import React, { Fragment, useRef } from 'react';
 import { ContainerPort, PodTemplateSpec } from '../../../../../../types/Pod';
 import { Select } from '../../../../../Controls/Select';
 import {
+  AccordionState,
   EditorAccordion,
-  OnAccordionChange,
 } from '../../Controls/EditorAccordion';
 import { useEditorStyles } from '../../styles';
 import { ServicePortView } from '../ServiceEditor';
@@ -34,8 +34,8 @@ type OnUpdatedServicePort = (
 ) => void;
 
 type ServicePortEditorAccordionProps = {
-  expanded: boolean;
-  onChange: OnAccordionChange;
+  id: string;
+  state: AccordionState;
   servicePort: ServicePortView;
   onUpdatedServicePort: OnUpdatedServicePort;
   targetPodTemplateSpec: PodTemplateSpec;
@@ -49,8 +49,8 @@ type TargetPortSelectItem = SelectItem & {
 };
 
 export const ServicePortEditorAccordion = ({
-  expanded,
-  onChange,
+  id,
+  state,
   servicePort,
   onUpdatedServicePort,
   targetPodTemplateSpec,
@@ -127,10 +127,10 @@ export const ServicePortEditorAccordion = ({
 
   return (
     <EditorAccordion
+      id={id}
       title="Service Port"
       description={getDescription()}
-      expanded={expanded}
-      onChange={onChange}
+      state={state}
     >
       <Fragment>
         <Fragment>

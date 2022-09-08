@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ServiceAccount,
   ServiceAccountMetadata,
@@ -49,11 +49,6 @@ export const ServiceAccountEditor = ({
 
   const classes = useEditorStyles();
 
-  const handleChange =
-    (panel: string) => (_: ChangeEvent<{}>, newExpanded: boolean) => {
-      setExpanded(newExpanded ? panel : undefined);
-    };
-
   useEffect(() => {
     resourceYaml.metadata = state.metadata;
 
@@ -63,12 +58,10 @@ export const ServiceAccountEditor = ({
   return (
     <div className={classes.root}>
       <ResourceMetadataAccordion
-        expanded={expanded === 'metadata'}
-        onChange={handleChange('metadata')}
+        id="metadata"
+        state={[expanded, setExpanded]}
         value={state.metadata}
-        onUpdate={metadata => {
-          setState(s => ({ ...s, metadata }));
-        }}
+        onUpdate={metadata => setState(s => ({ ...s, metadata }))}
       />
     </div>
   );

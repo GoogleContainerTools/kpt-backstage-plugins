@@ -19,15 +19,15 @@ import { TextField } from '@material-ui/core';
 import React, { Fragment, useMemo, useRef } from 'react';
 import { Select } from '../../../../../Controls';
 import {
+  AccordionState,
   EditorAccordion,
-  OnAccordionChange,
 } from '../../Controls/EditorAccordion';
 
 type OnUpdate = (newValue?: string) => void;
 
 type CustomControllerEditorAccordionProps = {
-  expanded: boolean;
-  onChange: OnAccordionChange;
+  id: string;
+  state: AccordionState;
   value?: string;
   onUpdate: OnUpdate;
 };
@@ -44,8 +44,8 @@ const useCustomControllerSelectItems: SelectItem[] = [
 ];
 
 export const CustomControllerEditorAccordion = ({
-  expanded,
-  onChange,
+  id,
+  state,
   value: ingressClassName,
   onUpdate,
 }: CustomControllerEditorAccordionProps) => {
@@ -69,10 +69,10 @@ export const CustomControllerEditorAccordion = ({
 
   return (
     <EditorAccordion
+      id={id}
       title="Custom Controller"
       description={description}
-      expanded={expanded}
-      onChange={onChange}
+      state={state}
     >
       <Fragment>
         <Select

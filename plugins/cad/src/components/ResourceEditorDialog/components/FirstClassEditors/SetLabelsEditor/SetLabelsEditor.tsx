@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { ChangeEvent, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
 import { SetLabels, SetLabelsMetadata } from '../../../../../types/SetLabels';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
@@ -52,11 +52,6 @@ export const SetLabelsEditor = ({
   const [state, setState] = useState<State>(createResourceState());
   const [expanded, setExpanded] = useState<string>();
 
-  const handleChange =
-    (panel: string) => (_: ChangeEvent<{}>, newExpanded: boolean) => {
-      setExpanded(newExpanded ? panel : undefined);
-    };
-
   useEffect(() => {
     resourceYaml.metadata = state.metadata;
     resourceYaml.labels = state.setLabels;
@@ -68,18 +63,16 @@ export const SetLabelsEditor = ({
     <div className={classes.root}>
       <ResourceMetadataAccordion
         clusterScopedResource
-        expanded={expanded === 'metadata'}
-        onChange={handleChange('metadata')}
+        id="metadata"
+        state={[expanded, setExpanded]}
         value={state.metadata}
-        onUpdate={metadata => {
-          setState(s => ({ ...s, metadata }));
-        }}
+        onUpdate={metadata => setState(s => ({ ...s, metadata }))}
       />
 
       <KeyValueEditorAccordion
+        id="set-labels"
         title="Set Labels"
-        expanded={expanded === 'set-labels'}
-        onChange={handleChange('set-labels')}
+        state={[expanded, setExpanded]}
         keyValueObject={state.setLabels}
         onUpdatedKeyValueObject={data =>
           setState(s => ({ ...s, setLabels: data }))

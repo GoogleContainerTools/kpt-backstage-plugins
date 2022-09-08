@@ -18,12 +18,12 @@ import { Button, TextField } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
 import { clone } from 'lodash';
-import React, { ChangeEvent, Fragment, useRef, useState } from 'react';
+import React, { Fragment, useRef, useState } from 'react';
 import { HTTPIngressPath, IngressRule } from '../../../../../../types/Ingress';
 import { PackageResource } from '../../../../../../utils/packageRevisionResources';
 import {
+  AccordionState,
   EditorAccordion,
-  OnAccordionChange,
 } from '../../Controls/EditorAccordion';
 import { useEditorStyles } from '../../styles';
 import { HTTPPathRuleEditorAccordion } from './HTTPPathRuleEditorAccordion';
@@ -31,8 +31,8 @@ import { HTTPPathRuleEditorAccordion } from './HTTPPathRuleEditorAccordion';
 type OnUpdate = (newValue?: IngressRule) => void;
 
 type IngressRuleEditorAccordionProps = {
-  expanded: boolean;
-  onChange: OnAccordionChange;
+  id: string;
+  state: AccordionState;
   value: IngressRule;
   onUpdate: OnUpdate;
   serviceResources: PackageResource[];
@@ -48,8 +48,8 @@ const updateList = <T,>(
 };
 
 export const IngressRuleEditorAccordion = ({
-  expanded: thisExpanded,
-  onChange,
+  id,
+  state,
   value: ingressRule,
   onUpdate,
   serviceResources,
@@ -66,11 +66,6 @@ export const IngressRuleEditorAccordion = ({
   );
   const pathsModel = refPathsModel.current;
 
-  const handleChange =
-    (panel: string) => (_: ChangeEvent<{}>, newExpanded: boolean) => {
-      setExpanded(newExpanded ? panel : undefined);
-    };
-
   const valueUpdated = (): void => {
     viewModel.http = viewModel.http ?? { paths: [] };
     viewModel.http.paths = pathsModel.filter(path => !path._isDeleted);
@@ -86,10 +81,10 @@ export const IngressRuleEditorAccordion = ({
 
   return (
     <EditorAccordion
+      id={id}
       title="Rule"
       description={description}
-      expanded={thisExpanded}
-      onChange={onChange}
+      state={state}
     >
       <Fragment>
         <Fragment>
@@ -109,9 +104,9 @@ export const IngressRuleEditorAccordion = ({
               (httpPath, index) =>
                 !httpPath._isDeleted && (
                   <HTTPPathRuleEditorAccordion
+                    id={`path-${index}`}
                     key={`path-${index}`}
-                    expanded={expanded === `path-${index}`}
-                    onChange={handleChange(`path-${index}`)}
+                    state={[expanded, setExpanded]}
                     value={httpPath}
                     onUpdate={updatedPath => {
                       refPathsModel.current = updateList(

@@ -17,8 +17,8 @@
 import { Button } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import { last, omit } from 'lodash';
-import React, { ChangeEvent, useEffect, useState } from 'react';
-import { Role, PolicyRule, RoleMetadata } from '../../../../../types/Role';
+import React, { useEffect, useState } from 'react';
+import { PolicyRule, Role, RoleMetadata } from '../../../../../types/Role';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { ResourceMetadataAccordion } from '../Controls';
 import { useEditorStyles } from '../styles';
@@ -59,11 +59,6 @@ export const RoleEditor = ({ yaml, onUpdatedYaml }: RoleEditorProps) => {
 
   const classes = useEditorStyles();
 
-  const handleChange =
-    (panel: string) => (_: ChangeEvent<{}>, newExpanded: boolean) => {
-      setExpanded(newExpanded ? panel : undefined);
-    };
-
   useEffect(() => {
     const mapToRule = (rule: RoleRuleView): PolicyRule => omit(rule, 'key');
 
@@ -87,20 +82,18 @@ export const RoleEditor = ({ yaml, onUpdatedYaml }: RoleEditorProps) => {
   return (
     <div className={classes.root}>
       <ResourceMetadataAccordion
-        expanded={expanded === 'metadata'}
-        onChange={handleChange('metadata')}
+        id="metadata"
+        state={[expanded, setExpanded]}
         value={state.metadata}
-        onUpdate={metadata => {
-          setState(s => ({ ...s, metadata }));
-        }}
+        onUpdate={metadata => setState(s => ({ ...s, metadata }))}
       />
 
       {rules.map((rule, idx) => (
         <RoleRuleEditorAccordion
+          id="`rule-${rule.key}`"
           key={rule.key}
           title={`Rule ${idx + 1}`}
-          expanded={expanded === `rule-${rule.key}`}
-          onChange={handleChange(`rule-${rule.key}`)}
+          state={[expanded, setExpanded]}
           rule={rule}
           onUpdatedRule={onRuleUpdated}
         />

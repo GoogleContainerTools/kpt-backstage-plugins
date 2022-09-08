@@ -22,8 +22,8 @@ import { PackageResource } from '../../../../../../utils/packageRevisionResource
 import { sortByLabel } from '../../../../../../utils/selectItem';
 import { Select } from '../../../../../Controls/Select';
 import {
+  AccordionState,
   EditorAccordion,
-  OnAccordionChange,
 } from '../../Controls/EditorAccordion';
 import { RoleBindingSubjectView } from '../RoleBindingEditor';
 
@@ -33,8 +33,8 @@ type OnUpdatedSubject = (
 ) => void;
 
 type SubjectEditorAccordionProps = {
-  expanded: boolean;
-  onChange: OnAccordionChange;
+  id: string;
+  state: AccordionState;
   subject: RoleBindingSubjectView;
   onUpdatedSubject: OnUpdatedSubject;
   packageResources: PackageResource[];
@@ -68,8 +68,8 @@ const subjectKindToApiGroup: Map<string, string | undefined> = new Map([
 ]);
 
 export const SubjectEditorAccordion = ({
-  expanded,
-  onChange,
+  id,
+  state,
   subject,
   onUpdatedSubject,
   packageResources,
@@ -110,10 +110,10 @@ export const SubjectEditorAccordion = ({
 
   return (
     <EditorAccordion
+      id={id}
       title="Subject"
       description={description}
-      expanded={expanded}
-      onChange={onChange}
+      state={state}
     >
       <Fragment>
         <Select

@@ -18,13 +18,7 @@ import { SelectItem } from '@backstage/core-components';
 import { Button, TextField } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import { last, omit } from 'lodash';
-import React, {
-  ChangeEvent,
-  Fragment,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import {
   RoleBinding,
   RoleBindingMetadata,
@@ -110,11 +104,6 @@ export const RoleBindingEditor = ({
 
   const classes = useEditorStyles();
 
-  const handleChange =
-    (panel: string) => (_: ChangeEvent<{}>, newExpanded: boolean) => {
-      setExpanded(newExpanded ? panel : undefined);
-    };
-
   useEffect(() => {
     const mapToSubject = (
       subjectView: RoleBindingSubjectView,
@@ -155,19 +144,17 @@ export const RoleBindingEditor = ({
   return (
     <div className={classes.root}>
       <ResourceMetadataAccordion
-        expanded={expanded === 'metadata'}
-        onChange={handleChange('metadata')}
+        id="metadata"
+        state={[expanded, setExpanded]}
         value={state.metadata}
-        onUpdate={metadata => {
-          setState(s => ({ ...s, metadata }));
-        }}
+        onUpdate={metadata => setState(s => ({ ...s, metadata }))}
       />
 
       <EditorAccordion
+        id="role-reference"
         title="Role Reference"
         description={getRoleRefDescription()}
-        expanded={expanded === 'role'}
-        onChange={handleChange('role')}
+        state={[expanded, setExpanded]}
       >
         <Fragment>
           <Select
@@ -210,9 +197,9 @@ export const RoleBindingEditor = ({
 
       {subjects.map(subject => (
         <SubjectEditorAccordion
+          id={`subject-${subject.key}`}
           key={subject.key}
-          expanded={expanded === `subject-${subject.key}`}
-          onChange={handleChange(`subject-${subject.key}`)}
+          state={[expanded, setExpanded]}
           subject={subject}
           onUpdatedSubject={onSubjectUpdated}
           packageResources={packageResources}

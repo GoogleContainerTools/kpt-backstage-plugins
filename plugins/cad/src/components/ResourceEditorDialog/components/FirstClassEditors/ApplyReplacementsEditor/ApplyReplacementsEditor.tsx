@@ -16,7 +16,7 @@
 
 import { SelectItem } from '@backstage/core-components';
 import { TextField } from '@material-ui/core';
-import React, { ChangeEvent, Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import {
   ApplyReplacement,
   ApplyReplacementMetadata,
@@ -298,28 +298,21 @@ export const ApplyReplacementsEditor = ({
     onUpdatedYaml(dumpYaml(resourceYaml));
   }, [state, sourceState, targetState, onUpdatedYaml, resourceYaml]);
 
-  const handleChange =
-    (panel: string) => (_: ChangeEvent<{}>, newExpanded: boolean) => {
-      setExpanded(newExpanded ? panel : undefined);
-    };
-
   return (
     <div className={classes.root}>
       <ResourceMetadataAccordion
         clusterScopedResource
-        expanded={expanded === 'metadata'}
-        onChange={handleChange('metadata')}
+        id="metadata"
+        state={[expanded, setExpanded]}
         value={state.metadata}
-        onUpdate={metadata => {
-          setState(s => ({ ...s, metadata }));
-        }}
+        onUpdate={metadata => setState(s => ({ ...s, metadata }))}
       />
 
       <EditorAccordion
+        id="source"
         title="Source"
         description={`${sourceState.resourceKind} ${sourceState.resourceName}`}
-        expanded={expanded === 'source'}
-        onChange={handleChange('source')}
+        state={[expanded, setExpanded]}
       >
         <Fragment>
           <Select
@@ -355,10 +348,10 @@ export const ApplyReplacementsEditor = ({
       </EditorAccordion>
 
       <EditorAccordion
+        id="target"
         title="Target"
         description={`${targetState.resourceKind} ${targetState.resourceName}`}
-        expanded={expanded === 'target'}
-        onChange={handleChange('target')}
+        state={[expanded, setExpanded]}
       >
         <Fragment>
           <Select

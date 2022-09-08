@@ -22,16 +22,16 @@ import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResourc
 import { toLowerCase } from '../../../../../utils/string';
 import { IconButton } from '../../../../Controls';
 import { useEditorStyles } from '../styles';
-import { EditorAccordion, OnAccordionChange } from './EditorAccordion';
+import { EditorAccordion, AccordionState } from './EditorAccordion';
 
 type OnUpdatedKeyValueObject = (
   keyValueObject: KubernetesKeyValueObject,
 ) => void;
 
 type KeyValueObjectEditorProps = {
+  id: string;
   title: string;
-  expanded: boolean;
-  onChange: OnAccordionChange;
+  state: AccordionState;
   keyValueObject: KubernetesKeyValueObject;
   onUpdatedKeyValueObject: OnUpdatedKeyValueObject;
 };
@@ -42,9 +42,9 @@ type InternalKeyValue = {
 };
 
 export const KeyValueEditorAccordion = ({
+  id,
   title,
-  expanded,
-  onChange,
+  state,
   keyValueObject,
   onUpdatedKeyValueObject,
 }: KeyValueObjectEditorProps) => {
@@ -54,12 +54,12 @@ export const KeyValueEditorAccordion = ({
       value,
     }));
 
-  const state = useRef<InternalKeyValue[]>(createKeyValueArray());
+  const refViewModel = useRef<InternalKeyValue[]>(createKeyValueArray());
 
   const classes = useEditorStyles();
 
   const keyValueObjectUpdated = (): void => {
-    const updatedObject = state.current
+    const updatedObject = refViewModel.current
       .filter(keyValue => keyValue.key !== '')
       .reduce((prev: KubernetesKeyValueObject, keyValue: InternalKeyValue) => {
         prev[keyValue.key] = keyValue.value;
@@ -70,21 +70,21 @@ export const KeyValueEditorAccordion = ({
   };
 
   const addRow = () => {
-    state.current.push({ key: '', value: '' });
+    refViewModel.current.push({ key: '', value: '' });
     keyValueObjectUpdated();
   };
 
-  const description = `${state.current.length} ${toLowerCase(title)}`;
+  const description = `${refViewModel.current.length} ${toLowerCase(title)}`;
 
   return (
     <EditorAccordion
+      id={id}
+      state={state}
       title={title}
       description={description}
-      expanded={expanded}
-      onChange={onChange}
     >
       <Fragment>
-        {state.current.map((keyValuePair, index) => (
+        {refViewModel.current.map((keyValuePair, index) => (
           <div className={classes.multiControlRow} key={index}>
             <TextField
               label="Key"
@@ -110,7 +110,7 @@ export const KeyValueEditorAccordion = ({
               title="Delete"
               className={classes.iconButton}
               onClick={() => {
-                state.current = state.current.filter(
+                refViewModel.current = refViewModel.current.filter(
                   thisKeyValueObject => thisKeyValueObject !== keyValuePair,
                 );
                 keyValueObjectUpdated();

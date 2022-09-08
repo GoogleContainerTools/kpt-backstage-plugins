@@ -19,24 +19,23 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import { clone } from 'lodash';
 import React, { Fragment, useRef } from 'react';
 import { IngressTLS } from '../../../../../../types/Ingress';
-
 import {
+  AccordionState,
   EditorAccordion,
-  OnAccordionChange,
 } from '../../Controls/EditorAccordion';
 
 type OnUpdate = (newValue?: IngressTLS) => void;
 
 type TLSEditorAccordionProps = {
-  expanded: boolean;
-  onChange: OnAccordionChange;
+  id: string;
+  state: AccordionState;
   value: IngressTLS;
   onUpdate: OnUpdate;
 };
 
 export const TLSEditorAccordion = ({
-  expanded,
-  onChange,
+  id,
+  state,
   value: ingressTls,
   onUpdate,
 }: TLSEditorAccordionProps) => {
@@ -51,10 +50,10 @@ export const TLSEditorAccordion = ({
 
   return (
     <EditorAccordion
+      id={id}
       title="TLS"
       description={description}
-      expanded={expanded}
-      onChange={onChange}
+      state={state}
     >
       <Fragment>
         <Fragment>

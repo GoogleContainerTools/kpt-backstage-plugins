@@ -38,8 +38,8 @@ import { sortByLabel } from '../../../../../../utils/selectItem';
 import { Autocomplete } from '../../../../../Controls/Autocomplete';
 import { Select } from '../../../../../Controls/Select';
 import {
+  AccordionState,
   EditorAccordion,
-  OnAccordionChange,
 } from '../../Controls/EditorAccordion';
 import { useEditorStyles } from '../../styles';
 import { KptfileFunctionView } from '../KptfileEditor';
@@ -50,9 +50,9 @@ type OnUpdatedKptFunction = (
 ) => void;
 
 type kptFunctionEditorProps = {
+  id: string;
   title: string;
-  expanded: boolean;
-  onChange: OnAccordionChange;
+  state: AccordionState;
   kptFunction: KptfileFunctionView;
   onUpdatedKptFunction: OnUpdatedKptFunction;
   allKptFunctions: Function[];
@@ -60,9 +60,9 @@ type kptFunctionEditorProps = {
 };
 
 export const KptFunctionEditorAccordion = ({
+  id,
   title,
-  expanded,
-  onChange,
+  state: accordionState,
   kptFunction,
   onUpdatedKptFunction,
   allKptFunctions,
@@ -211,10 +211,10 @@ export const KptFunctionEditorAccordion = ({
 
   return (
     <EditorAccordion
+      id={id}
       title={title}
       description={description}
-      expanded={expanded}
-      onChange={onChange}
+      state={accordionState}
     >
       <Fragment>
         <div className={classes.multiControlRow}>

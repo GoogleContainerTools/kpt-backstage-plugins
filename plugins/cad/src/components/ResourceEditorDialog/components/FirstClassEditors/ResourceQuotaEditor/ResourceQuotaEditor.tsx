@@ -15,7 +15,7 @@
  */
 
 import { TextField } from '@material-ui/core';
-import React, { ChangeEvent, Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import {
   ResourceQuota,
   ResourceQuotaMetadata,
@@ -62,11 +62,6 @@ export const ResourceQuotaEditor = ({
 
   const classes = useEditorStyles();
 
-  const handleChange =
-    (panel: string) => (_: ChangeEvent<{}>, newExpanded: boolean) => {
-      setExpanded(newExpanded ? panel : undefined);
-    };
-
   useEffect(() => {
     resourceYaml.metadata = state.metadata;
     resourceYaml.spec = resourceYaml.spec ?? {};
@@ -102,18 +97,16 @@ export const ResourceQuotaEditor = ({
   return (
     <div className={classes.root}>
       <ResourceMetadataAccordion
-        expanded={expanded === 'metadata'}
-        onChange={handleChange('metadata')}
+        id="metadata"
+        state={[expanded, setExpanded]}
         value={state.metadata}
-        onUpdate={metadata => {
-          setState(s => ({ ...s, metadata }));
-        }}
+        onUpdate={metadata => setState(s => ({ ...s, metadata }))}
       />
 
       <EditorAccordion
+        id="compute-resources"
         title="Compute Resources"
-        expanded={expanded === 'compute'}
-        onChange={handleChange('compute')}
+        state={[expanded, setExpanded]}
         description={computeResourcesDescription}
       >
         <Fragment>

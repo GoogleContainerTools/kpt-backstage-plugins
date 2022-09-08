@@ -16,7 +16,7 @@
 
 import { Button } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import React, { ChangeEvent, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Ingress,
   IngressBackend,
@@ -98,11 +98,6 @@ export const IngressEditor = ({
 
   const classes = useEditorStyles();
 
-  const handleChange =
-    (panel: string) => (_: ChangeEvent<{}>, newExpanded: boolean) => {
-      setExpanded(newExpanded ? panel : undefined);
-    };
-
   useEffect(() => {
     resourceYaml.metadata = state.metadata;
     resourceYaml.spec.ingressClassName = state.ingressClassName;
@@ -116,17 +111,15 @@ export const IngressEditor = ({
   return (
     <div className={classes.root}>
       <ResourceMetadataAccordion
-        expanded={expanded === 'metadata'}
-        onChange={handleChange('metadata')}
+        id="metadata"
+        state={[expanded, setExpanded]}
         value={state.metadata}
-        onUpdate={metadata => {
-          setState(s => ({ ...s, metadata }));
-        }}
+        onUpdate={metadata => setState(s => ({ ...s, metadata }))}
       />
 
       <CustomControllerEditorAccordion
-        expanded={expanded === 'custom-controller'}
-        onChange={handleChange('custom-controller')}
+        id="custom-controller"
+        state={[expanded, setExpanded]}
         value={state.ingressClassName}
         onUpdate={ingressClassName => {
           setState(s => ({ ...s, ingressClassName }));
@@ -134,8 +127,8 @@ export const IngressEditor = ({
       />
 
       <DefaultBackendEditorAccordion
-        expanded={expanded === 'default-backend'}
-        onChange={handleChange('default-backend')}
+        id="default-backend"
+        state={[expanded, setExpanded]}
         value={state.defaultBackend}
         onUpdate={defaultBackend => {
           setState(s => ({ ...s, defaultBackend }));
@@ -147,9 +140,9 @@ export const IngressEditor = ({
         (tls, index) =>
           !tls._isDeleted && (
             <TLSEditorAccordion
+              id={`tls-${index}`}
               key={`tls-${index}`}
-              expanded={expanded === `tls-${index}`}
-              onChange={handleChange(`tls-${index}`)}
+              state={[expanded, setExpanded]}
               value={tls}
               onUpdate={updatedTls => {
                 setState(s => ({
@@ -165,9 +158,9 @@ export const IngressEditor = ({
         (ingressRule, index) =>
           !ingressRule._isDeleted && (
             <IngressRuleEditorAccordion
+              id={`rule-${index}`}
               key={`rule-${index}`}
-              expanded={expanded === `rule-${index}`}
-              onChange={handleChange(`rule-${index}`)}
+              state={[expanded, setExpanded]}
               value={ingressRule}
               onUpdate={updatedIngressRule => {
                 setState(s => ({

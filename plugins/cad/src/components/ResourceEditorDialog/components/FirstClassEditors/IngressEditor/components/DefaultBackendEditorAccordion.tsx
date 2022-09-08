@@ -21,16 +21,16 @@ import { IngressBackend } from '../../../../../../types/Ingress';
 import { PackageResource } from '../../../../../../utils/packageRevisionResources';
 import { Select } from '../../../../../Controls';
 import {
+  AccordionState,
   EditorAccordion,
-  OnAccordionChange,
 } from '../../Controls/EditorAccordion';
 import { IngressBackendPanel } from './IngressBackendPanel';
 
 type OnUpdate = (newValue?: IngressBackend) => void;
 
 type DefaultBackendEditorAccordionProps = {
-  expanded: boolean;
-  onChange: OnAccordionChange;
+  id: string;
+  state: AccordionState;
   value?: IngressBackend;
   onUpdate: OnUpdate;
   serviceResources: PackageResource[];
@@ -48,8 +48,8 @@ const useDefaultBackendSelectItems: SelectItem[] = [
 ];
 
 export const DefaultBackendEditorAccordion = ({
-  expanded,
-  onChange,
+  id,
+  state,
   value: defaultBackend,
   onUpdate,
   serviceResources,
@@ -78,10 +78,10 @@ export const DefaultBackendEditorAccordion = ({
 
   return (
     <EditorAccordion
+      id={id}
       title="Default Backend"
       description={description}
-      expanded={expanded}
-      onChange={onChange}
+      state={state}
     >
       <Fragment>
         <Select

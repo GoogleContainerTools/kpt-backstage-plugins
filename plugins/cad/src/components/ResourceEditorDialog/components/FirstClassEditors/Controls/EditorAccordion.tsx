@@ -22,18 +22,26 @@ import {
   Typography,
 } from '@material-ui/core';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import React, { ChangeEvent, ReactNode, useEffect, useRef } from 'react';
+import React, {
+  ChangeEvent,
+  Dispatch,
+  ReactNode,
+  SetStateAction,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 
-export type OnAccordionChange = (
-  event: ChangeEvent<{}>,
-  newExpanded: boolean,
-) => void;
+export type AccordionState = [
+  string | undefined,
+  Dispatch<SetStateAction<string | undefined>>,
+];
 
 type EditorAccordionProps = {
+  id: string;
   title: string;
   description?: string;
-  expanded: boolean;
-  onChange: OnAccordionChange;
+  state: AccordionState;
   children: ReactNode;
 };
 
@@ -57,14 +65,20 @@ const useStyles = makeStyles(theme => ({
 }));
 
 export const EditorAccordion = ({
+  id,
   title,
   description,
-  expanded,
-  onChange,
+  state,
   children,
 }: EditorAccordionProps) => {
   const classes = useStyles();
   const detailsRef = useRef<HTMLDivElement>(null);
+
+  const [activeAccordion, setActiveAccordion] = state;
+  const expanded = useMemo(() => activeAccordion === id, [activeAccordion, id]);
+
+  const onChange = (_: ChangeEvent<{}>, newExpanded: boolean) =>
+    setActiveAccordion(newExpanded ? id : undefined);
 
   useEffect(() => {
     if (expanded && detailsRef.current) {
