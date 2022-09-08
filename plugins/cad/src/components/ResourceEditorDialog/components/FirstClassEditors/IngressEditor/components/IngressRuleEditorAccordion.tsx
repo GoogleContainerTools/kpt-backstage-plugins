@@ -26,6 +26,12 @@ import {
   EditorAccordion,
 } from '../../Controls/EditorAccordion';
 import { useEditorStyles } from '../../styles';
+import {
+  Deletable,
+  getActiveElements,
+  isActiveElement,
+  updateList,
+} from '../../util/deletable';
 import { HTTPPathRuleEditorAccordion } from './HTTPPathRuleEditorAccordion';
 
 type OnUpdate = (newValue?: IngressRule) => void;
@@ -36,15 +42,6 @@ type IngressRuleEditorAccordionProps = {
   value: IngressRule;
   onUpdate: OnUpdate;
   serviceResources: PackageResource[];
-};
-
-const updateList = <T,>(
-  list: T[],
-  newValue: T | undefined,
-  idx: number,
-): T[] => {
-  list[idx] = newValue || { ...list[idx], _isDeleted: true };
-  return list;
 };
 
 export const IngressRuleEditorAccordion = ({
@@ -61,14 +58,14 @@ export const IngressRuleEditorAccordion = ({
 
   const [expanded, setExpanded] = useState<string>();
 
-  const refPathsModel = useRef<(HTTPIngressPath & { _isDeleted?: boolean })[]>(
+  const refPathsModel = useRef<Deletable<HTTPIngressPath>[]>(
     clone(ingressRule.http?.paths || []),
   );
   const pathsModel = refPathsModel.current;
 
   const valueUpdated = (): void => {
     viewModel.http = viewModel.http ?? { paths: [] };
-    viewModel.http.paths = pathsModel.filter(path => !path._isDeleted);
+    viewModel.http.paths = getActiveElements(pathsModel);
 
     const updatedValue = clone(viewModel);
     onUpdate(updatedValue);
@@ -102,7 +99,7 @@ export const IngressRuleEditorAccordion = ({
           <div>
             {pathsModel.map(
               (httpPath, index) =>
-                !httpPath._isDeleted && (
+                isActiveElement(httpPath) && (
                   <HTTPPathRuleEditorAccordion
                     id={`path-${index}`}
                     key={`path-${index}`}

@@ -17,7 +17,6 @@
 import { SelectItem } from '@backstage/core-components';
 import { Button, TextField } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import { last, omit } from 'lodash';
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import {
   RoleBinding,
@@ -30,6 +29,12 @@ import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { Select } from '../../../../Controls/Select';
 import { EditorAccordion, ResourceMetadataAccordion } from '../Controls';
 import { useEditorStyles } from '../styles';
+import {
+  Deletable,
+  getActiveElements,
+  isActiveElement,
+  updateList,
+} from '../util/deletable';
 import { SubjectEditorAccordion } from './components/SubjectEditorAccordion';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
@@ -45,10 +50,7 @@ type State = {
   roleRefKind: string;
   roleRefName: string;
   roleRefApiGroup: string;
-};
-
-export type RoleBindingSubjectView = RoleBindingSubject & {
-  key: number;
+  subjects: Deletable<RoleBindingSubject>[];
 };
 
 export const RoleBindingEditor = ({
@@ -75,20 +77,10 @@ export const RoleBindingEditor = ({
     roleRefKind: resourceYaml.roleRef?.kind ?? '',
     roleRefName: resourceYaml.roleRef?.name ?? '',
     roleRefApiGroup: resourceYaml.roleRef?.apiGroup ?? '',
-  });
-
-  const mapSubjectToView = (
-    subject: RoleBindingSubject,
-    idx: number,
-  ): RoleBindingSubjectView => ({
-    key: idx,
-    ...subject,
+    subjects: resourceYaml.subjects ?? [],
   });
 
   const [state, setState] = useState<State>(createResourceState());
-  const [subjects, setSubjects] = useState<RoleBindingSubjectView[]>(
-    (resourceYaml.subjects ?? []).map(mapSubjectToView),
-  );
   const [expanded, setExpanded] = useState<string>();
 
   const roleRefKindSelectItems: SelectItem[] = [
@@ -105,10 +97,6 @@ export const RoleBindingEditor = ({
   const classes = useEditorStyles();
 
   useEffect(() => {
-    const mapToSubject = (
-      subjectView: RoleBindingSubjectView,
-    ): RoleBindingSubject => omit(subjectView, 'key');
-
     resourceYaml.metadata = state.metadata;
     resourceYaml.roleRef = {
       ...resourceYaml.roleRef,
@@ -116,24 +104,10 @@ export const RoleBindingEditor = ({
       name: state.roleRefName,
       apiGroup: state.roleRefApiGroup,
     };
-    resourceYaml.subjects = subjects.map(mapToSubject);
+    resourceYaml.subjects = getActiveElements(state.subjects);
 
     onUpdatedYaml(dumpYaml(resourceYaml));
-  }, [state, subjects, onUpdatedYaml, resourceYaml]);
-
-  const onSubjectUpdated = (
-    currentSubject: RoleBindingSubjectView,
-    updatedSubject?: RoleBindingSubjectView,
-  ) => {
-    const idx = subjects.indexOf(currentSubject);
-    const list = subjects.slice();
-    if (updatedSubject) {
-      list[idx] = updatedSubject;
-    } else {
-      list.splice(idx, 1);
-    }
-    setSubjects(list);
-  };
+  }, [state, onUpdatedYaml, resourceYaml]);
 
   const getRoleRefDescription = (): string => {
     return state.roleRefKind
@@ -195,25 +169,39 @@ export const RoleBindingEditor = ({
         </Fragment>
       </EditorAccordion>
 
-      {subjects.map(subject => (
-        <SubjectEditorAccordion
-          id={`subject-${subject.key}`}
-          key={subject.key}
-          state={[expanded, setExpanded]}
-          subject={subject}
-          onUpdatedSubject={onSubjectUpdated}
-          packageResources={packageResources}
-        />
-      ))}
+      {state.subjects.map(
+        (subject, index) =>
+          isActiveElement(subject) && (
+            <SubjectEditorAccordion
+              id={`subject-${index}`}
+              key={`subject-${index}`}
+              state={[expanded, setExpanded]}
+              value={subject}
+              onUpdate={updatedSubject =>
+                setState(s => ({
+                  ...s,
+                  subjects: updateList(
+                    s.subjects.slice(),
+                    updatedSubject,
+                    index,
+                  ),
+                }))
+              }
+              packageResources={packageResources}
+            />
+          ),
+      )}
 
       <div className={classes.buttonRow}>
         <Button
           variant="outlined"
           startIcon={<AddIcon />}
           onClick={() => {
-            const nextKey = (last(subjects)?.key || 0) + 1;
-            setSubjects([...subjects, { key: nextKey, kind: '', name: '' }]);
-            setExpanded(`subject-${nextKey}`);
+            setState(s => ({
+              ...s,
+              subjects: [...s.subjects, { kind: '', name: '' }],
+            }));
+            setExpanded(`subject-${state.subjects.length}`);
           }}
         >
           Add Subject

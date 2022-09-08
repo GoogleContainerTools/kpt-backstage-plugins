@@ -18,6 +18,7 @@ import { SelectItem } from '@backstage/core-components';
 import { Button, TextField } from '@material-ui/core';
 import DeleteIcon from '@material-ui/icons/Delete';
 import React, { Fragment, useMemo, useRef } from 'react';
+import { RoleBindingSubject } from '../../../../../../types/RoleBinding';
 import { PackageResource } from '../../../../../../utils/packageRevisionResources';
 import { sortByLabel } from '../../../../../../utils/selectItem';
 import { Select } from '../../../../../Controls/Select';
@@ -25,18 +26,14 @@ import {
   AccordionState,
   EditorAccordion,
 } from '../../Controls/EditorAccordion';
-import { RoleBindingSubjectView } from '../RoleBindingEditor';
 
-type OnUpdatedSubject = (
-  originalSubject: RoleBindingSubjectView,
-  subject?: RoleBindingSubjectView,
-) => void;
+type OnUpdate = (newValue?: RoleBindingSubject) => void;
 
 type SubjectEditorAccordionProps = {
   id: string;
   state: AccordionState;
-  subject: RoleBindingSubjectView;
-  onUpdatedSubject: OnUpdatedSubject;
+  value: RoleBindingSubject;
+  onUpdate: OnUpdate;
   packageResources: PackageResource[];
 };
 
@@ -70,8 +67,8 @@ const subjectKindToApiGroup: Map<string, string | undefined> = new Map([
 export const SubjectEditorAccordion = ({
   id,
   state,
-  subject,
-  onUpdatedSubject,
+  value: subject,
+  onUpdate,
   packageResources,
 }: SubjectEditorAccordionProps) => {
   const viewModel = useRef<ViewModel>({
@@ -94,14 +91,14 @@ export const SubjectEditorAccordion = ({
   );
 
   const subjectUpdated = (): void => {
-    const updatedSubject: RoleBindingSubjectView = {
+    const updatedSubject: RoleBindingSubject = {
       ...subject,
       kind: viewModel.current.kind,
       name: viewModel.current.name,
       apiGroup: viewModel.current.apiGroup || undefined,
     };
 
-    onUpdatedSubject(subject, updatedSubject);
+    onUpdate(updatedSubject);
   };
 
   const description = subject.kind
@@ -155,7 +152,7 @@ export const SubjectEditorAccordion = ({
         <Button
           variant="outlined"
           startIcon={<DeleteIcon />}
-          onClick={() => onUpdatedSubject(subject, undefined)}
+          onClick={() => onUpdate(undefined)}
         >
           Delete
         </Button>

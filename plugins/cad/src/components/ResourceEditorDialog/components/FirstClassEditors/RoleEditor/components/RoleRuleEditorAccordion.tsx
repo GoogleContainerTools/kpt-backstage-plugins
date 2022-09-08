@@ -18,21 +18,21 @@ import { SelectItem } from '@backstage/core-components';
 import { Button, TextField } from '@material-ui/core';
 import DeleteIcon from '@material-ui/icons/Delete';
 import React, { Fragment, useRef } from 'react';
+import { PolicyRule } from '../../../../../../types/Role';
 import { MultiSelect } from '../../../../../Controls/MultiSelect';
 import {
   AccordionState,
   EditorAccordion,
 } from '../../Controls/EditorAccordion';
-import { RoleRuleView } from '../RoleEditor';
 
-type OnUpdatedRule = (originalRule: RoleRuleView, rule?: RoleRuleView) => void;
+type OnUpdate = (newValue?: PolicyRule) => void;
 
 type RoleRuleEditorAccordionProps = {
   id: string;
   title: string;
   state: AccordionState;
-  rule: RoleRuleView;
-  onUpdatedRule: OnUpdatedRule;
+  value: PolicyRule;
+  onUpdate: OnUpdate;
 };
 
 type ViewModel = {
@@ -51,8 +51,8 @@ export const RoleRuleEditorAccordion = ({
   id,
   title,
   state,
-  rule,
-  onUpdatedRule,
+  value: rule,
+  onUpdate,
 }: RoleRuleEditorAccordionProps) => {
   const viewModel = useRef<ViewModel>({
     apiGroups: rule?.apiGroups?.join(', ') || '',
@@ -64,7 +64,7 @@ export const RoleRuleEditorAccordion = ({
     const toStringArray = (str: string): string[] | undefined =>
       str.trim().length > 0 ? str.split(',').map(s => s.trim()) : undefined;
 
-    const updatedRule: RoleRuleView = {
+    const updatedRule: PolicyRule = {
       ...rule,
       apiGroups: toStringArray(viewModel.current.apiGroups),
       resources: toStringArray(viewModel.current.resources),
@@ -74,7 +74,7 @@ export const RoleRuleEditorAccordion = ({
           : undefined,
     };
 
-    onUpdatedRule(rule, updatedRule);
+    onUpdate(updatedRule);
   };
 
   return (
@@ -118,7 +118,7 @@ export const RoleRuleEditorAccordion = ({
         <Button
           variant="outlined"
           startIcon={<DeleteIcon />}
-          onClick={() => onUpdatedRule(rule, undefined)}
+          onClick={() => onUpdate(undefined)}
         >
           Delete
         </Button>

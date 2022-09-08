@@ -28,6 +28,13 @@ import { PackageResource } from '../../../../../utils/packageRevisionResources';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { ResourceMetadataAccordion } from '../Controls';
 import { useEditorStyles } from '../styles';
+import {
+  Deletable,
+  getActiveElements,
+  isActiveElement,
+  undefinedIfEmpty,
+  updateList,
+} from '../util/deletable';
 import { CustomControllerEditorAccordion } from './components/CustomControllerEditorAccordion';
 import { DefaultBackendEditorAccordion } from './components/DefaultBackendEditorAccordion';
 import { IngressRuleEditorAccordion } from './components/IngressRuleEditorAccordion';
@@ -41,35 +48,12 @@ type IngressEditorProps = {
   packageResources: PackageResource[];
 };
 
-type DeleteField = {
-  _isDeleted?: boolean;
-};
-
 type State = {
   metadata: IngressMetadata;
   ingressClassName: string | undefined;
   defaultBackend?: IngressBackend;
-  tls: (IngressTLS & DeleteField)[];
-  rules: (IngressRule & DeleteField)[];
-};
-
-const updateList = <T,>(
-  list: T[],
-  newValue: T | undefined,
-  idx: number,
-): T[] => {
-  list[idx] = newValue || { ...list[idx], _isDeleted: true };
-  return list;
-};
-
-const getArray = <T extends DeleteField>(list: T[]): T[] | undefined => {
-  const filterDeletedElements = (arr: T[]): T[] =>
-    arr.filter(t => !t._isDeleted);
-
-  const undefinedIfEmpty = (arr: T[]): T[] | undefined =>
-    arr.length > 0 ? arr : undefined;
-
-  return undefinedIfEmpty(filterDeletedElements(list));
+  tls: Deletable<IngressTLS>[];
+  rules: Deletable<IngressRule>[];
 };
 
 export const IngressEditor = ({
@@ -102,8 +86,8 @@ export const IngressEditor = ({
     resourceYaml.metadata = state.metadata;
     resourceYaml.spec.ingressClassName = state.ingressClassName;
     resourceYaml.spec.defaultBackend = state.defaultBackend;
-    resourceYaml.spec.tls = getArray(state.tls);
-    resourceYaml.spec.rules = getArray(state.rules);
+    resourceYaml.spec.tls = undefinedIfEmpty(getActiveElements(state.tls));
+    resourceYaml.spec.rules = undefinedIfEmpty(getActiveElements(state.rules));
 
     onUpdatedYaml(dumpYaml(resourceYaml));
   }, [state, onUpdatedYaml, resourceYaml]);
@@ -138,7 +122,7 @@ export const IngressEditor = ({
 
       {state.tls.map(
         (tls, index) =>
-          !tls._isDeleted && (
+          isActiveElement(tls) && (
             <TLSEditorAccordion
               id={`tls-${index}`}
               key={`tls-${index}`}
@@ -156,7 +140,7 @@ export const IngressEditor = ({
 
       {state.rules.map(
         (ingressRule, index) =>
-          !ingressRule._isDeleted && (
+          isActiveElement(ingressRule) && (
             <IngressRuleEditorAccordion
               id={`rule-${index}`}
               key={`rule-${index}`}

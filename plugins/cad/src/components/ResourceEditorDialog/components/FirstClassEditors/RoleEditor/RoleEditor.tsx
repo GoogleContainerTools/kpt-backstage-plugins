@@ -16,12 +16,17 @@
 
 import { Button } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import { last, omit } from 'lodash';
 import React, { useEffect, useState } from 'react';
 import { PolicyRule, Role, RoleMetadata } from '../../../../../types/Role';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { ResourceMetadataAccordion } from '../Controls';
 import { useEditorStyles } from '../styles';
+import {
+  Deletable,
+  getActiveElements,
+  isActiveElement,
+  updateList,
+} from '../util/deletable';
 import { RoleRuleEditorAccordion } from './components/RoleRuleEditorAccordion';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
@@ -33,10 +38,7 @@ type RoleEditorProps = {
 
 type State = {
   metadata: RoleMetadata;
-};
-
-export type RoleRuleView = PolicyRule & {
-  key: number;
+  rules: Deletable<PolicyRule>[];
 };
 
 export const RoleEditor = ({ yaml, onUpdatedYaml }: RoleEditorProps) => {
@@ -44,40 +46,20 @@ export const RoleEditor = ({ yaml, onUpdatedYaml }: RoleEditorProps) => {
 
   const createResourceState = (): State => ({
     metadata: resourceYaml.metadata,
-  });
-
-  const mapRuleToView = (rule: PolicyRule, idx: number): RoleRuleView => ({
-    key: idx,
-    ...rule,
+    rules: resourceYaml.rules ?? [],
   });
 
   const [state, setState] = useState<State>(createResourceState());
-  const [rules, setRules] = useState<RoleRuleView[]>(
-    (resourceYaml.rules ?? []).map(mapRuleToView),
-  );
   const [expanded, setExpanded] = useState<string>();
 
   const classes = useEditorStyles();
 
   useEffect(() => {
-    const mapToRule = (rule: RoleRuleView): PolicyRule => omit(rule, 'key');
-
     resourceYaml.metadata = state.metadata;
-    resourceYaml.rules = rules.map(mapToRule);
+    resourceYaml.rules = getActiveElements(state.rules);
 
     onUpdatedYaml(dumpYaml(resourceYaml));
-  }, [state, rules, onUpdatedYaml, resourceYaml]);
-
-  const onRuleUpdated = (currentRule: RoleRuleView, rule?: RoleRuleView) => {
-    const idx = rules.indexOf(currentRule);
-    const rulesList = rules.slice();
-    if (rule) {
-      rulesList[idx] = rule;
-    } else {
-      rulesList.splice(idx, 1);
-    }
-    setRules(rulesList);
-  };
+  }, [state, onUpdatedYaml, resourceYaml]);
 
   return (
     <div className={classes.root}>
@@ -88,25 +70,32 @@ export const RoleEditor = ({ yaml, onUpdatedYaml }: RoleEditorProps) => {
         onUpdate={metadata => setState(s => ({ ...s, metadata }))}
       />
 
-      {rules.map((rule, idx) => (
-        <RoleRuleEditorAccordion
-          id="`rule-${rule.key}`"
-          key={rule.key}
-          title={`Rule ${idx + 1}`}
-          state={[expanded, setExpanded]}
-          rule={rule}
-          onUpdatedRule={onRuleUpdated}
-        />
-      ))}
+      {state.rules.map(
+        (rule, index) =>
+          isActiveElement(rule) && (
+            <RoleRuleEditorAccordion
+              id={`rule-${index}`}
+              key={`rule-${index}`}
+              title="Rule"
+              state={[expanded, setExpanded]}
+              value={rule}
+              onUpdate={updatedRule =>
+                setState(s => ({
+                  ...s,
+                  rules: updateList(s.rules.slice(), updatedRule, index),
+                }))
+              }
+            />
+          ),
+      )}
 
       <div className={classes.buttonRow}>
         <Button
           variant="outlined"
           startIcon={<AddIcon />}
           onClick={() => {
-            const nextKey = (last(rules)?.key || 0) + 1;
-            setRules([...rules, { key: nextKey }]);
-            setExpanded(`rule-${nextKey}`);
+            setState(s => ({ ...s, rules: [...s.rules, {}] }));
+            setExpanded(`rule-${state.rules.length}`);
           }}
         >
           Add Rule
