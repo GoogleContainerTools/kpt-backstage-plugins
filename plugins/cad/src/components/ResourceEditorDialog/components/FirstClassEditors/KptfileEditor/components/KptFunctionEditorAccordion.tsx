@@ -27,6 +27,7 @@ import React, {
 } from 'react';
 import usePrevious from 'react-use/lib/usePrevious';
 import { Function } from '../../../../../../types/Function';
+import { KptfileFunction } from '../../../../../../types/Kptfile';
 import {
   getFunctionNameAndTagFromImage,
   getFunctionNameFromImage,
@@ -42,19 +43,15 @@ import {
   EditorAccordion,
 } from '../../Controls/EditorAccordion';
 import { useEditorStyles } from '../../styles';
-import { KptfileFunctionView } from '../KptfileEditor';
 
-type OnUpdatedKptFunction = (
-  originalFunctin: KptfileFunctionView,
-  updatedFunction?: KptfileFunctionView,
-) => void;
+type OnUpdate = (newValue?: KptfileFunction) => void;
 
 type kptFunctionEditorProps = {
   id: string;
   title: string;
   state: AccordionState;
-  kptFunction: KptfileFunctionView;
-  onUpdatedKptFunction: OnUpdatedKptFunction;
+  value: KptfileFunction;
+  onUpdate: OnUpdate;
   allKptFunctions: Function[];
   packageResources: PackageResource[];
 };
@@ -63,8 +60,8 @@ export const KptFunctionEditorAccordion = ({
   id,
   title,
   state: accordionState,
-  kptFunction,
-  onUpdatedKptFunction,
+  value: kptFunction,
+  onUpdate,
   allKptFunctions,
   packageResources,
 }: kptFunctionEditorProps) => {
@@ -91,7 +88,7 @@ export const KptFunctionEditorAccordion = ({
     });
   }
 
-  const [state, setState] = useState<KptfileFunctionView>(kptFunction);
+  const [state, setState] = useState<KptfileFunction>(kptFunction);
   const [functionNameSelected, setFunctionNameSelected] = useState<string>(
     kptFunction.image ? CUSTOM_IMAGE : '',
   );
@@ -192,9 +189,9 @@ export const KptFunctionEditorAccordion = ({
 
   useEffect(() => {
     if (kptFunction !== state) {
-      onUpdatedKptFunction(kptFunction, state);
+      onUpdate(state);
     }
-  }, [state, kptFunction, onUpdatedKptFunction]);
+  }, [state, kptFunction, onUpdate]);
 
   const updateFunctionName = useCallback(
     (functionName: string): void => setFunctionNameSelected(functionName),
@@ -260,7 +257,7 @@ export const KptFunctionEditorAccordion = ({
         <Button
           variant="outlined"
           startIcon={<DeleteIcon />}
-          onClick={() => onUpdatedKptFunction(kptFunction, undefined)}
+          onClick={() => onUpdate(undefined)}
         >
           Delete
         </Button>

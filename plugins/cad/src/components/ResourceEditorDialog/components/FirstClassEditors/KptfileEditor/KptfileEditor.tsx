@@ -17,7 +17,6 @@
 import { useApi } from '@backstage/core-plugin-api';
 import { Button } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import { last, omit } from 'lodash';
 import React, { useEffect, useMemo, useState } from 'react';
 import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../../../../apis';
@@ -38,6 +37,13 @@ import {
   SingleTextFieldAccordion,
 } from '../Controls';
 import { useEditorStyles } from '../styles';
+import {
+  Deletable,
+  getActiveElements,
+  isActiveElement,
+  undefinedIfEmpty,
+  updateList,
+} from '../util/deletable';
 import { KptFunctionEditorAccordion } from './components/KptFunctionEditorAccordion';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
@@ -51,10 +57,8 @@ type KptfileEditorProps = {
 type State = {
   metadata: KptfileMetadata;
   description: string;
-};
-
-export type KptfileFunctionView = KptfileFunction & {
-  key: number;
+  mutators: Deletable<KptfileFunction>[];
+  validators: Deletable<KptfileFunction>[];
 };
 
 export const KptfileEditor = ({
@@ -68,26 +72,11 @@ export const KptfileEditor = ({
   const createResourceState = (): State => ({
     metadata: resourceYaml.metadata,
     description: resourceYaml.info?.description || '',
+    mutators: resourceYaml.pipeline?.mutators ?? [],
+    validators: resourceYaml.pipeline?.validators ?? [],
   });
 
-  const createFunctionsView = (
-    kptFunctions: KptfileFunction[],
-  ): KptfileFunctionView[] => {
-    const mapToView = (
-      fn: KptfileFunction,
-      index: number,
-    ): KptfileFunctionView => ({ ...fn, key: index });
-
-    return kptFunctions.map(mapToView);
-  };
-
   const [state, setState] = useState<State>(createResourceState());
-  const [mutators, setMutators] = useState<KptfileFunctionView[]>(
-    createFunctionsView(resourceYaml.pipeline?.mutators ?? []),
-  );
-  const [validators, setValidators] = useState<KptfileFunctionView[]>(
-    createFunctionsView(resourceYaml.pipeline?.validators ?? []),
-  );
   const [allKptFunctions, setAllKptFunctions] = useState<Function[]>([]);
 
   const allKptMutatorFunctions = useMemo(
@@ -109,62 +98,19 @@ export const KptfileEditor = ({
   }, []);
 
   useEffect(() => {
-    const mapToKptFunction = (fn: KptfileFunctionView): KptfileFunction => {
-      const thisFn = omit(fn, 'key');
-      return thisFn;
-    };
-
     if (!resourceYaml.pipeline) resourceYaml.pipeline = {};
 
     resourceYaml.metadata = state.metadata;
     resourceYaml.info.description = state.description;
-    resourceYaml.pipeline.mutators =
-      mutators.length > 0 ? mutators.map(mapToKptFunction) : undefined;
-    resourceYaml.pipeline.validators =
-      validators.length > 0 ? validators.map(mapToKptFunction) : undefined;
+    resourceYaml.pipeline.mutators = undefinedIfEmpty(
+      getActiveElements(state.mutators),
+    );
+    resourceYaml.pipeline.validators = undefinedIfEmpty(
+      getActiveElements(state.validators),
+    );
 
     onUpdatedYaml(dumpYaml(resourceYaml));
-  }, [state, mutators, validators, resourceYaml, onUpdatedYaml]);
-
-  const kptFunctionUpdateFn = (
-    lst: KptfileFunctionView[],
-    setFunctions: React.Dispatch<React.SetStateAction<KptfileFunctionView[]>>,
-    currentFunction: KptfileFunctionView,
-    updatedFunction?: KptfileFunctionView,
-  ) => {
-    const idx = lst.indexOf(currentFunction);
-    const updatedList = lst.slice();
-    if (updatedFunction) {
-      updatedList[idx] = updatedFunction;
-    } else {
-      updatedList.splice(idx, 1);
-    }
-    setFunctions(updatedList);
-  };
-
-  const updateMutatorFunction = (
-    currentFunction: KptfileFunctionView,
-    updatedFunction?: KptfileFunctionView,
-  ): void => {
-    kptFunctionUpdateFn(
-      mutators,
-      setMutators,
-      currentFunction,
-      updatedFunction,
-    );
-  };
-
-  const updateValidatorFunction = (
-    currentFunction: KptfileFunctionView,
-    updatedFunction?: KptfileFunctionView,
-  ): void => {
-    kptFunctionUpdateFn(
-      validators,
-      setValidators,
-      currentFunction,
-      updatedFunction,
-    );
-  };
+  }, [state, resourceYaml, onUpdatedYaml]);
 
   return (
     <div className={classes.root}>
@@ -184,40 +130,63 @@ export const KptfileEditor = ({
         onValueUpdated={value => setState(s => ({ ...s, description: value }))}
       />
 
-      {mutators.map(fn => (
-        <KptFunctionEditorAccordion
-          id={`mutator-${fn.key}`}
-          key={`mutator-${fn.key}`}
-          title="Mutator"
-          state={[expanded, setExpanded]}
-          kptFunction={fn}
-          allKptFunctions={allKptMutatorFunctions}
-          packageResources={packageResources}
-          onUpdatedKptFunction={updateMutatorFunction}
-        />
-      ))}
+      {state.mutators.map(
+        (mutator, index) =>
+          isActiveElement(mutator) && (
+            <KptFunctionEditorAccordion
+              id={`mutator-${index}`}
+              key={`mutator-${index}`}
+              title="Mutator"
+              state={[expanded, setExpanded]}
+              value={mutator}
+              allKptFunctions={allKptMutatorFunctions}
+              packageResources={packageResources}
+              onUpdate={updatedMutator =>
+                setState(s => ({
+                  ...s,
+                  mutators: updateList(
+                    s.mutators.slice(),
+                    updatedMutator,
+                    index,
+                  ),
+                }))
+              }
+            />
+          ),
+      )}
 
-      {validators.map(fn => (
-        <KptFunctionEditorAccordion
-          id={`validator-${fn.key}`}
-          key={`validator-${fn.key}`}
-          title="Validator"
-          state={[expanded, setExpanded]}
-          kptFunction={fn}
-          allKptFunctions={allKptValidatorFunctions}
-          packageResources={packageResources}
-          onUpdatedKptFunction={updateValidatorFunction}
-        />
-      ))}
+      {state.validators.map(
+        (validator, index) =>
+          isActiveElement(validator) && (
+            <KptFunctionEditorAccordion
+              id={`validator-${index}`}
+              key={`validator-${index}`}
+              title="Validator"
+              state={[expanded, setExpanded]}
+              value={validator}
+              allKptFunctions={allKptValidatorFunctions}
+              packageResources={packageResources}
+              onUpdate={updatedValidator =>
+                setState(s => ({
+                  ...s,
+                  validators: updateList(
+                    s.validators.slice(),
+                    updatedValidator,
+                    index,
+                  ),
+                }))
+              }
+            />
+          ),
+      )}
 
       <div className={classes.buttonRow}>
         <Button
           variant="outlined"
           startIcon={<AddIcon />}
           onClick={() => {
-            const nextKey = (last(mutators)?.key || 0) + 1;
-            setMutators([...mutators, { image: '', key: nextKey }]);
-            setExpanded(`mutator-${nextKey}`);
+            setState(s => ({ ...s, mutators: [...s.mutators, { image: '' }] }));
+            setExpanded(`mutator-${state.mutators.length}`);
           }}
         >
           Add Mutator
@@ -226,9 +195,11 @@ export const KptfileEditor = ({
           variant="outlined"
           startIcon={<AddIcon />}
           onClick={() => {
-            const nextKey = (last(validators)?.key || 0) + 1;
-            setValidators([...validators, { image: '', key: nextKey }]);
-            setExpanded(`validator-${nextKey}`);
+            setState(s => ({
+              ...s,
+              validators: [...s.validators, { image: '' }],
+            }));
+            setExpanded(`validator-${state.validators.length}`);
           }}
         >
           Add Validator

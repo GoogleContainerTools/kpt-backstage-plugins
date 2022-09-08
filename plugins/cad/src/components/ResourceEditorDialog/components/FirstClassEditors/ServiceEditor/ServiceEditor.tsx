@@ -17,7 +17,7 @@
 import { SelectItem } from '@backstage/core-components';
 import { Button, TextField } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
-import { last, omit, startCase } from 'lodash';
+import { omit, startCase } from 'lodash';
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import { KubernetesKeyValueObject } from '../../../../../types/KubernetesResource';
 import {
@@ -31,6 +31,12 @@ import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
 import { Select } from '../../../../Controls/Select';
 import { EditorAccordion, ResourceMetadataAccordion } from '../Controls';
 import { useEditorStyles } from '../styles';
+import {
+  Deletable,
+  getActiveElements,
+  isActiveElement,
+  updateList,
+} from '../util/deletable';
 import { ServicePortEditorAccordion } from './components/ServicePortEditorAccordion';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
@@ -47,14 +53,11 @@ type State = {
   selector: string;
   externalTrafficPolicy: string;
   externalName: string;
+  servicePorts: Deletable<ServicePort>[];
 };
 
 type WorkloadSelectItem = SelectItem & {
   selectorLabels: KubernetesKeyValueObject;
-};
-
-export type ServicePortView = ServicePort & {
-  key: number;
 };
 
 const EXTERNAL_TRAFFIC_POLICY = ['Cluster', 'Local'];
@@ -114,6 +117,7 @@ export const ServiceEditor = ({
     type: resourceYaml.spec.type || 'ClusterIP',
     externalTrafficPolicy: resourceYaml.spec.externalTrafficPolicy || 'Cluster',
     externalName: resourceYaml.spec.externalName ?? '',
+    servicePorts: resourceYaml.spec.ports ?? [],
   });
 
   const [state, setState] = useState<State>(createResourceState());
@@ -135,26 +139,11 @@ export const ServiceEditor = ({
 
   const [expanded, setExpanded] = useState<string>();
 
-  const mapServicePortToView = (
-    servicePort: ServicePort,
-    idx: number,
-  ): ServicePortView => ({
-    key: idx,
-    ...servicePort,
-  });
-
-  const [servicePorts, setServicePorts] = useState<ServicePortView[]>(
-    (resourceYaml.spec.ports ?? []).map(mapServicePortToView),
-  );
-
   const classes = useEditorStyles();
 
   useEffect(() => {
-    const servicePortOmitKeys = ['key'];
+    const servicePortOmitKeys: string[] = [];
     if (state.type === 'ClusterIP') servicePortOmitKeys.push('nodePort');
-
-    const mapToServicePort = (servicePortView: ServicePortView): ServicePort =>
-      omit(servicePortView, servicePortOmitKeys);
 
     resourceYaml.metadata = state.metadata;
     resourceYaml.spec.type = state.type;
@@ -163,7 +152,9 @@ export const ServiceEditor = ({
           ?.selectorLabels
       : undefined;
     resourceYaml.spec.ports = isTargetRelevant
-      ? servicePorts.map(mapToServicePort)
+      ? getActiveElements(state.servicePorts).map(servicePort =>
+          omit(servicePort, servicePortOmitKeys),
+        )
       : undefined;
     resourceYaml.spec.externalTrafficPolicy = isExternalTrafficPolicyRelevant
       ? state.externalTrafficPolicy
@@ -180,23 +171,8 @@ export const ServiceEditor = ({
     isExternalNameRelevant,
     isExternalTrafficPolicyRelevant,
     isTargetRelevant,
-    servicePorts,
     workloadSelectItems,
   ]);
-
-  const onServicePortUpdated = (
-    currentServicePort: ServicePortView,
-    updatedServicePort?: ServicePortView,
-  ) => {
-    const idx = servicePorts.indexOf(currentServicePort);
-    const list = servicePorts.slice();
-    if (updatedServicePort) {
-      list[idx] = updatedServicePort;
-    } else {
-      list.splice(idx, 1);
-    }
-    setServicePorts(list);
-  };
 
   const getServiceDescription = (): string => {
     const target =
@@ -264,17 +240,29 @@ export const ServiceEditor = ({
 
       {isTargetRelevant &&
         targetPodTemplateSpec &&
-        servicePorts.map(servicePort => (
-          <ServicePortEditorAccordion
-            id={`service-port-${servicePort.key}`}
-            key={`service-port-${servicePort.key}`}
-            serviceType={state.type}
-            state={[expanded, setExpanded]}
-            servicePort={servicePort}
-            onUpdatedServicePort={onServicePortUpdated}
-            targetPodTemplateSpec={targetPodTemplateSpec}
-          />
-        ))}
+        state.servicePorts.map(
+          (servicePort, index) =>
+            isActiveElement(servicePort) && (
+              <ServicePortEditorAccordion
+                id={`service-port-${index}`}
+                key={`service-port-${index}`}
+                serviceType={state.type}
+                state={[expanded, setExpanded]}
+                value={servicePort}
+                onUpdate={updatedServicePort =>
+                  setState(s => ({
+                    ...s,
+                    servicePorts: updateList(
+                      s.servicePorts.slice(),
+                      updatedServicePort,
+                      index,
+                    ),
+                  }))
+                }
+                targetPodTemplateSpec={targetPodTemplateSpec}
+              />
+            ),
+        )}
 
       {isTargetRelevant && targetPodTemplateSpec && (
         <div className={classes.buttonRow}>
@@ -282,9 +270,8 @@ export const ServiceEditor = ({
             variant="outlined"
             startIcon={<AddIcon />}
             onClick={() => {
-              const nextKey = (last(servicePorts)?.key || 0) + 1;
-              setServicePorts([...servicePorts, { key: nextKey }]);
-              setExpanded(`service-port-${nextKey}`);
+              setState(s => ({ ...s, servicePorts: [...s.servicePorts, {}] }));
+              setExpanded(`service-port-${state.servicePorts.length}`);
             }}
           >
             Add Service Port

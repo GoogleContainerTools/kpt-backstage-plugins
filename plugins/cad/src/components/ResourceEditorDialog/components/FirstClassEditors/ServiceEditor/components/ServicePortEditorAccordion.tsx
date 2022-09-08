@@ -20,24 +20,21 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import { clone, isNaN } from 'lodash';
 import React, { Fragment, useRef } from 'react';
 import { ContainerPort, PodTemplateSpec } from '../../../../../../types/Pod';
+import { ServicePort } from '../../../../../../types/Service';
 import { Select } from '../../../../../Controls/Select';
 import {
   AccordionState,
   EditorAccordion,
 } from '../../Controls/EditorAccordion';
 import { useEditorStyles } from '../../styles';
-import { ServicePortView } from '../ServiceEditor';
 
-type OnUpdatedServicePort = (
-  originalServicePort: ServicePortView,
-  servicePort?: ServicePortView,
-) => void;
+type OnUpdate = (newValue?: ServicePort) => void;
 
 type ServicePortEditorAccordionProps = {
   id: string;
   state: AccordionState;
-  servicePort: ServicePortView;
-  onUpdatedServicePort: OnUpdatedServicePort;
+  value: ServicePort;
+  onUpdate: OnUpdate;
   targetPodTemplateSpec: PodTemplateSpec;
   serviceType: string;
 };
@@ -51,12 +48,12 @@ type TargetPortSelectItem = SelectItem & {
 export const ServicePortEditorAccordion = ({
   id,
   state,
-  servicePort,
-  onUpdatedServicePort,
+  value: servicePort,
+  onUpdate,
   targetPodTemplateSpec,
   serviceType,
 }: ServicePortEditorAccordionProps) => {
-  const viewModel = useRef<ServicePortView>(clone(servicePort));
+  const viewModel = useRef<ServicePort>(clone(servicePort));
   const classes = useEditorStyles();
 
   const isNodePortRelevant =
@@ -90,7 +87,7 @@ export const ServicePortEditorAccordion = ({
 
   const servicePortUpdated = (): void => {
     const updatedServicePort = clone(viewModel.current);
-    onUpdatedServicePort(servicePort, updatedServicePort);
+    onUpdate(updatedServicePort);
   };
 
   const targetPort = viewModel.current.targetPort ?? viewModel.current.port;
@@ -209,7 +206,7 @@ export const ServicePortEditorAccordion = ({
         <Button
           variant="outlined"
           startIcon={<DeleteIcon />}
-          onClick={() => onUpdatedServicePort(servicePort, undefined)}
+          onClick={() => onUpdate(undefined)}
         >
           Delete
         </Button>
