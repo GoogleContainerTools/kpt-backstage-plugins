@@ -96,6 +96,21 @@ export const getUpstreamPackageDescriptor = (
   return 'Upstream Package';
 };
 
+export const getRepository = (
+  allRepositories: Repository[],
+  repositoryName: string,
+): Repository => {
+  const repository = allRepositories.find(
+    thisRepository => thisRepository.metadata.name === repositoryName,
+  );
+
+  if (!repository) {
+    throw new Error(`Repository ${name} does not exist`);
+  }
+
+  return repository;
+};
+
 export const getRepositoryTitle = (repository: Repository): string => {
   return repository.metadata.name;
 };
