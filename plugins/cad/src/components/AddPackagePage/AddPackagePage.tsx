@@ -26,7 +26,7 @@ import { useApi, useRouteRef } from '@backstage/core-plugin-api';
 import { makeStyles, TextField, Typography } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import { startCase } from 'lodash';
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../apis';
@@ -36,24 +36,22 @@ import {
   PackageRevisionLifecycle,
 } from '../../types/PackageRevision';
 import { Repository } from '../../types/Repository';
-import { RepositorySummary } from '../../types/RepositorySummary';
 import {
   canCloneOrDeploy,
   getCloneTask,
   getInitTask,
+  getPackageRevision,
   getPackageRevisionResource,
 } from '../../utils/packageRevision';
 import {
+  ContentSummary,
   getPackageDescriptor,
+  getRepository,
   getUpstreamPackageDescriptor,
   isCatalogBlueprintRepository,
   isDeployableBlueprintRepository,
   isDeploymentRepository,
 } from '../../utils/repository';
-import {
-  getRepositorySummaries,
-  getRepositorySummary,
-} from '../../utils/repositorySummary';
 import { sortByLabel } from '../../utils/selectItem';
 import { toLowerCase } from '../../utils/string';
 import { Select } from '../Controls/Select';
@@ -78,51 +76,89 @@ type AddPackagePageProps = {
   action: AddPackagePageAction;
 };
 
+type PackageRevisionSelectItem = SelectItem & {
+  packageRevision?: PackageRevision;
+};
+
+type RepositorySelectItem = SelectItem & {
+  repository?: Repository;
+};
+
+type KptfileState = {
+  description: string;
+  keywords: string;
+  site: string;
+};
+
+const ALLOW_CLONE_PACKAGE_TO = {
+  [ContentSummary.CATALOG_BLUEPRINT]: (repository: Repository): boolean =>
+    isDeployableBlueprintRepository(repository),
+  [ContentSummary.BLUEPRINT]: (repository: Repository): boolean =>
+    isDeploymentRepository(repository),
+  [ContentSummary.DEPLOYMENT]: (): boolean => false,
+  [ContentSummary.FUNCTION]: (): boolean => false,
+};
+
+const ALLOW_BASE_PACKAGE_FROM = {
+  [ContentSummary.CATALOG_BLUEPRINT]: (): boolean => false,
+  [ContentSummary.BLUEPRINT]: (repository: Repository): boolean =>
+    isCatalogBlueprintRepository(repository),
+  [ContentSummary.DEPLOYMENT]: (repository: Repository): boolean =>
+    isDeployableBlueprintRepository(repository),
+  [ContentSummary.FUNCTION]: (): boolean => false,
+};
+
+const mapPackageRevisionToSelectItem = (
+  pacakgeRevision: PackageRevision,
+): PackageRevisionSelectItem => ({
+  label: `${pacakgeRevision.spec.packageName}:${pacakgeRevision.spec.revision}`,
+  value: pacakgeRevision.metadata.name,
+  packageRevision: pacakgeRevision,
+});
+
+const mapRepositoryToSelectItem = (
+  repository: Repository,
+): RepositorySelectItem => ({
+  label: repository.metadata.name,
+  value: repository.metadata.name,
+  repository: repository,
+});
+
 export const AddPackagePage = ({ action }: AddPackagePageProps) => {
   const api = useApi(configAsDataApiRef);
+  const classes = useStyles();
+  const navigate = useNavigate();
 
   const { repositoryName, packageName } = useParams();
 
-  const cloneToDownstreamRepository = action !== AddPackagePageAction.ADD;
-
-  const [targetRepositoryName, setTargetRepositoryName] = useState<string>(
-    !cloneToDownstreamRepository ? repositoryName : '',
-  );
-
-  const [targetRepository, setTargetRepository] = useState<Repository>();
-  const [baseRepository, setBaseRepository] = useState<Repository>();
-  const [repositorySummary, setRepositorySummary] =
-    useState<RepositorySummary>();
-  const [allRepositories, setAllRepositories] = useState<Repository[]>([]);
-
-  const [basePackageName, setBasePackageName] = useState<string>(
-    packageName ?? '',
-  );
-  const [basePackageRevision, setBasePackageRevision] =
-    useState<PackageRevision>();
+  const isAddPackageAction = action === AddPackagePageAction.ADD;
+  const isCloneNamedPackageAction = !isAddPackageAction;
 
   const [newPackageName, setNewPackageName] = useState<string>('');
-  const [newPackageRevision, _] = useState<string>('v1');
-  const [kptFileDescription, setKptFileDescription] = useState<string>('');
-  const [kptFileKeywords, setKptFileKeywords] = useState<string>('');
-  const [kptFileSite, setKptFileSite] = useState<string>('');
+  const newPackageRevision = 'v1';
 
-  const [selectUpstreamRepositoryItems, setSelectUpstreamRepositoryItems] =
-    useState<SelectItem[]>([]);
-  const [selectDownstreamRepositoryItems, setSelectDownstreamRepositoryItems] =
-    useState<SelectItem[]>([]);
+  const [targetRepository, setTargetRepository] = useState<Repository>();
+  const [basePackageRevision, setBasePackageRevision] =
+    useState<PackageRevision>();
+  const [baseRepository, setBaseRepository] = useState<Repository>();
 
-  const [
-    targetRepositoryPackageDescriptor,
-    setTargetRepositoryPackageDescriptor,
-  ] = useState<string>('Package');
-  const [
-    upstreamRepositoryPackageDescriptor,
-    setUpstreamRepositoryPackageDescriptor,
-  ] = useState<string>('Package');
+  const [kptfileState, setKptfileState] = useState<KptfileState>({
+    description: '',
+    keywords: '',
+    site: '',
+  });
 
-  const classes = useStyles();
-  const navigate = useNavigate();
+  const [basePackageRevisionSelectItems, setBasePackageRevisionSelectItems] =
+    useState<PackageRevisionSelectItem[]>([{ label: 'none', value: 'none' }]);
+  const [targetRepositorySelectItems, setTargetRepositorySelectItems] =
+    useState<RepositorySelectItem[]>([]);
+
+  const targetRepositoryPackageDescriptor = targetRepository
+    ? getPackageDescriptor(targetRepository)
+    : 'Package';
+  const upstreamRepositoryPackageDescriptor = targetRepository
+    ? getUpstreamPackageDescriptor(targetRepository)
+    : 'Package';
 
   const packageRef = useRouteRef(packageRouteRef);
 
@@ -134,131 +170,84 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
   );
 
   const { loading, error } = useAsync(async (): Promise<void> => {
-    const { items: thisAllRepositories } = await api.listRepositories();
-    const repositorySummaries = getRepositorySummaries(thisAllRepositories);
-    const thisRepositorySummary = getRepositorySummary(
-      repositorySummaries,
-      repositoryName,
-    );
+    const [{ items: allRepositories }, allPackages] = await Promise.all([
+      api.listRepositories(),
+      api.listPackageRevisions(),
+    ]);
 
-    setAllRepositories(thisAllRepositories);
-    setRepositorySummary(thisRepositorySummary);
-  });
+    const thisRepository = getRepository(allRepositories, repositoryName);
+    const packageDescriptor = getPackageDescriptor(
+      thisRepository,
+    ) as ContentSummary;
 
-  useEffect(() => {
-    if (!repositorySummary) return;
+    if (isAddPackageAction) {
+      setTargetRepository(thisRepository);
 
-    const loadRequired = async () => {
-      const setBasePackages = async (): Promise<void> => {
-        const allPackages = await api.listPackageRevisions();
+      const getAllowableClonablePackages = (): PackageRevision[] => {
+        if (isCatalogBlueprintRepository(thisRepository)) return [];
 
-        const getUpstreamPackages = (): PackageRevision[] => {
-          if (isCatalogBlueprintRepository(repositorySummary.repository))
-            return [];
+        const repositoryFilter = ALLOW_BASE_PACKAGE_FROM[packageDescriptor];
 
-          const upstreamRepositoryFilter = isDeploymentRepository(
-            repositorySummary.repository,
+        const allowRepositories = allRepositories
+          .filter(repositoryFilter)
+          .map(repository => repository.metadata.name);
+
+        const clonablePackages = allPackages
+          .filter(thisPackage =>
+            allowRepositories.includes(thisPackage.spec.repository),
           )
-            ? isDeployableBlueprintRepository
-            : isCatalogBlueprintRepository;
+          .filter(canCloneOrDeploy);
 
-          const upstreamRepositories = allRepositories
-            .filter(upstreamRepositoryFilter)
-            .map(repostiory => repostiory.metadata.name);
-
-          const upstreamBlueprintPackages = allPackages
-            .filter(thisPackage =>
-              upstreamRepositories.includes(thisPackage.spec.repository),
-            )
-            .filter(canCloneOrDeploy);
-
-          return upstreamBlueprintPackages;
-        };
-
-        const blueprintPackages = getUpstreamPackages();
-        const upstreamBlueprints = sortByLabel(
-          blueprintPackages.map(blueprintPackage => ({
-            label: `${blueprintPackage.spec.packageName}:${blueprintPackage.spec.revision}`,
-            value: blueprintPackage.metadata.name,
-          })),
-        );
-
-        upstreamBlueprints.unshift({ label: 'none', value: 'none' });
-
-        setSelectUpstreamRepositoryItems(upstreamBlueprints);
-
-        if (upstreamBlueprints.length === 1) {
-          setBasePackageName(upstreamBlueprints[0].value as string);
-        }
+        return clonablePackages;
       };
 
-      const setDownstreamRepositories = (): void => {
-        if (allRepositories && allRepositories.length > 0) {
-          const isCatalogBlueprint = isCatalogBlueprintRepository(
-            repositorySummary.repository,
-          );
+      const blueprintPackages = getAllowableClonablePackages();
+      const allowPackageRevisions = sortByLabel<PackageRevisionSelectItem>(
+        blueprintPackages.map(mapPackageRevisionToSelectItem),
+      );
 
-          const downstreamRepositoryFilter = isCatalogBlueprint
-            ? isDeployableBlueprintRepository
-            : isDeploymentRepository;
+      allowPackageRevisions.unshift({ label: 'none', value: 'none' });
 
-          const downstreamRepositories = allRepositories.filter(
-            downstreamRepositoryFilter,
-          );
+      setBasePackageRevisionSelectItems(allowPackageRevisions);
+    }
 
-          const deploymentRepositorySelectItems: SelectItem[] = sortByLabel(
-            downstreamRepositories.map(repository => ({
-              label: repository.metadata.name,
-              value: repository.metadata.name,
-            })),
-          );
+    if (isCloneNamedPackageAction) {
+      setBaseRepository(thisRepository);
+      setBasePackageRevision(getPackageRevision(allPackages, packageName));
 
-          setSelectDownstreamRepositoryItems(deploymentRepositorySelectItems);
+      const repositoryFilter = ALLOW_CLONE_PACKAGE_TO[packageDescriptor];
 
-          if (downstreamRepositories.length > 0) {
-            setTargetRepositoryPackageDescriptor(
-              getPackageDescriptor(downstreamRepositories[0]),
-            );
+      const allowTargetRepositories = allRepositories.filter(repositoryFilter);
 
-            if (deploymentRepositorySelectItems.length === 1) {
-              setTargetRepositoryName(
-                deploymentRepositorySelectItems[0].value as string,
-              );
-            }
-          }
-        }
-      };
+      const repositorySelectItems: RepositorySelectItem[] = sortByLabel(
+        allowTargetRepositories.map(mapRepositoryToSelectItem),
+      );
 
-      if (cloneToDownstreamRepository) {
-        setBaseRepository(repositorySummary.repository);
+      setTargetRepositorySelectItems(repositorySelectItems);
 
-        setDownstreamRepositories();
-      } else {
-        setTargetRepository(repositorySummary.repository);
-
-        await setBasePackages();
+      if (repositorySelectItems.length === 1) {
+        setTargetRepository(repositorySelectItems[0].repository);
       }
-    };
-
-    loadRequired();
-  }, [
-    api,
-    allRepositories,
-    repositorySummary,
-    packageName,
-    cloneToDownstreamRepository,
-  ]);
+    }
+  }, [api, packageName]);
 
   const getNewPackageRevisionResource = (): PackageRevision => {
-    const baseTask =
-      basePackageName !== 'none'
-        ? getCloneTask(basePackageName)
-        : getInitTask(kptFileDescription, kptFileKeywords, kptFileSite);
+    if (!targetRepository) {
+      throw new Error('Target repository is not defined');
+    }
+
+    const baseTask = basePackageRevision
+      ? getCloneTask(basePackageRevision.metadata.name)
+      : getInitTask(
+          kptfileState.description,
+          kptfileState.keywords,
+          kptfileState.site,
+        );
 
     const tasks = [baseTask];
 
     const resource: PackageRevision = getPackageRevisionResource(
-      targetRepository?.metadata.name || '',
+      targetRepository.metadata.name,
       newPackageName,
       newPackageRevision,
       PackageRevisionLifecycle.DRAFT,
@@ -267,50 +256,6 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
 
     return resource;
   };
-
-  useEffect(() => {
-    if (targetRepositoryName && repositorySummary) {
-      const findRepository = (): Repository | undefined => {
-        if (cloneToDownstreamRepository) {
-          const thisRepository = allRepositories.find(
-            repository => repository.metadata.name === targetRepositoryName,
-          );
-          return thisRepository;
-        }
-
-        return repositorySummary.repository;
-      };
-
-      const thisRepository = findRepository();
-
-      if (thisRepository) {
-        setTargetRepository(thisRepository);
-        setTargetRepositoryPackageDescriptor(
-          getPackageDescriptor(thisRepository),
-        );
-        setUpstreamRepositoryPackageDescriptor(
-          getUpstreamPackageDescriptor(thisRepository),
-        );
-      }
-    }
-  }, [
-    allRepositories,
-    targetRepositoryName,
-    repositorySummary,
-    cloneToDownstreamRepository,
-  ]);
-
-  useEffect(() => {
-    if (!basePackageName || basePackageName === 'none') return;
-
-    const getBasePackageRevision = async (): Promise<void> => {
-      const packageRevision = await api.getPackageRevision(basePackageName);
-
-      setBasePackageRevision(packageRevision);
-    };
-
-    getBasePackageRevision();
-  }, [api, basePackageName]);
 
   const getDisplayPackageName = (thisPackage?: PackageRevision): string => {
     return thisPackage?.spec.packageName || packageName;
@@ -340,7 +285,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
 
   return (
     <div>
-      {cloneToDownstreamRepository ? (
+      {isCloneNamedPackageAction ? (
         <Fragment>
           <Breadcrumbs>
             <RepositoriesLink breadcrumb />
@@ -381,21 +326,32 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
           title={`${targetRepositoryPackageDescriptor} Metadata`}
         >
           <div className={classes.stepContent}>
-            {cloneToDownstreamRepository && (
+            {isCloneNamedPackageAction && (
               <Select
                 label={`${targetRepositoryPackageDescriptor} Repository`}
-                onChange={value => setTargetRepositoryName(value)}
-                selected={targetRepositoryName}
-                items={selectDownstreamRepositoryItems}
+                onChange={selectedRepositoryName =>
+                  setTargetRepository(
+                    targetRepositorySelectItems.find(
+                      r => r.value === selectedRepositoryName,
+                    )?.repository,
+                  )
+                }
+                selected={targetRepository?.metadata.name ?? ''}
+                items={targetRepositorySelectItems}
                 helperText={`The ${targetRepositoryPackageDescriptorLowercase} repository the package will be created in.`}
               />
             )}
-            {!cloneToDownstreamRepository && (
+            {!isCloneNamedPackageAction && (
               <Select
                 label={upstreamRepositoryPackageDescriptor}
-                onChange={value => setBasePackageName(value)}
-                selected={basePackageName}
-                items={selectUpstreamRepositoryItems}
+                onChange={value =>
+                  setBasePackageRevision(
+                    basePackageRevisionSelectItems.find(p => p.value === value)
+                      ?.packageRevision,
+                  )
+                }
+                selected={basePackageRevision?.metadata.name ?? 'none'}
+                items={basePackageRevisionSelectItems}
                 helperText={`The ${upstreamRepositoryPackageDescriptorLowercase} the ${targetRepositoryPackageDescriptorLowercase} will be based off of.`}
               />
             )}
@@ -411,14 +367,16 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
           </div>
         </SimpleStepperStep>
 
-        {basePackageName === 'none' && (
+        {!basePackageRevision && (
           <SimpleStepperStep title="Kptfile">
             <div className={classes.stepContent}>
               <TextField
                 label="Description"
                 variant="outlined"
-                value={kptFileDescription}
-                onChange={e => setKptFileDescription(e.target.value)}
+                value={kptfileState.description}
+                onChange={e =>
+                  setKptfileState(s => ({ ...s, description: e.target.value }))
+                }
                 fullWidth
                 helperText={`The short description of this ${targetRepositoryPackageDescriptorLowercase}.`}
               />
@@ -426,8 +384,10 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
               <TextField
                 label="Keywords"
                 variant="outlined"
-                value={kptFileKeywords}
-                onChange={e => setKptFileKeywords(e.target.value)}
+                value={kptfileState.keywords}
+                onChange={e =>
+                  setKptfileState(s => ({ ...s, keywords: e.target.value }))
+                }
                 fullWidth
                 helperText="Optional. Comma separated list of keywords."
               />
@@ -435,8 +395,10 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
               <TextField
                 label="Site"
                 variant="outlined"
-                value={kptFileSite}
-                onChange={e => setKptFileSite(e.target.value)}
+                value={kptfileState.site}
+                onChange={e =>
+                  setKptfileState(s => ({ ...s, site: e.target.value }))
+                }
                 fullWidth
                 helperText={`Optional. The URL for the ${targetRepositoryPackageDescriptor?.toLocaleLowerCase(
                   'en-US',
@@ -459,7 +421,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
               <strong>
                 {newPackageName} {targetRepositoryPackageDescriptorLowercase}
               </strong>{' '}
-              in the {targetRepositoryName} repository?
+              in the {targetRepository?.metadata.name} repository?
             </Typography>
           </div>
         </SimpleStepperStep>
