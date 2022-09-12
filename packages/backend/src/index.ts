@@ -35,7 +35,6 @@ import auth from './plugins/auth';
 import cad from './plugins/cad';
 import catalog from './plugins/catalog';
 import proxy from './plugins/proxy';
-import scaffolder from './plugins/scaffolder';
 import techdocs from './plugins/techdocs';
 import { PluginEnvironment } from './types';
 
@@ -82,7 +81,6 @@ async function main() {
 
   const cadEnv = useHotMemoize(module, () => createEnv('cad'));
   const catalogEnv = useHotMemoize(module, () => createEnv('catalog'));
-  const scaffolderEnv = useHotMemoize(module, () => createEnv('scaffolder'));
   const authEnv = useHotMemoize(module, () => createEnv('auth'));
   const proxyEnv = useHotMemoize(module, () => createEnv('proxy'));
   const techdocsEnv = useHotMemoize(module, () => createEnv('techdocs'));
@@ -91,7 +89,6 @@ async function main() {
   const apiRouter = Router();
   apiRouter.use('/catalog', await catalog(catalogEnv));
   apiRouter.use('/config-as-data', await cad(cadEnv));
-  apiRouter.use('/scaffolder', await scaffolder(scaffolderEnv));
   apiRouter.use('/auth', await auth(authEnv));
   apiRouter.use('/techdocs', await techdocs(techdocsEnv));
   apiRouter.use('/proxy', await proxy(proxyEnv));
