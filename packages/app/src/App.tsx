@@ -16,16 +16,12 @@
 
 import React from 'react';
 import { Navigate, Route } from 'react-router';
-import { apiDocsPlugin, ApiExplorerPage } from '@backstage/plugin-api-docs';
 import {
   CatalogEntityPage,
   CatalogIndexPage,
   catalogPlugin,
 } from '@backstage/plugin-catalog';
-import {
-  CatalogImportPage,
-  catalogImportPlugin,
-} from '@backstage/plugin-catalog-import';
+import { CatalogImportPage } from '@backstage/plugin-catalog-import';
 import { orgPlugin } from '@backstage/plugin-org';
 import {
   TechDocsIndexPage,
@@ -51,9 +47,6 @@ const app = createApp({
     bind(catalogPlugin.externalRoutes, {
       viewTechDoc: techdocsPlugin.routes.docRoot,
     });
-    bind(apiDocsPlugin.externalRoutes, {
-      registerApi: catalogImportPlugin.routes.importPage,
-    });
     bind(orgPlugin.externalRoutes, {
       catalogIndex: catalogPlugin.routes.catalogIndex,
     });
@@ -78,7 +71,6 @@ const routes = (
       path="/docs/:namespace/:kind/:name/*"
       element={<TechDocsReaderPage />}
     />
-    <Route path="/api-docs" element={<ApiExplorerPage />} />
     <PermissionedRoute
       path="/catalog-import"
       permission={catalogEntityCreatePermission}
