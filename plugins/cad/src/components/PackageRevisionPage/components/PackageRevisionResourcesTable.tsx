@@ -19,6 +19,7 @@ import { errorApiRef, useApi } from '@backstage/core-plugin-api';
 import { Button, Divider, Menu, MenuItem } from '@material-ui/core';
 import AddIcon from '@material-ui/icons/Add';
 import DeleteIcon from '@material-ui/icons/Delete';
+import SettingsIcon from '@material-ui/icons/Settings';
 import { cloneDeep, startCase } from 'lodash';
 import React, { Fragment, useRef, useState } from 'react';
 import {
@@ -167,7 +168,23 @@ export const PackageRevisionResourcesTable = ({
     }
   };
 
-  const renderRowOptions = (resourceRow: ResourceRow): JSX.Element[] => {
+  const renderLocalConfigColumn = (
+    resourceRow: ResourceRow,
+  ): JSX.Element | null => {
+    if (resourceRow.isLocalConfigResource) {
+      return (
+        <Fragment>
+          <IconButton title="Local config" inTable>
+            <SettingsIcon />
+          </IconButton>
+        </Fragment>
+      );
+    }
+
+    return null;
+  };
+
+  const renderOptionsColumn = (resourceRow: ResourceRow): JSX.Element[] => {
     const options: JSX.Element[] = [];
 
     if (isEditMode && !resourceRow.isDeleted) {
@@ -216,11 +233,12 @@ export const PackageRevisionResourcesTable = ({
   };
 
   const columns: TableColumn<ResourceRow>[] = [
+    { render: renderLocalConfigColumn, width: 'min-content' },
     { title: 'Kind', field: 'kind' },
     { title: 'Name', field: 'name' },
     { title: 'Namespace', field: 'namespace' },
     {},
-    { render: resourceRow => <div>{renderRowOptions(resourceRow)}</div> },
+    { render: resourceRow => <div>{renderOptionsColumn(resourceRow)}</div> },
   ];
 
   if (showDiff) {

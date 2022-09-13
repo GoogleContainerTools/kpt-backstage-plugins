@@ -36,6 +36,7 @@ export type PackageResource = {
   yaml: string;
   filename: string;
   resourceIndex: number;
+  isLocalConfigResource: boolean;
 };
 
 export enum ResourceDiffStatus {
@@ -134,6 +135,10 @@ export const getPackageResourcesFromResourcesMap = (
         namespace: k8sResource.metadata.namespace,
         yaml: resourceYaml,
         resourceIndex: index,
+        isLocalConfigResource:
+          !!k8sResource.metadata.annotations?.[
+            'config.kubernetes.io/local-config'
+          ],
       };
     });
   });
