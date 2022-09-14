@@ -37,6 +37,7 @@ type PackageResourcesListProps = {
   resourcesMap: PackageRevisionResourcesMap;
   baseResourcesMap?: PackageRevisionResourcesMap;
   onUpdatedResourcesMap: (resourcesMap: PackageRevisionResourcesMap) => void;
+  resourceFilter: PackageResourceFilter;
   mode: PackageRevisionPageMode;
 };
 
@@ -46,6 +47,10 @@ export type ResourceRow = PackageResource & {
   originalResource?: PackageResource;
   currentResource?: PackageResource;
 };
+
+export type PackageResourceFilter = (
+  packageResource: PackageResource,
+) => boolean;
 
 const sortResources = (allResources: ResourceRow[]): void => {
   allResources.sort((resource1, resource2) => {
@@ -141,13 +146,17 @@ export const PackageResourcesList = ({
   resourcesMap,
   baseResourcesMap,
   onUpdatedResourcesMap,
+  resourceFilter,
   mode,
 }: PackageResourcesListProps) => {
   const classes = useStyles();
 
-  const packageResources = getPackageResourcesFromResourcesMap(
-    resourcesMap,
-  ) as ResourceRow[];
+  const getPackageResources = (
+    map: PackageRevisionResourcesMap,
+  ): PackageResource[] =>
+    getPackageResourcesFromResourcesMap(map).filter(resourceFilter);
+
+  const packageResources = getPackageResources(resourcesMap) as ResourceRow[];
 
   const allResources: ResourceRow[] = packageResources.map(resource => ({
     ...resource,
@@ -157,7 +166,7 @@ export const PackageResourcesList = ({
   sortResources(allResources);
 
   if (baseResourcesMap) {
-    const baseResources = getPackageResourcesFromResourcesMap(baseResourcesMap);
+    const baseResources = getPackageResources(baseResourcesMap);
 
     addDiffDetails(allResources, baseResources);
   }
