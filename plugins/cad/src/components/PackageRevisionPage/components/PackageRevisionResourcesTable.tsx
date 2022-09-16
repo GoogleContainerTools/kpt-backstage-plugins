@@ -273,7 +273,8 @@ export const PackageRevisionResourcesTable = ({
       resourceGVK;
 
     const getNamespace = (): string | undefined =>
-      resources.find(r => r.kind === 'Namespace')?.name;
+      resources.find(r => r.kind === 'Namespace')?.name ||
+      resources.find(r => r.namespace)?.namespace;
 
     const name = defaultName || 'default';
     const namespace = namespaceScoped ? getNamespace() : undefined;
