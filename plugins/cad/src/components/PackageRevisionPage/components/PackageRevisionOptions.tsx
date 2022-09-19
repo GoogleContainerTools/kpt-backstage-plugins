@@ -36,9 +36,10 @@ import {
   isLatestPublishedRevision,
 } from '../../../utils/packageRevision';
 import {
-  isCatalogBlueprintRepository,
-  isDeployableBlueprintRepository,
+  ContentSummary,
+  getPackageDescriptor,
   isDeploymentRepository,
+  RepositoryContentDetails,
 } from '../../../utils/repository';
 import { PackageRevisionPageMode } from '../PackageRevisionPage';
 
@@ -205,13 +206,16 @@ const PublishedPackageRevisionOptions = ({
     );
   }
 
+  const packageContentType = getPackageDescriptor(repositorySummary.repository);
   const showDeploy =
-    isDeployableBlueprintRepository(repositorySummary.repository) &&
-    canCloneOrDeploy(packageRevision);
+    RepositoryContentDetails[packageContentType].cloneTo.includes(
+      ContentSummary.DEPLOYMENT,
+    ) && canCloneOrDeploy(packageRevision);
 
   const showClone =
-    isCatalogBlueprintRepository(repositorySummary.repository) &&
-    canCloneOrDeploy(packageRevision);
+    !RepositoryContentDetails[packageContentType].cloneTo.includes(
+      ContentSummary.DEPLOYMENT,
+    ) && canCloneOrDeploy(packageRevision);
 
   const isNewerUnpublishedRevision = latestRevision !== latestPublishedRevision;
 
