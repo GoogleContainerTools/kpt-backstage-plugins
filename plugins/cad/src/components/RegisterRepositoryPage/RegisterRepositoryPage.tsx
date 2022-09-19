@@ -41,13 +41,13 @@ import { Secret } from '../../types/Secret';
 import { allowFunctionRepositoryRegistration } from '../../utils/featureFlags';
 import {
   ContentSummary,
+  getPackageDescriptor,
   getRepositoryGitDetails,
   getRepositoryOciDetails,
   getRepositoryResource,
   getRepositoryTitle,
   getSecretRef,
-  isCatalogBlueprintRepository,
-  isDeployableBlueprintRepository,
+  RepositoryContentDetails,
 } from '../../utils/repository';
 import { getBasicAuthSecret, isBasicAuthSecret } from '../../utils/secret';
 import { Select } from '../Controls/Select';
@@ -307,13 +307,13 @@ export const RegisterRepositoryPage = () => {
         contentSummary === ContentSummary.DEPLOYMENT ||
         contentSummary === ContentSummary.BLUEPRINT
       ) {
-        const repositoryFilter =
-          contentSummary === ContentSummary.DEPLOYMENT
-            ? isDeployableBlueprintRepository
-            : isCatalogBlueprintRepository;
+        const repositoryFilter = (repository: Repository) =>
+          RepositoryContentDetails[contentSummary].cloneFrom.includes(
+            getPackageDescriptor(repository) as ContentSummary,
+          );
 
-        const blueprintRepositories = allRepositories.filter(repositoryFilter);
-        const upstreamRepositoryItems = blueprintRepositories.map(
+        const upstreamRepositories = allRepositories.filter(repositoryFilter);
+        const upstreamRepositoryItems = upstreamRepositories.map(
           mapRepositoryToSelectItem,
         );
         upstreamRepositoryItems.unshift({ label: 'none', value: 'none' });

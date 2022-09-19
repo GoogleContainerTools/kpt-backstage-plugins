@@ -25,6 +25,16 @@ import {
   RepositoryUpstream,
 } from '../types/Repository';
 
+type ContentDetails = {
+  [key: string]: ContentDetail;
+};
+
+type ContentDetail = {
+  isContent: (repository: Repository) => boolean;
+  cloneTo: ContentSummary[];
+  cloneFrom: ContentSummary[];
+};
+
 const CATELOG_BLUEPRINT_REPOSITORY_LABEL =
   'kpt.dev/catalog-blueprint-repository';
 
@@ -75,13 +85,35 @@ export const isDeploymentRepository = (repository: Repository): boolean => {
   return isPackageRepository(repository) && !!repository.spec.deployment;
 };
 
+export const RepositoryContentDetails: ContentDetails = {
+  [ContentSummary.DEPLOYMENT]: {
+    isContent: isDeploymentRepository,
+    cloneTo: [],
+    cloneFrom: [ContentSummary.BLUEPRINT],
+  },
+  [ContentSummary.BLUEPRINT]: {
+    isContent: isDeployableBlueprintRepository,
+    cloneTo: [ContentSummary.DEPLOYMENT],
+    cloneFrom: [ContentSummary.CATALOG_BLUEPRINT],
+  },
+  [ContentSummary.CATALOG_BLUEPRINT]: {
+    isContent: isCatalogBlueprintRepository,
+    cloneTo: [ContentSummary.BLUEPRINT],
+    cloneFrom: [],
+  },
+  [ContentSummary.FUNCTION]: {
+    isContent: isFunctionRepository,
+    cloneTo: [],
+    cloneFrom: [],
+  },
+};
+
 export const getPackageDescriptor = (repository: Repository): string => {
-  if (isCatalogBlueprintRepository(repository))
-    return ContentSummary.CATALOG_BLUEPRINT;
-  if (isDeployableBlueprintRepository(repository))
-    return ContentSummary.BLUEPRINT;
-  if (isDeploymentRepository(repository)) return ContentSummary.DEPLOYMENT;
-  if (isFunctionRepository(repository)) return ContentSummary.FUNCTION;
+  for (const contentType of Object.keys(RepositoryContentDetails)) {
+    if (RepositoryContentDetails[contentType].isContent(repository)) {
+      return contentType;
+    }
+  }
 
   return 'Unknown';
 };
@@ -89,11 +121,10 @@ export const getPackageDescriptor = (repository: Repository): string => {
 export const getUpstreamPackageDescriptor = (
   repository: Repository,
 ): string => {
-  if (isDeployableBlueprintRepository(repository))
-    return ContentSummary.CATALOG_BLUEPRINT;
-  if (isDeploymentRepository(repository)) return ContentSummary.BLUEPRINT;
-
-  return 'Upstream Package';
+  return (
+    RepositoryContentDetails[getPackageDescriptor(repository)].cloneFrom[0] ||
+    'Upstream Package'
+  );
 };
 
 export const getRepository = (

@@ -48,9 +48,7 @@ import {
   getPackageDescriptor,
   getRepository,
   getUpstreamPackageDescriptor,
-  isCatalogBlueprintRepository,
-  isDeployableBlueprintRepository,
-  isDeploymentRepository,
+  RepositoryContentDetails,
 } from '../../utils/repository';
 import { sortByLabel } from '../../utils/selectItem';
 import { toLowerCase } from '../../utils/string';
@@ -88,24 +86,6 @@ type KptfileState = {
   description: string;
   keywords: string;
   site: string;
-};
-
-const ALLOW_CLONE_PACKAGE_TO = {
-  [ContentSummary.CATALOG_BLUEPRINT]: (repository: Repository): boolean =>
-    isDeployableBlueprintRepository(repository),
-  [ContentSummary.BLUEPRINT]: (repository: Repository): boolean =>
-    isDeploymentRepository(repository),
-  [ContentSummary.DEPLOYMENT]: (): boolean => false,
-  [ContentSummary.FUNCTION]: (): boolean => false,
-};
-
-const ALLOW_BASE_PACKAGE_FROM = {
-  [ContentSummary.CATALOG_BLUEPRINT]: (): boolean => false,
-  [ContentSummary.BLUEPRINT]: (repository: Repository): boolean =>
-    isCatalogBlueprintRepository(repository),
-  [ContentSummary.DEPLOYMENT]: (repository: Repository): boolean =>
-    isDeployableBlueprintRepository(repository),
-  [ContentSummary.FUNCTION]: (): boolean => false,
 };
 
 const mapPackageRevisionToSelectItem = (
@@ -184,9 +164,10 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
       setTargetRepository(thisRepository);
 
       const getAllowableClonablePackages = (): PackageRevision[] => {
-        if (isCatalogBlueprintRepository(thisRepository)) return [];
-
-        const repositoryFilter = ALLOW_BASE_PACKAGE_FROM[packageDescriptor];
+        const repositoryFilter = (repository: Repository): boolean =>
+          RepositoryContentDetails[packageDescriptor].cloneFrom.includes(
+            getPackageDescriptor(repository) as ContentSummary,
+          );
 
         const allowRepositories = allRepositories
           .filter(repositoryFilter)
@@ -215,7 +196,10 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
       setBaseRepository(thisRepository);
       setBasePackageRevision(getPackageRevision(allPackages, packageName));
 
-      const repositoryFilter = ALLOW_CLONE_PACKAGE_TO[packageDescriptor];
+      const repositoryFilter = (repository: Repository): boolean =>
+        RepositoryContentDetails[packageDescriptor].cloneTo.includes(
+          getPackageDescriptor(repository) as ContentSummary,
+        );
 
       const allowTargetRepositories = allRepositories.filter(repositoryFilter);
 
