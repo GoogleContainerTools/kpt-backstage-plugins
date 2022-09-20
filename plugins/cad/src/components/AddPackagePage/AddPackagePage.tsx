@@ -37,7 +37,7 @@ import {
 } from '../../types/PackageRevision';
 import { Repository } from '../../types/Repository';
 import {
-  canCloneOrDeploy,
+  canCloneRevision,
   getCloneTask,
   getInitTask,
   getPackageRevision,
@@ -66,7 +66,6 @@ const useStyles = makeStyles(() => ({
 export enum AddPackagePageAction {
   ADD = 'add',
   CLONE = 'clone',
-  DEPLOY = 'deploy',
 }
 
 type AddPackagePageProps = {
@@ -167,7 +166,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
     ]);
 
     allRepositories.current = thisAllRepositories;
-    allClonablePackageRevisions.current = allPackages.filter(canCloneOrDeploy);
+    allClonablePackageRevisions.current = allPackages.filter(canCloneRevision);
 
     const thisRepository = getRepository(thisAllRepositories, repositoryName);
     const packageDescriptor = getPackageDescriptor(
@@ -324,13 +323,11 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
               packageRevision={sourcePackageRevision as PackageRevision}
               breadcrumb
             />
-            <Typography>{action}</Typography>
+            <Typography>clone</Typography>
           </Breadcrumbs>
 
           <ContentHeader
-            title={`${startCase(action)} ${getDisplayPackageName(
-              sourcePackageRevision,
-            )}`}
+            title={`Clone ${getDisplayPackageName(sourcePackageRevision)}`}
           />
         </Fragment>
       )}

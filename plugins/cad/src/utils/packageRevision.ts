@@ -133,7 +133,7 @@ export const getPackageRevision = (
   return packageRevision;
 };
 
-export const canCloneOrDeploy = (packageRevision: PackageRevision): boolean => {
+export const canCloneRevision = (packageRevision: PackageRevision): boolean => {
   return isLatestPublishedRevision(packageRevision);
 };
 

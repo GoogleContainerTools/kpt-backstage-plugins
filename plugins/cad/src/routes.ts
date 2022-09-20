@@ -50,12 +50,6 @@ export const clonePackageRouteRef = createSubRouteRef({
   parent: rootRouteRef,
 });
 
-export const deployPackageRouteRef = createSubRouteRef({
-  id: 'deploy-package',
-  path: '/repositories/:repositoryName/packages/:packageName/deploy',
-  parent: rootRouteRef,
-});
-
 export const editPackageRouteRef = createSubRouteRef({
   id: 'edit-package',
   path: '/repositories/:repositoryName/packages/:packageName/edit',

@@ -20,7 +20,6 @@ import { Button as MaterialButton } from '@material-ui/core';
 import React, { Fragment } from 'react';
 import {
   clonePackageRouteRef,
-  deployPackageRouteRef,
   editPackageRouteRef,
   packageRouteRef,
 } from '../../../routes';
@@ -31,12 +30,11 @@ import {
 import { RepositorySummary } from '../../../types/RepositorySummary';
 import { RootSync } from '../../../types/RootSync';
 import {
-  canCloneOrDeploy,
+  canCloneRevision,
   findLatestPublishedRevision,
   isLatestPublishedRevision,
 } from '../../../utils/packageRevision';
 import {
-  ContentSummary,
   getPackageDescriptor,
   isDeploymentRepository,
   RepositoryContentDetails,
@@ -164,7 +162,6 @@ const PublishedPackageRevisionOptions = ({
 }: PackageRevisionOptionsProps) => {
   const packageRef = useRouteRef(packageRouteRef);
   const clonePackageRef = useRouteRef(clonePackageRouteRef);
-  const deployPackageRef = useRouteRef(deployPackageRouteRef);
 
   const packageName = packageRevision.metadata.name;
   const repositoryName = packageRevision.spec.repository;
@@ -207,15 +204,10 @@ const PublishedPackageRevisionOptions = ({
   }
 
   const packageContentType = getPackageDescriptor(repositorySummary.repository);
-  const showDeploy =
-    RepositoryContentDetails[packageContentType].cloneTo.includes(
-      ContentSummary.DEPLOYMENT,
-    ) && canCloneOrDeploy(packageRevision);
 
   const showClone =
-    !RepositoryContentDetails[packageContentType].cloneTo.includes(
-      ContentSummary.DEPLOYMENT,
-    ) && canCloneOrDeploy(packageRevision);
+    RepositoryContentDetails[packageContentType].cloneTo.length > 0 &&
+    canCloneRevision(packageRevision);
 
   const isNewerUnpublishedRevision = latestRevision !== latestPublishedRevision;
 
@@ -278,17 +270,6 @@ const PublishedPackageRevisionOptions = ({
           disabled={disabled}
         >
           Clone
-        </Button>
-      )}
-
-      {showDeploy && (
-        <Button
-          to={deployPackageRef({ repositoryName, packageName })}
-          color="primary"
-          variant="contained"
-          disabled={disabled}
-        >
-          Deploy
         </Button>
       )}
     </Fragment>
