@@ -118,15 +118,6 @@ export const getPackageDescriptor = (repository: Repository): string => {
   return 'Unknown';
 };
 
-export const getUpstreamPackageDescriptor = (
-  repository: Repository,
-): string => {
-  return (
-    RepositoryContentDetails[getPackageDescriptor(repository)].cloneFrom[0] ||
-    'Upstream Package'
-  );
-};
-
 export const getRepository = (
   allRepositories: Repository[],
   repositoryName: string,
