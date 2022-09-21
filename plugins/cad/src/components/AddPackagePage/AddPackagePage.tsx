@@ -25,7 +25,6 @@ import {
 import { useApi, useRouteRef } from '@backstage/core-plugin-api';
 import { makeStyles, TextField, Typography } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
-import { startCase } from 'lodash';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
@@ -37,7 +36,7 @@ import {
 } from '../../types/PackageRevision';
 import { Repository } from '../../types/Repository';
 import {
-  canCloneOrDeploy,
+  canCloneRevision,
   getCloneTask,
   getInitTask,
   getPackageRevision,
@@ -66,7 +65,6 @@ const useStyles = makeStyles(() => ({
 export enum AddPackagePageAction {
   ADD = 'add',
   CLONE = 'clone',
-  DEPLOY = 'deploy',
 }
 
 type AddPackagePageProps = {
@@ -167,7 +165,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
     ]);
 
     allRepositories.current = thisAllRepositories;
-    allClonablePackageRevisions.current = allPackages.filter(canCloneOrDeploy);
+    allClonablePackageRevisions.current = allPackages.filter(canCloneRevision);
 
     const thisRepository = getRepository(thisAllRepositories, repositoryName);
     const packageDescriptor = getPackageDescriptor(
@@ -324,13 +322,11 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
               packageRevision={sourcePackageRevision as PackageRevision}
               breadcrumb
             />
-            <Typography>{action}</Typography>
+            <Typography>clone</Typography>
           </Breadcrumbs>
 
           <ContentHeader
-            title={`${startCase(action)} ${getDisplayPackageName(
-              sourcePackageRevision,
-            )}`}
+            title={`Clone ${getDisplayPackageName(sourcePackageRevision)}`}
           />
         </Fragment>
       )}

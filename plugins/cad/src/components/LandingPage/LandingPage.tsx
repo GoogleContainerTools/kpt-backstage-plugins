@@ -24,7 +24,6 @@ import { configAsDataApiRef } from '../../apis';
 import {
   addPackageRouteRef,
   clonePackageRouteRef,
-  deployPackageRouteRef,
   editPackageRouteRef,
   packageRouteRef,
   registerRepositoryRouteRef,
@@ -70,10 +69,6 @@ export const LandingPage = () => {
         <Route
           path={clonePackageRouteRef.path}
           element={<AddPackagePage action={AddPackagePageAction.CLONE} />}
-        />
-        <Route
-          path={deployPackageRouteRef.path}
-          element={<AddPackagePage action={AddPackagePageAction.DEPLOY} />}
         />
         <Route
           path={editPackageRouteRef.path}
