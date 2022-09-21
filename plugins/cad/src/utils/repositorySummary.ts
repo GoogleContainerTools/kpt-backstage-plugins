@@ -98,12 +98,3 @@ export const populatePackageSummaries = (
     );
   });
 };
-
-export const fitlerRepositorySummary = (
-  repositorySummaries: RepositorySummary[],
-  repositoryFilter: (repository: Repository) => boolean,
-): RepositorySummary[] => {
-  return repositorySummaries.filter(summary =>
-    repositoryFilter(summary.repository),
-  );
-};

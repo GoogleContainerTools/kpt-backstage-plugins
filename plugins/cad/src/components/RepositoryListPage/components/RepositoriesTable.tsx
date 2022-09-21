@@ -16,62 +16,34 @@
 
 import { Table, TableColumn } from '@backstage/core-components';
 import { useRouteRef } from '@backstage/core-plugin-api';
-import React, { Fragment } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { repositoryRouteRef } from '../../../routes';
 import { PackageRevisionLifecycle } from '../../../types/PackageRevision';
-import { Repository, RepositoryContent } from '../../../types/Repository';
 import { RepositorySummary } from '../../../types/RepositorySummary';
 import { PackageSummary } from '../../../utils/packageSummary';
-import {
-  ContentSummary,
-  getPackageDescriptor,
-  getRepositoryTitle,
-} from '../../../utils/repository';
-import { RepositoryLink } from '../../Links';
 
 type RepositoriesTableProps = {
   title: string;
   repositories: RepositorySummary[];
-  repositoryContent: RepositoryContent;
-  packageDescriptor: string;
+  contentType: string;
 };
 
 type RepositoryRow = {
   id: string;
-  singularContent: string;
-  content: string;
-  title: string;
-  description: string;
   name: string;
+  description: string;
   summary: string;
-  blueprint?: Repository;
 };
 
 const getTableColumns = (
   packageDescriptor: string,
-  repositoryContent: RepositoryContent,
 ): TableColumn<RepositoryRow>[] => {
   const columns: TableColumn<RepositoryRow>[] = [
-    { title: 'Content', field: 'content' },
-    { title: 'Title', field: 'title' },
+    { title: 'Name', field: 'name' },
     { title: 'Description', field: 'description' },
     { title: `${packageDescriptor}s`, field: 'summary' },
   ];
-
-  if (repositoryContent === RepositoryContent.PACKAGE) {
-    const createLink = (repository: Repository) => (
-      <RepositoryLink repository={repository} stopPropagation />
-    );
-
-    const renderBlueprintColumn = (row: RepositoryRow) =>
-      row.blueprint ? createLink(row.blueprint) : <Fragment />;
-
-    columns.push({
-      title: 'Blueprint Repository',
-      render: renderBlueprintColumn,
-    });
-  }
 
   return columns;
 };
@@ -110,59 +82,26 @@ const mapToRepositoryRow = (
   repositorySummary: RepositorySummary,
 ): RepositoryRow => {
   const repository = repositorySummary.repository;
-  const blueprint = repositorySummary.upstreamRepository;
 
   return {
     id: repository.metadata.name,
-    singularContent: getPackageDescriptor(repository),
-    content: `${getPackageDescriptor(repository)}s`,
-    title: getRepositoryTitle(repository),
-    description: repository.spec.description,
-    blueprint: blueprint,
     name: repository.metadata.name,
+    description: repository.spec.description,
     summary: getSummary(repositorySummary.packageSummaries),
   };
-};
-
-const compareRepositoryRows = (
-  repositoryRow1: RepositoryRow,
-  repositoryRow2: RepositoryRow,
-): number => {
-  const getContentPriority = (row: RepositoryRow): number => {
-    switch (row.singularContent) {
-      case ContentSummary.DEPLOYMENT:
-        return 1;
-      case ContentSummary.BLUEPRINT:
-        return 2;
-      case ContentSummary.CATALOG_BLUEPRINT:
-        return 3;
-      default:
-        return 5;
-    }
-  };
-
-  const row1ContentPriority = getContentPriority(repositoryRow1);
-  const row2ContentPriority = getContentPriority(repositoryRow2);
-
-  if (row1ContentPriority !== row2ContentPriority) {
-    return row1ContentPriority > row2ContentPriority ? 1 : -1;
-  }
-
-  return repositoryRow1.name > repositoryRow2.name ? 1 : -1;
 };
 
 export const RepositoriesTable = ({
   title,
   repositories,
-  repositoryContent,
-  packageDescriptor,
+  contentType,
 }: RepositoriesTableProps) => {
   const navigate = useNavigate();
 
   const repositoryRef = useRouteRef(repositoryRouteRef);
 
-  const columns = getTableColumns(packageDescriptor, repositoryContent);
-  const data = repositories.map(mapToRepositoryRow).sort(compareRepositoryRows);
+  const columns = getTableColumns(contentType);
+  const data = repositories.map(mapToRepositoryRow);
 
   return (
     <div>

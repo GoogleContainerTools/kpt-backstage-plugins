@@ -19,83 +19,38 @@ import {
   Button,
   ContentHeader,
   Progress,
-  Tabs,
 } from '@backstage/core-components';
 import { useApi, useRouteRef } from '@backstage/core-plugin-api';
-import { Typography } from '@material-ui/core';
+import { makeStyles, Typography } from '@material-ui/core';
 import Alert from '@material-ui/lab/Alert';
+import { groupBy } from 'lodash';
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../apis';
 import { registerRepositoryRouteRef } from '../../routes';
-import { RepositoryContent } from '../../types/Repository';
-import { RepositorySummary } from '../../types/RepositorySummary';
 import { showRegisteredFunctionRepositories } from '../../utils/featureFlags';
 import {
-  isFunctionRepository,
-  isPackageRepository,
+  ContentSummary,
+  getPackageDescriptor,
+  PackageContentSummaryOrder,
 } from '../../utils/repository';
 import {
-  fitlerRepositorySummary,
   getRepositorySummaries,
   populatePackageSummaries,
 } from '../../utils/repositorySummary';
 import { RepositoriesTable } from './components/RepositoriesTable';
 
-interface TabProps {
-  content: any;
-  label: string;
-}
-
-const createRepositoriesTable = (
-  descriptor: string,
-  repositories: RepositorySummary[],
-  content: RepositoryContent,
-): JSX.Element => (
-  <RepositoriesTable
-    title={`${descriptor} Repositories`}
-    packageDescriptor={descriptor}
-    repositories={repositories}
-    repositoryContent={content}
-  />
-);
-
-const getPackagesTab = (
-  allRepositorySummaries: RepositorySummary[],
-): TabProps => ({
-  label: 'Packages',
-  content: createRepositoriesTable(
-    'Package',
-    fitlerRepositorySummary(allRepositorySummaries, isPackageRepository),
-    RepositoryContent.PACKAGE,
-  ),
+export const useStyles = makeStyles({
+  repositoriesTablesSection: {
+    '& > *': {
+      marginBottom: '24px',
+    },
+  },
 });
-
-const getFunctionsTab = (
-  allRepositorySummaries: RepositorySummary[],
-): TabProps => ({
-  label: 'Functions',
-  content: createRepositoriesTable(
-    'Function',
-    fitlerRepositorySummary(allRepositorySummaries, isFunctionRepository),
-    RepositoryContent.FUNCTION,
-  ),
-});
-
-const getRepositoryTabs = (
-  allRepositories: RepositorySummary[],
-): TabProps[] => {
-  const tabs: TabProps[] = [getPackagesTab(allRepositories)];
-
-  if (showRegisteredFunctionRepositories()) {
-    tabs.push(getFunctionsTab(allRepositories));
-  }
-
-  return tabs;
-};
 
 export const RepositoryListPage = () => {
+  const classes = useStyles();
   const api = useApi(configAsDataApiRef);
 
   const registerRepository = useRouteRef(registerRepositoryRouteRef);
@@ -130,7 +85,10 @@ export const RepositoryListPage = () => {
     throw new Error('Repository summaries is not defined');
   }
 
-  const repositoryTabs = getRepositoryTabs(allRepositorySummaries);
+  const repositoriesByContentType = groupBy(
+    allRepositorySummaries,
+    ({ repository }) => getPackageDescriptor(repository),
+  );
 
   return (
     <div>
@@ -149,7 +107,26 @@ export const RepositoryListPage = () => {
         </Button>
       </ContentHeader>
 
-      <Tabs tabs={repositoryTabs} />
+      <div className={classes.repositoriesTablesSection}>
+        {PackageContentSummaryOrder.map(contentType => (
+          <RepositoriesTable
+            key={contentType}
+            title={`${contentType} Repositories`}
+            contentType={contentType}
+            repositories={repositoriesByContentType[contentType] ?? []}
+          />
+        ))}
+
+        {showRegisteredFunctionRepositories() && (
+          <RepositoriesTable
+            title="Function Repositories"
+            contentType={ContentSummary.FUNCTION}
+            repositories={
+              repositoriesByContentType[ContentSummary.FUNCTION] ?? []
+            }
+          />
+        )}
+      </div>
     </div>
   );
 };
