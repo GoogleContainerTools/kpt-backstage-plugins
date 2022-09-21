@@ -15,17 +15,9 @@
  */
 
 import { PackageRevision } from '../types/PackageRevision';
-import {
-  Repository,
-  RepositoryGitDetails,
-  RepositoryOciDetails,
-  RepositoryUpstream,
-} from '../types/Repository';
+import { Repository } from '../types/Repository';
 import { RepositorySummary } from '../types/RepositorySummary';
 import { filterPackageSummaries, getPackageSummaries } from './packageSummary';
-import { isBlueprintRepository } from './repository';
-
-type RepositoryDetails = RepositoryUpstream;
 
 export const getRepositorySummaries = (
   allRepositories: Repository[],
@@ -33,35 +25,6 @@ export const getRepositorySummaries = (
   const repositorySummaries: RepositorySummary[] = allRepositories.map(
     repository => ({ repository: repository, downstreamRepositories: [] }),
   );
-
-  const gitRepoString = (git?: RepositoryGitDetails): string =>
-    git ? `${git.repo}:${git.branch}:${git.directory}` : '';
-  const ociRepoString = (oci?: RepositoryOciDetails): string =>
-    oci ? oci.registry : '';
-  const getRepoString = (repoDetails: RepositoryDetails) =>
-    `${repoDetails.type}:${gitRepoString(repoDetails.git)}:${ociRepoString(
-      repoDetails.oci,
-    )}`;
-
-  for (const repositorySummary of repositorySummaries) {
-    const repository = repositorySummary.repository;
-
-    if (repository.spec.upstream) {
-      repositorySummary.upstreamRepository = allRepositories.find(
-        r =>
-          repository.spec.upstream &&
-          getRepoString(r.spec) === getRepoString(repository.spec.upstream),
-      );
-    }
-
-    if (isBlueprintRepository(repository)) {
-      repositorySummary.downstreamRepositories = allRepositories.filter(
-        r =>
-          r.spec.upstream &&
-          getRepoString(r.spec.upstream) === getRepoString(repository.spec),
-      );
-    }
-  }
 
   return repositorySummaries;
 };

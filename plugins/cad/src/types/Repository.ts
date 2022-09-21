@@ -42,7 +42,6 @@ export type RepositorySpec = {
   deployment?: boolean;
   git?: RepositoryGitDetails;
   oci?: RepositoryOciDetails;
-  upstream?: RepositoryUpstream;
 };
 
 export enum RepositoryType {
@@ -69,10 +68,4 @@ export type RepositorySecretRef = {
 export type RepositoryOciDetails = {
   registry: string;
   secretRef?: RepositorySecretRef;
-};
-
-export type RepositoryUpstream = {
-  type: RepositoryType;
-  git?: RepositoryGitDetails;
-  oci?: RepositoryOciDetails;
 };

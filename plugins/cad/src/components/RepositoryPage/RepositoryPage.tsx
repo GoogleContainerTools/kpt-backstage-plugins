@@ -54,7 +54,6 @@ import { RepositoriesLink } from '../Links';
 import { PackagesTable } from '../PackagesTable';
 import { AdvancedRepositoryOptions } from './components/AdvancedRepositoryOptions';
 import { FunctionsTable } from './components/FunctionsTable';
-import { RelatedRepositoryContent } from './components/RelatedRepositoryContent';
 
 export const RepositoryPage = () => {
   const { repositoryName } = useParams();
@@ -212,7 +211,6 @@ export const RepositoryPage = () => {
       </Breadcrumbs>
 
       <ContentHeader title={repoTitle}>
-        <RelatedRepositoryContent repositorySummary={repositorySummary} />
         <Button
           to={addPackageRef({ repositoryName: repositoryName })}
           color="primary"

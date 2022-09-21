@@ -22,7 +22,6 @@ import {
   RepositoryOciDetails,
   RepositorySecretRef,
   RepositoryType,
-  RepositoryUpstream,
 } from '../types/Repository';
 
 type ContentDetails = {
@@ -156,7 +155,6 @@ export const getRepositoryResource = (
   contentSummary: ContentSummary,
   git?: RepositoryGitDetails,
   oci?: RepositoryOciDetails,
-  upstream?: RepositoryUpstream,
 ): Repository => {
   const namespace = 'default';
 
@@ -190,7 +188,6 @@ export const getRepositoryResource = (
       git,
       oci,
       deployment,
-      upstream,
     },
   };
 
