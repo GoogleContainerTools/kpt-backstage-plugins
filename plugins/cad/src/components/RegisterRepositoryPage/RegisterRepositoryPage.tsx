@@ -35,19 +35,15 @@ import {
   RepositoryOciDetails,
   RepositorySecretRef,
   RepositoryType,
-  RepositoryUpstream,
 } from '../../types/Repository';
 import { Secret } from '../../types/Secret';
 import { allowFunctionRepositoryRegistration } from '../../utils/featureFlags';
 import {
   ContentSummary,
-  getPackageDescriptor,
   getRepositoryGitDetails,
   getRepositoryOciDetails,
   getRepositoryResource,
-  getRepositoryTitle,
   getSecretRef,
-  RepositoryContentDetails,
 } from '../../utils/repository';
 import { getBasicAuthSecret, isBasicAuthSecret } from '../../utils/secret';
 import { Select } from '../Controls/Select';
@@ -67,13 +63,6 @@ enum AuthenticationType {
   GITHUB_ACCESS_TOKEN = 'GitHub Personal Access Token',
 }
 
-const mapRepositoryToSelectItem = (repository: Repository): SelectItem => {
-  return {
-    label: getRepositoryTitle(repository),
-    value: repository.metadata.name,
-  };
-};
-
 const mapSecretToSelectItem = (secret: Secret): SelectItem => {
   return {
     label: secret.metadata.name,
@@ -89,7 +78,6 @@ export const RegisterRepositoryPage = () => {
     repoUrl: '',
     contentSummary: '',
     type: '',
-    upstreamRepoName: '',
     description: '',
     repoBranch: '',
     repoDir: '',
@@ -98,10 +86,6 @@ export const RegisterRepositoryPage = () => {
     authSecretName: '',
     authPassword: '',
   });
-
-  const [allRepositories, setAllRepositories] = useState<Repository[]>([]);
-  const [selectUpstreamRepositoryItems, setSelectUpstreamRepositoryItems] =
-    useState<SelectItem[]>([]);
 
   const [selectAuthSecretItems, setSelectAuthSecretItems] = useState<
     SelectItem[]
@@ -128,14 +112,7 @@ export const RegisterRepositoryPage = () => {
       setSelectAuthSecretItems(secretSelectItems);
     };
 
-    const loadRepositories = async () => {
-      const { items: repositories } = await api.listRepositories();
-
-      setAllRepositories(repositories);
-    };
-
     loadSecrets();
-    loadRepositories();
   }, [api]);
 
   const getRepositorySecretRef = (): RepositorySecretRef | undefined => {
@@ -149,34 +126,11 @@ export const RegisterRepositoryPage = () => {
     return undefined;
   };
 
-  const getRepositoryUpstream = (): RepositoryUpstream | undefined => {
-    if (state.upstreamRepoName && state.upstreamRepoName !== 'none') {
-      const upstreamRepository = allRepositories.find(
-        repository => repository.metadata.name === state.upstreamRepoName,
-      );
-
-      if (!upstreamRepository) {
-        throw new Error(
-          `Upstream repository ${state.upstreamRepoName} not found`,
-        );
-      }
-
-      return {
-        type: upstreamRepository.spec.type,
-        git: upstreamRepository.spec.git,
-        oci: upstreamRepository.spec.oci,
-      };
-    }
-
-    return undefined;
-  };
-
   const getRepositoryResourceJson = (): Repository => {
     const secretRef = getRepositorySecretRef();
 
     let gitDetails: RepositoryGitDetails | undefined = undefined;
     let ociDetails: RepositoryOciDetails | undefined = undefined;
-    const upstream: RepositoryUpstream | undefined = getRepositoryUpstream();
 
     if (state.type === RepositoryType.GIT) {
       gitDetails = getRepositoryGitDetails(
@@ -199,7 +153,6 @@ export const RegisterRepositoryPage = () => {
       contentSummary,
       gitDetails,
       ociDetails,
-      upstream,
     );
 
     return resource;
@@ -297,28 +250,6 @@ export const RegisterRepositoryPage = () => {
         (state.authType && !options.find(o => o.value === state.authType))
       ) {
         toSet.authType = options[0].value as string;
-      }
-    }
-
-    if (toSet.contentSummary) {
-      const contentSummary = toSet.contentSummary;
-
-      if (
-        contentSummary === ContentSummary.DEPLOYMENT ||
-        contentSummary === ContentSummary.BLUEPRINT
-      ) {
-        const repositoryFilter = (repository: Repository) =>
-          RepositoryContentDetails[contentSummary].cloneFrom.includes(
-            getPackageDescriptor(repository) as ContentSummary,
-          );
-
-        const upstreamRepositories = allRepositories.filter(repositoryFilter);
-        const upstreamRepositoryItems = upstreamRepositories.map(
-          mapRepositoryToSelectItem,
-        );
-        upstreamRepositoryItems.unshift({ label: 'none', value: 'none' });
-
-        setSelectUpstreamRepositoryItems(upstreamRepositoryItems);
       }
     }
 
@@ -510,21 +441,6 @@ export const RegisterRepositoryPage = () => {
             />
           </div>
         </SimpleStepperStep>
-
-        {state.contentSummary !== ContentSummary.CATALOG_BLUEPRINT && (
-          <SimpleStepperStep title="Upstream Repository">
-            <div className={classes.stepContent}>
-              <Select
-                onChange={value =>
-                  setState({ ...state, upstreamRepoName: value })
-                }
-                label="Upstream Repository"
-                selected={state.upstreamRepoName}
-                items={selectUpstreamRepositoryItems}
-              />
-            </div>
-          </SimpleStepperStep>
-        )}
 
         <SimpleStepperStep
           title="Confirm"
