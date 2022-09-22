@@ -31,25 +31,26 @@ type ContentDetails = {
 type ContentDetail = {
   repositoryContent: RepositoryContent;
   isDeployment?: boolean;
-  expectedLabel?: string;
+  repositoryContentLabelValue?: string;
   notContent?: ContentSummary[];
   cloneTo: ContentSummary[];
 };
 
-const CATALOG_BLUEPRINT_REPOSITORY_LABEL =
-  'kpt.dev/catalog-blueprint-repository';
+const REPOSITORY_CONTENT_LABEL = 'kpt.dev/repository-content';
 
 export enum ContentSummary {
-  CATALOG_BLUEPRINT = 'Catalog Blueprint',
-  BLUEPRINT = 'Blueprint',
+  EXTERNAL_BLUEPRINT = 'External Blueprint',
+  ORGANIZATIONAL_BLUEPRINT = 'Organizational Blueprint',
+  TEAM_BLUEPRINT = 'Team Blueprint',
   DEPLOYMENT = 'Deployment',
   FUNCTION = 'Function',
 }
 
 export const PackageContentSummaryOrder = [
   ContentSummary.DEPLOYMENT,
-  ContentSummary.BLUEPRINT,
-  ContentSummary.CATALOG_BLUEPRINT,
+  ContentSummary.TEAM_BLUEPRINT,
+  ContentSummary.ORGANIZATIONAL_BLUEPRINT,
+  ContentSummary.EXTERNAL_BLUEPRINT,
 ];
 
 export const isFunctionRepository = (repository: Repository): boolean => {
@@ -70,15 +71,32 @@ export const RepositoryContentDetails: ContentDetails = {
     isDeployment: true,
     cloneTo: [],
   },
-  [ContentSummary.BLUEPRINT]: {
+  [ContentSummary.TEAM_BLUEPRINT]: {
     repositoryContent: RepositoryContent.PACKAGE,
-    notContent: [ContentSummary.CATALOG_BLUEPRINT],
-    cloneTo: [ContentSummary.DEPLOYMENT],
+    notContent: [
+      ContentSummary.ORGANIZATIONAL_BLUEPRINT,
+      ContentSummary.EXTERNAL_BLUEPRINT,
+    ],
+    cloneTo: [ContentSummary.DEPLOYMENT, ContentSummary.TEAM_BLUEPRINT],
   },
-  [ContentSummary.CATALOG_BLUEPRINT]: {
+  [ContentSummary.ORGANIZATIONAL_BLUEPRINT]: {
     repositoryContent: RepositoryContent.PACKAGE,
-    expectedLabel: CATALOG_BLUEPRINT_REPOSITORY_LABEL,
-    cloneTo: [ContentSummary.BLUEPRINT],
+    repositoryContentLabelValue: 'organizational-blueprints',
+    cloneTo: [
+      ContentSummary.DEPLOYMENT,
+      ContentSummary.TEAM_BLUEPRINT,
+      ContentSummary.ORGANIZATIONAL_BLUEPRINT,
+    ],
+  },
+  [ContentSummary.EXTERNAL_BLUEPRINT]: {
+    repositoryContent: RepositoryContent.PACKAGE,
+    repositoryContentLabelValue: 'external-blueprints',
+    cloneTo: [
+      ContentSummary.DEPLOYMENT,
+      ContentSummary.TEAM_BLUEPRINT,
+      ContentSummary.ORGANIZATIONAL_BLUEPRINT,
+      ContentSummary.EXTERNAL_BLUEPRINT,
+    ],
   },
   [ContentSummary.FUNCTION]: {
     repositoryContent: RepositoryContent.FUNCTION,
@@ -97,8 +115,9 @@ const isRepositoryContent = (
   const isDeploymentMatch =
     !!repository.spec.deployment === !!repositoryDetails.isDeployment;
   const isLabelMatch =
-    !repositoryDetails.expectedLabel ||
-    !!repository.metadata.labels?.[repositoryDetails.expectedLabel];
+    !repositoryDetails.repositoryContentLabelValue ||
+    repository.metadata.labels?.[REPOSITORY_CONTENT_LABEL] ===
+      repositoryDetails.repositoryContentLabelValue;
 
   const notContent = repositoryDetails.notContent ?? [];
   const noDisqualifiers = !notContent
@@ -170,8 +189,9 @@ export const getRepositoryResource = (
 
   const labels: KubernetesKeyValueObject = {};
 
-  if (contentDetails.expectedLabel) {
-    labels[contentDetails.expectedLabel] = 'true';
+  if (contentDetails.repositoryContentLabelValue) {
+    labels[REPOSITORY_CONTENT_LABEL] =
+      contentDetails.repositoryContentLabelValue;
   }
 
   const resource: Repository = {

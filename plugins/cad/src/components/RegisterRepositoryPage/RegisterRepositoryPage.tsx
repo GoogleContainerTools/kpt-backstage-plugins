@@ -44,6 +44,7 @@ import {
   getRepositoryOciDetails,
   getRepositoryResource,
   getSecretRef,
+  PackageContentSummaryOrder,
 } from '../../utils/repository';
 import { getBasicAuthSecret, isBasicAuthSecret } from '../../utils/secret';
 import { Select } from '../Controls/Select';
@@ -224,7 +225,7 @@ export const RegisterRepositoryPage = () => {
       }
 
       for (const contentSummary of Object.values(ContentSummary)) {
-        if (repositoryUrl.includes(contentSummary.toLocaleLowerCase('en-US'))) {
+        if (repositoryUrl.includes(kebabCase(contentSummary))) {
           toSet.contentSummary = contentSummary;
         }
       }
@@ -264,20 +265,12 @@ export const RegisterRepositoryPage = () => {
   };
 
   const repositoryContentSelectItems = useMemo(() => {
-    const selectItems: SelectItem[] = [
-      {
-        label: 'Catalog Blueprints',
-        value: ContentSummary.CATALOG_BLUEPRINT,
-      },
-      {
-        label: 'Blueprints',
-        value: ContentSummary.BLUEPRINT,
-      },
-      {
-        label: 'Deployments',
-        value: ContentSummary.DEPLOYMENT,
-      },
-    ];
+    const selectItems: SelectItem[] = PackageContentSummaryOrder.map(
+      contentType => ({
+        label: `${contentType}s`,
+        value: contentType,
+      }),
+    );
 
     if (allowFunctionRepositoryRegistration()) {
       selectItems.push({
