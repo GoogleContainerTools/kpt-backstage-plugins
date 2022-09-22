@@ -22,7 +22,7 @@ import {
   DialogTitle,
   makeStyles,
 } from '@material-ui/core';
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { KubernetesResource } from '../../types/KubernetesResource';
 import { PackageResource } from '../../utils/packageRevisionResources';
 import { loadYaml } from '../../utils/yaml';
@@ -60,6 +60,7 @@ export const ResourceEditorDialog = ({
 
   const [showYamlView, setShowYamlView] = useState<boolean>(false);
   const [latestYaml, setLatestYaml] = useState<string>('');
+  const [isNamedEditor, setIsNamedEditor] = useState<boolean>(true);
 
   const resourceYaml = loadYaml(yaml) as KubernetesResource;
 
@@ -71,12 +72,15 @@ export const ResourceEditorDialog = ({
       // Reset the state of the dialog anytime it is opened
       setLatestYaml(yaml);
       setShowYamlView(false);
+      setIsNamedEditor(true);
     }
   }, [open, yaml]);
 
   const toggleView = (): void => {
     setShowYamlView(!showYamlView);
   };
+
+  const handleNoNamedEditor = useCallback(() => setIsNamedEditor(false), []);
 
   const handleUpdatedYaml = (updatedYaml: string): void => {
     setLatestYaml(updatedYaml);
@@ -105,12 +109,13 @@ export const ResourceEditorDialog = ({
             className={classes.container}
             style={{ height: `${latestYamlHeight}px` }}
           >
-            {!showYamlView ? (
+            {!showYamlView && isNamedEditor ? (
               <FirstClassEditorSelector
                 apiVersion={resourceApiVersion}
                 kind={kind}
                 yaml={latestYaml}
                 packageResources={packageResources}
+                onNoNamedEditor={handleNoNamedEditor}
                 onUpdatedYaml={handleUpdatedYaml}
               />
             ) : (
@@ -121,9 +126,11 @@ export const ResourceEditorDialog = ({
               />
             )}
           </div>
-          <Button variant="text" color="primary" onClick={toggleView}>
-            Show {showYamlView ? 'Formatted View' : 'YAML View'}
-          </Button>
+          {isNamedEditor && (
+            <Button variant="text" color="primary" onClick={toggleView}>
+              Show {showYamlView ? 'Formatted View' : 'YAML View'}
+            </Button>
+          )}
         </Fragment>
       </DialogContent>
       <DialogActions>
