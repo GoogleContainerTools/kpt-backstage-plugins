@@ -31,7 +31,6 @@ type ContentDetails = {
 type ContentDetail = {
   isContent: (repository: Repository) => boolean;
   cloneTo: ContentSummary[];
-  cloneFrom: ContentSummary[];
 };
 
 const CATELOG_BLUEPRINT_REPOSITORY_LABEL =
@@ -88,22 +87,18 @@ export const RepositoryContentDetails: ContentDetails = {
   [ContentSummary.DEPLOYMENT]: {
     isContent: isDeploymentRepository,
     cloneTo: [],
-    cloneFrom: [ContentSummary.BLUEPRINT],
   },
   [ContentSummary.BLUEPRINT]: {
     isContent: isDeployableBlueprintRepository,
     cloneTo: [ContentSummary.DEPLOYMENT],
-    cloneFrom: [ContentSummary.CATALOG_BLUEPRINT],
   },
   [ContentSummary.CATALOG_BLUEPRINT]: {
     isContent: isCatalogBlueprintRepository,
     cloneTo: [ContentSummary.BLUEPRINT],
-    cloneFrom: [],
   },
   [ContentSummary.FUNCTION]: {
     isContent: isFunctionRepository,
     cloneTo: [],
-    cloneFrom: [],
   },
 };
 

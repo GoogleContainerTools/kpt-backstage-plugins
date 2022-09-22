@@ -174,22 +174,25 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
 
     if (isAddPackageAction) {
       setTargetRepository(thisRepository);
+      const packageDescriptorLowerCase = toLowerCase(packageDescriptor);
 
       const actionSelectItems: SelectItem[] = [
         {
-          label: `Create a new ${toLowerCase(packageDescriptor)} from scratch`,
+          label: `Create a new ${packageDescriptorLowerCase} from scratch`,
           value: 'none',
         },
       ];
 
-      for (const contentType of RepositoryContentDetails[packageDescriptor]
-        .cloneFrom) {
-        actionSelectItems.push({
-          label: `Create a new ${toLowerCase(
-            packageDescriptor,
-          )} by cloning a ${toLowerCase(contentType)}`,
-          value: contentType,
-        });
+      for (const contentType of Object.keys(RepositoryContentDetails)) {
+        const cloneTo = RepositoryContentDetails[contentType].cloneTo;
+        const contentTypeLowerCase = toLowerCase(contentType);
+
+        if (cloneTo.includes(packageDescriptor)) {
+          actionSelectItems.push({
+            label: `Create a new ${packageDescriptorLowerCase} by cloning a ${contentTypeLowerCase}`,
+            value: contentType,
+          });
+        }
       }
 
       setAddPackageSelectItems(actionSelectItems);
