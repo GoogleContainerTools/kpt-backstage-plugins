@@ -237,12 +237,18 @@ export const PackageRevisionResourcesTable = ({
     { title: 'Kind', field: 'kind' },
     { title: 'Name', field: 'name' },
     { title: 'Namespace', field: 'namespace' },
-    {},
+    { title: 'Diff', render: renderDiffColumn },
     { render: resourceRow => <div>{renderOptionsColumn(resourceRow)}</div> },
   ];
 
-  if (showDiff) {
-    columns[3] = { title: 'Diff', render: renderDiffColumn };
+  if (!showDiff) {
+    const diffColumn = columns.find(column => column.title === 'Diff');
+
+    if (!diffColumn) {
+      throw new Error('Diff column not found');
+    }
+
+    columns[columns.indexOf(diffColumn)] = {};
   }
 
   const saveUpdatedYaml = (yaml: string): void => {
