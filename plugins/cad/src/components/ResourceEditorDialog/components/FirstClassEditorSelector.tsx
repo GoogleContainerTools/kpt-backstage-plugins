@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import { Typography } from '@material-ui/core';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { PackageResource } from '../../../utils/packageRevisionResources';
 import { ApplyReplacementsEditor } from './FirstClassEditors/ApplyReplacementsEditor';
 import { ConfigMapEditor } from './FirstClassEditors/ConfigMapEditor';
@@ -30,12 +29,14 @@ import { ServiceEditor } from './FirstClassEditors/ServiceEditor';
 import { SetLabelsEditor } from './FirstClassEditors/SetLabelsEditor';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
+type OnNoNamedEditorFn = () => void;
 
 type FirstClassEditorSelectorProps = {
   apiVersion: string;
   kind: string;
   yaml: string;
   onUpdatedYaml: OnUpdatedYamlFn;
+  onNoNamedEditor: OnNoNamedEditorFn;
   packageResources: PackageResource[];
 };
 
@@ -44,9 +45,17 @@ export const FirstClassEditorSelector = ({
   kind,
   yaml,
   onUpdatedYaml,
+  onNoNamedEditor,
   packageResources,
 }: FirstClassEditorSelectorProps) => {
   const groupVersionKind = `${apiVersion}/${kind}`;
+  const isNamedEditor = useRef<boolean>(true);
+
+  useEffect(() => {
+    if (!isNamedEditor.current) {
+      onNoNamedEditor();
+    }
+  }, [onNoNamedEditor]);
 
   switch (groupVersionKind) {
     case 'fn.kpt.dev/v1alpha1/ApplyReplacements':
@@ -115,12 +124,6 @@ export const FirstClassEditorSelector = ({
     default:
   }
 
-  return (
-    <div>
-      <Typography>
-        A first class editor could not be found for {kind}. Use the YAML VIEW to
-        update the resource's YAML directly.
-      </Typography>
-    </div>
-  );
+  isNamedEditor.current = false;
+  return null;
 };
