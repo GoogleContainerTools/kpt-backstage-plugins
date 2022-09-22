@@ -29,11 +29,14 @@ type ContentDetails = {
 };
 
 type ContentDetail = {
-  isContent: (repository: Repository) => boolean;
+  repositoryContent: RepositoryContent;
+  isDeployment?: boolean;
+  expectedLabel?: string;
+  notContent?: ContentSummary[];
   cloneTo: ContentSummary[];
 };
 
-const CATELOG_BLUEPRINT_REPOSITORY_LABEL =
+const CATALOG_BLUEPRINT_REPOSITORY_LABEL =
   'kpt.dev/catalog-blueprint-repository';
 
 export enum ContentSummary {
@@ -57,54 +60,59 @@ export const isPackageRepository = (repository: Repository): boolean => {
   return repository.spec.content === RepositoryContent.PACKAGE;
 };
 
-export const isBlueprintRepository = (repository: Repository): boolean => {
-  return isPackageRepository(repository) && !repository.spec.deployment;
-};
-
-export const isCatalogBlueprintRepository = (
-  repository: Repository,
-): boolean => {
-  return (
-    isBlueprintRepository(repository) &&
-    !!repository.metadata.labels?.[CATELOG_BLUEPRINT_REPOSITORY_LABEL]
-  );
-};
-
-export const isDeployableBlueprintRepository = (
-  repository: Repository,
-): boolean => {
-  return (
-    isBlueprintRepository(repository) &&
-    !repository.metadata.labels?.[CATELOG_BLUEPRINT_REPOSITORY_LABEL]
-  );
-};
-
 export const isDeploymentRepository = (repository: Repository): boolean => {
   return isPackageRepository(repository) && !!repository.spec.deployment;
 };
 
 export const RepositoryContentDetails: ContentDetails = {
   [ContentSummary.DEPLOYMENT]: {
-    isContent: isDeploymentRepository,
+    repositoryContent: RepositoryContent.PACKAGE,
+    isDeployment: true,
     cloneTo: [],
   },
   [ContentSummary.BLUEPRINT]: {
-    isContent: isDeployableBlueprintRepository,
+    repositoryContent: RepositoryContent.PACKAGE,
+    notContent: [ContentSummary.CATALOG_BLUEPRINT],
     cloneTo: [ContentSummary.DEPLOYMENT],
   },
   [ContentSummary.CATALOG_BLUEPRINT]: {
-    isContent: isCatalogBlueprintRepository,
+    repositoryContent: RepositoryContent.PACKAGE,
+    expectedLabel: CATALOG_BLUEPRINT_REPOSITORY_LABEL,
     cloneTo: [ContentSummary.BLUEPRINT],
   },
   [ContentSummary.FUNCTION]: {
-    isContent: isFunctionRepository,
+    repositoryContent: RepositoryContent.FUNCTION,
     cloneTo: [],
   },
 };
 
+const isRepositoryContent = (
+  repository: Repository,
+  contentType: ContentSummary,
+): boolean => {
+  const repositoryDetails = RepositoryContentDetails[contentType];
+
+  const isContentTypeMatch =
+    repository.spec.content === repositoryDetails.repositoryContent;
+  const isDeploymentMatch =
+    !!repository.spec.deployment === !!repositoryDetails.isDeployment;
+  const isLabelMatch =
+    !repositoryDetails.expectedLabel ||
+    !!repository.metadata.labels?.[repositoryDetails.expectedLabel];
+
+  const notContent = repositoryDetails.notContent ?? [];
+  const noDisqualifiers = !notContent
+    .map(content => isRepositoryContent(repository, content))
+    .includes(true);
+
+  return (
+    isContentTypeMatch && isDeploymentMatch && isLabelMatch && noDisqualifiers
+  );
+};
+
 export const getPackageDescriptor = (repository: Repository): string => {
   for (const contentType of Object.keys(RepositoryContentDetails)) {
-    if (RepositoryContentDetails[contentType].isContent(repository)) {
+    if (isRepositoryContent(repository, contentType as ContentSummary)) {
       return contentType;
     }
   }
@@ -153,19 +161,17 @@ export const getRepositoryResource = (
 ): Repository => {
   const namespace = 'default';
 
-  const content: RepositoryContent =
-    contentSummary === ContentSummary.FUNCTION
-      ? RepositoryContent.FUNCTION
-      : RepositoryContent.PACKAGE;
-  const deployment =
-    contentSummary === ContentSummary.DEPLOYMENT ? true : undefined;
+  const contentDetails = RepositoryContentDetails[contentSummary];
+
+  const content: RepositoryContent = contentDetails.repositoryContent;
+  const deployment = contentDetails.isDeployment ? true : undefined;
 
   const type = git ? RepositoryType.GIT : RepositoryType.OCI;
 
   const labels: KubernetesKeyValueObject = {};
 
-  if (contentSummary === ContentSummary.CATALOG_BLUEPRINT) {
-    labels[CATELOG_BLUEPRINT_REPOSITORY_LABEL] = 'true';
+  if (contentDetails.expectedLabel) {
+    labels[contentDetails.expectedLabel] = 'true';
   }
 
   const resource: Repository = {
