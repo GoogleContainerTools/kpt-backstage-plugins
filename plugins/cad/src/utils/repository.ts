@@ -31,6 +31,7 @@ type ContentDetails = {
 
 type ContentDetail = {
   repositoryContent: RepositoryContent;
+  description: string;
   isDeployment?: boolean;
   repositoryContentLabelValue?: string;
   notContent?: ContentSummary[];
@@ -69,11 +70,15 @@ export const isDeploymentRepository = (repository: Repository): boolean => {
 export const RepositoryContentDetails: ContentDetails = {
   [ContentSummary.DEPLOYMENT]: {
     repositoryContent: RepositoryContent.PACKAGE,
+    description:
+      'Deployment Packages are packages ready for deployment to live clusters.',
     isDeployment: true,
     cloneTo: [],
   },
   [ContentSummary.TEAM_BLUEPRINT]: {
     repositoryContent: RepositoryContent.PACKAGE,
+    description:
+      'Team Blueprints are packages that a team in your organization owns. Deployment Packages can be created from packages in this repository.',
     notContent: [
       ContentSummary.ORGANIZATIONAL_BLUEPRINT,
       ContentSummary.EXTERNAL_BLUEPRINT,
@@ -83,6 +88,8 @@ export const RepositoryContentDetails: ContentDetails = {
   [ContentSummary.ORGANIZATIONAL_BLUEPRINT]: {
     repositoryContent: RepositoryContent.PACKAGE,
     repositoryContentLabelValue: 'organizational-blueprints',
+    description:
+      'Organizational Blueprints are packages that your organization owns. An Organizational Blueprint package is expected to be cloned and customized in a Team Blueprint repository before a Deployment Package is created.',
     cloneTo: [
       ContentSummary.DEPLOYMENT,
       ContentSummary.TEAM_BLUEPRINT,
@@ -92,6 +99,8 @@ export const RepositoryContentDetails: ContentDetails = {
   [ContentSummary.EXTERNAL_BLUEPRINT]: {
     repositoryContent: RepositoryContent.PACKAGE,
     repositoryContentLabelValue: 'external-blueprints',
+    description:
+      'External Blueprints are packages that your organization does not own. An External Blueprint package is expected to be cloned and customized in an Organization or Team Blueprint repository before a Deployment Package is created.',
     cloneTo: [
       ContentSummary.DEPLOYMENT,
       ContentSummary.TEAM_BLUEPRINT,
@@ -101,6 +110,8 @@ export const RepositoryContentDetails: ContentDetails = {
   },
   [ContentSummary.FUNCTION]: {
     repositoryContent: RepositoryContent.FUNCTION,
+    description:
+      'Functions are containerized programs that can perform CRUD operations on KRM resources.',
     cloneTo: [],
   },
 };
