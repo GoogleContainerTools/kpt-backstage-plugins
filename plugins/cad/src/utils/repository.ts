@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { trimEnd } from 'lodash';
 import { KubernetesKeyValueObject } from '../types/KubernetesResource';
 import {
   Repository,
@@ -163,8 +164,12 @@ export const findRepository = (
   { repositoryUrl }: { repositoryUrl?: string },
 ): Repository | undefined => {
   if (repositoryUrl) {
+    const normalize = (repository?: string): string =>
+      trimEnd(repository, '.git');
+
     return allRepositories.find(
-      repository => repository.spec.git?.repo === repositoryUrl,
+      repository =>
+        normalize(repository.spec.git?.repo) === normalize(repositoryUrl),
     );
   }
 
