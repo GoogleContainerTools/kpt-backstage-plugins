@@ -45,9 +45,10 @@ import {
   getRepositoryResource,
   getSecretRef,
   PackageContentSummaryOrder,
+  RepositoryContentDetails,
 } from '../../utils/repository';
 import { getBasicAuthSecret, isBasicAuthSecret } from '../../utils/secret';
-import { Select } from '../Controls/Select';
+import { RadioGroup, RadioOption, Select } from '../Controls';
 import { RepositoriesLink } from '../Links';
 
 const useStyles = makeStyles(() => ({
@@ -264,11 +265,12 @@ export const RegisterRepositoryPage = () => {
     updateStateValue(target.name, target.value);
   };
 
-  const repositoryContentSelectItems = useMemo(() => {
-    const selectItems: SelectItem[] = PackageContentSummaryOrder.map(
+  const repositoryContentRadioOptions = useMemo(() => {
+    const selectItems: RadioOption[] = PackageContentSummaryOrder.map(
       contentType => ({
         label: `${contentType}s`,
         value: contentType,
+        description: RepositoryContentDetails[contentType].description,
       }),
     );
 
@@ -276,6 +278,8 @@ export const RegisterRepositoryPage = () => {
       selectItems.push({
         label: 'Functions',
         value: ContentSummary.FUNCTION,
+        description:
+          RepositoryContentDetails[ContentSummary.FUNCTION].description,
       });
     }
 
@@ -425,11 +429,11 @@ export const RegisterRepositoryPage = () => {
 
         <SimpleStepperStep title="Repository Content">
           <div className={classes.stepContent}>
-            <Select
-              label="Content"
+            <RadioGroup
+              label="Repository Content"
               onChange={value => updateStateValue('contentSummary', value)}
-              selected={state.contentSummary}
-              items={repositoryContentSelectItems}
+              value={state.contentSummary}
+              options={repositoryContentRadioOptions}
               helperText="The content the repository will store."
             />
           </div>

@@ -19,5 +19,7 @@ export { ConfirmationDialog } from './ConfirmationDialog';
 export { IconButton } from './IconButton';
 export { MultiSelect } from './MultiSelect';
 export { PackageIcon } from './PackageIcon';
+export { RadioGroup } from './RadioGroup';
+export type { RadioOption } from './RadioGroup';
 export { Select } from './Select';
 export { YamlViewer } from './YamlViewer';
