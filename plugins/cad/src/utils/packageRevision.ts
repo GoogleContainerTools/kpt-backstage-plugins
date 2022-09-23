@@ -63,9 +63,16 @@ export const getUpstreamPackageRevisionDetails = (
 
   if (upstreamLock?.git) {
     const repositoryUrl = upstreamLock.git.repo;
-    const [packageName, revision] = upstreamLock.git.ref.split('/');
 
-    return { repositoryUrl, packageName, revision };
+    const upstreamRef = upstreamLock.git.ref;
+    const separatorIdx = upstreamRef.lastIndexOf('/');
+
+    if (separatorIdx > 0) {
+      const packageName = upstreamRef.slice(0, separatorIdx);
+      const revision = upstreamRef.slice(separatorIdx + 1);
+
+      return { repositoryUrl, packageName, revision };
+    }
   }
 
   return undefined;
