@@ -41,9 +41,9 @@ type ResourceEditorProps = {
 
 const useStyles = makeStyles({
   container: {
-    width: '600px',
-    minHeight: '300px',
-    maxHeight: '50vh',
+    width: '660px',
+    minHeight: 'min(420px, calc(80vh - 120px))',
+    maxHeight: 'calc(80vh - 120px)',
     marginBottom: '10px',
     overflowY: 'scroll',
   },
