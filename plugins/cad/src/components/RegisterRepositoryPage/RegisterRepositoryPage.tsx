@@ -135,9 +135,12 @@ export const RegisterRepositoryPage = () => {
     let ociDetails: RepositoryOciDetails | undefined = undefined;
 
     if (state.type === RepositoryType.GIT) {
+      const createBranch = true;
+
       gitDetails = getRepositoryGitDetails(
         state.repoUrl,
         state.repoBranch || 'main',
+        createBranch,
         state.repoDir || '/',
         secretRef,
       );
