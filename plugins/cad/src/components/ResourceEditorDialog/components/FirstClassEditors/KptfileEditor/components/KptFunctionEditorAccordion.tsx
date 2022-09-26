@@ -65,7 +65,7 @@ export const KptFunctionEditorAccordion = ({
   allKptFunctions,
   packageResources,
 }: kptFunctionEditorProps) => {
-  const CUSTOM_IMAGE = 'Use custom image';
+  const CUSTOM_IMAGE = 'use custom image';
 
   const functionConfigSelectItems: SelectItem[] = sortByLabel(
     packageResources.map(resource => ({
@@ -115,7 +115,7 @@ export const KptFunctionEditorAccordion = ({
 
   useEffect(() => {
     const allFunctionNames = Object.keys(allKptFunctionsGroupedByName);
-
+    allFunctionNames.push(CUSTOM_IMAGE);
     setFunctionNames(allFunctionNames);
 
     if (stateImage.current) {
