@@ -234,12 +234,14 @@ export const getRepositoryResource = (
 export const getRepositoryGitDetails = (
   repo: string,
   branch: string,
+  createBranch: boolean,
   directory: string,
   secretRef: RepositorySecretRef | undefined,
 ): RepositoryGitDetails => {
   const gitDetails: RepositoryGitDetails = {
     repo,
     branch,
+    createBranch,
     directory,
     secretRef,
   };

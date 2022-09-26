@@ -57,6 +57,7 @@ export enum RepositoryContent {
 export type RepositoryGitDetails = {
   repo: string;
   branch: string;
+  createBranch?: boolean;
   directory: string;
   secretRef?: RepositorySecretRef;
 };
