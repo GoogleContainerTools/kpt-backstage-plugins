@@ -133,6 +133,8 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
     site: '',
   });
 
+  const [isCreatingPackage, setIsCreatingPackage] = useState<boolean>(false);
+
   const [
     sourcePackageRevisionSelectItems,
     setSourcePackageRevisionSelectItems,
@@ -292,6 +294,8 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
   const createPackage = async (): Promise<void> => {
     const resourceJson = getNewPackageRevisionResource();
 
+    setIsCreatingPackage(true);
+
     const newPackageRevisionResource = await api.createPackageRevision(
       resourceJson,
     );
@@ -305,7 +309,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
     );
   };
 
-  if (loading) {
+  if (loading || isCreatingPackage) {
     return <Progress />;
   } else if (error) {
     return <Alert severity="error">{error.message}</Alert>;
