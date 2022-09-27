@@ -30,7 +30,7 @@ export type PodMetadata = {
 
 export type PodSpec = {
   serviceAccountName?: string;
-  volumes: Volume[];
+  volumes?: Volume[];
   containers: Container[];
 };
 
@@ -48,6 +48,7 @@ export type PersistentVolumeClaimVolumeSource = {
 
 export type ConfigMapVolumeSource = {
   name: string;
+  items?: KeyToPath[];
 };
 
 export type EmptyDirVolumeSource = {};
@@ -63,6 +64,8 @@ export type Container = {
   args?: string[];
   ports?: ContainerPort[];
   volumeMounts?: VolumeMount[];
+  env?: EnvVar[];
+  envFrom?: EnvFromSource[];
 };
 
 export type ContainerPort = {
@@ -75,4 +78,61 @@ export type VolumeMount = {
   name: string;
   mountPath: string;
   readOnly?: boolean;
+};
+
+export type EnvVar = {
+  name: string;
+  value?: string;
+  valueFrom?: EnvVarSource;
+};
+
+export type EnvVarSource = {
+  configMapKeyRef?: ConfigMapKeySelector;
+  fieldRef?: ObjectFieldSelector;
+  resourceFieldRef?: ResourceFieldSelector;
+  secretKeyRef?: SecretKeySelector;
+};
+
+export type KeyToPath = {
+  key: string;
+  path: string;
+};
+
+export type ConfigMapKeySelector = {
+  name: string;
+  key: string;
+  optional?: boolean;
+};
+
+export type ObjectFieldSelector = {
+  apiVersion?: string;
+  fieldPath: string;
+};
+
+export type ResourceFieldSelector = {
+  containerName?: string;
+  resource: string;
+  divisor?: string;
+};
+
+export type SecretKeySelector = {
+  name: string;
+  key: string;
+  optional?: boolean;
+};
+
+export type EnvFromSource = {
+  prefix?: string;
+  configMapRef?: ConfigMapEnvSource;
+  secretRef?: SecretEnvSource;
+};
+
+export type ConfigMapEnvSource = {
+  name?: string;
+  optional?: boolean;
+};
+
+export type SecretEnvSource = {
+  name?: string;
+  optional?: boolean;
 };
