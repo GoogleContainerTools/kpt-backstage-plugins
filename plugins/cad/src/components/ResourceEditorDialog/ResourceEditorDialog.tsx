@@ -96,9 +96,10 @@ export const ResourceEditorDialog = ({
   };
 
   const latestYamlHeight = (latestYaml.split('\n').length + 1) * 18;
-  const title = resourceYaml?.metadata
-    ? `${resourceYaml.kind} ${resourceYaml?.metadata.name}`
-    : 'New Resource';
+  const title =
+    resourceYaml?.kind && resourceYaml?.metadata
+      ? `${resourceYaml.kind} ${resourceYaml?.metadata.name}`
+      : 'New Resource';
 
   return (
     <Dialog open={open} onClose={onDialogClose} maxWidth="lg">
