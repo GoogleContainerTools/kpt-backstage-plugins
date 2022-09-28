@@ -56,7 +56,7 @@ const sortResources = (allResources: ResourceRow[]): void => {
   allResources.sort((resource1, resource2) => {
     const resourceScore = (resource: ResourceRow): number => {
       if (resource.kind === 'Kptfile') return 1000;
-      if (resource.kind === 'Namespace') return 100;
+      if (resource.isLocalConfigResource) return 100;
 
       return 0;
     };
