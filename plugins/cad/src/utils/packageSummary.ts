@@ -121,8 +121,9 @@ export const getPackageSummariesForRepository = (
             );
 
           thisPackageSummary.isUpgradeAvailable =
-            thisPackageSummary.upstreamLatestPublishedRevision?.spec
-              .revision !== upstream.revision;
+            thisPackageSummary.upstreamLatestPublishedRevision &&
+            thisPackageSummary.upstreamLatestPublishedRevision.spec.revision !==
+              upstream.revision;
         }
       }
 
