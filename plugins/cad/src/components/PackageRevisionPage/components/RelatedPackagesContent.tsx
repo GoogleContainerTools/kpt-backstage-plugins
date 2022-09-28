@@ -69,7 +69,7 @@ const DownstreamPackageContent = ({
   return (
     <Fragment>
       {packageDescriptors.map(descriptor => (
-        <div>
+        <div key={descriptor}>
           Downstream {descriptor}s:&nbsp;
           {(packagesByDescriptor[descriptor] ?? []).length}
         </div>
