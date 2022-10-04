@@ -17,3 +17,7 @@
 export const toLowerCase = (str: string): string | undefined => {
   return str.toLocaleLowerCase('us-EN');
 };
+
+export const emptyIfUndefined = (str?: string): string => {
+  return str ?? '';
+};

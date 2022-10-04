@@ -32,8 +32,9 @@ export type KptfileMetadata = {
 };
 
 export type KptfileInfo = {
-  description: string;
-  keywords: string[];
+  description?: string;
+  keywords?: string[];
+  site?: string;
 };
 
 export type KptfilePipeline = {
