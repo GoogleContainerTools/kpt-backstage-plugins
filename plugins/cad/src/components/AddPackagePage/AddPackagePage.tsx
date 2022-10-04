@@ -28,12 +28,14 @@ import { Alert } from '@material-ui/lab';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
-import { configAsDataApiRef } from '../../apis';
+import { ConfigAsDataApi, configAsDataApiRef } from '../../apis';
 import { packageRouteRef } from '../../routes';
+import { Kptfile } from '../../types/Kptfile';
 import {
   PackageRevision,
   PackageRevisionLifecycle,
 } from '../../types/PackageRevision';
+import { PackageRevisionResourcesMap } from '../../types/PackageRevisionResource';
 import { Repository } from '../../types/Repository';
 import {
   canCloneRevision,
@@ -43,13 +45,21 @@ import {
   getPackageRevisionResource,
 } from '../../utils/packageRevision';
 import {
+  getPackageResourcesFromResourcesMap,
+  getPackageRevisionResourcesResource,
+  getRootKptfile,
+  PackageResource,
+  updateResourceInResourcesMap,
+} from '../../utils/packageRevisionResources';
+import {
   ContentSummary,
   getPackageDescriptor,
   getRepository,
   RepositoryContentDetails,
 } from '../../utils/repository';
 import { sortByLabel } from '../../utils/selectItem';
-import { toLowerCase } from '../../utils/string';
+import { emptyIfUndefined, toLowerCase } from '../../utils/string';
+import { dumpYaml, loadYaml } from '../../utils/yaml';
 import { Select } from '../Controls/Select';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
 
@@ -80,6 +90,7 @@ type RepositorySelectItem = SelectItem & {
 };
 
 type KptfileState = {
+  name: string;
   description: string;
   keywords: string;
   site: string;
@@ -101,6 +112,19 @@ const mapRepositoryToSelectItem = (
   repository: repository,
 });
 
+const getPackageResources = async (
+  api: ConfigAsDataApi,
+  packageName: string,
+): Promise<[PackageResource[], PackageRevisionResourcesMap]> => {
+  const packageResourcesResponse = await api.getPackageRevisionResources(
+    packageName,
+  );
+  const resourcesMap = packageResourcesResponse.spec.resources;
+  const resources = getPackageResourcesFromResourcesMap(resourcesMap);
+
+  return [resources, resourcesMap];
+};
+
 export const AddPackagePage = ({ action }: AddPackagePageProps) => {
   const api = useApi(configAsDataApiRef);
   const classes = useStyles();
@@ -111,7 +135,6 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
   const isAddPackageAction = action === AddPackagePageAction.ADD;
   const isCloneNamedPackageAction = !isAddPackageAction;
 
-  const [newPackageName, setNewPackageName] = useState<string>('');
   const newPackageRevision = 'v1';
 
   const [addPackageAction, setAddPackageAction] = useState<string>('');
@@ -128,6 +151,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
   const [sourceRepository, setSourceRepository] = useState<Repository>();
 
   const [kptfileState, setKptfileState] = useState<KptfileState>({
+    name: '',
     description: '',
     keywords: '',
     site: '',
@@ -198,7 +222,9 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
       }
 
       setAddPackageSelectItems(actionSelectItems);
-      setAddPackageAction((actionSelectItems?.[0].value as string) ?? '');
+      setAddPackageAction(
+        emptyIfUndefined(actionSelectItems?.[0].value as string),
+      );
     }
 
     if (isCloneNamedPackageAction) {
@@ -217,7 +243,9 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
       setSourceRepository(thisRepository);
       setSourcePackageRevision(thisPackageRevision);
       setAddPackageSelectItems(addPackageSelectItems);
-      setAddPackageAction((addPackageSelectItems?.[0].value as string) ?? '');
+      setAddPackageAction(
+        emptyIfUndefined(addPackageSelectItems?.[0].value as string),
+      );
     }
   }, [api, packageName]);
 
@@ -261,6 +289,33 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
     }
   }, [sourceRepository, isAddPackageAction, isCloneNamedPackageAction]);
 
+  useEffect(() => {
+    if (sourcePackageRevision) {
+      const updateKptfileState = async (thisPackageName: string) => {
+        const [resources] = await getPackageResources(api, thisPackageName);
+
+        const kptfileResource = getRootKptfile(resources);
+
+        const thisKptfile: Kptfile = loadYaml(kptfileResource.yaml);
+        setKptfileState({
+          name: emptyIfUndefined(thisKptfile.metadata?.name),
+          description: emptyIfUndefined(thisKptfile.info?.description),
+          keywords: emptyIfUndefined(thisKptfile.info?.keywords?.join(', ')),
+          site: emptyIfUndefined(thisKptfile.info?.site),
+        });
+      };
+
+      updateKptfileState(sourcePackageRevision.metadata.name);
+    } else {
+      setKptfileState({
+        name: '',
+        description: '',
+        keywords: '',
+        site: '',
+      });
+    }
+  }, [api, sourcePackageRevision]);
+
   const getNewPackageRevisionResource = (): PackageRevision => {
     if (!targetRepository) {
       throw new Error('Target repository is not defined');
@@ -278,7 +333,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
 
     const resource: PackageRevision = getPackageRevisionResource(
       targetRepository.metadata.name,
-      newPackageName,
+      kptfileState.name,
       newPackageRevision,
       PackageRevisionLifecycle.DRAFT,
       tasks,
@@ -291,6 +346,43 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
     return thisPackage?.spec.packageName || packageName;
   };
 
+  const updatePackageResources = async (
+    thisPackageName: string,
+  ): Promise<void> => {
+    const updateRequired = !!sourcePackageRevision;
+
+    if (!updateRequired) return;
+
+    const [resources, resourcesMap] = await getPackageResources(
+      api,
+      thisPackageName,
+    );
+
+    const kptfileResource = getRootKptfile(resources);
+
+    const thisKptfile: Kptfile = loadYaml(kptfileResource.yaml);
+
+    thisKptfile.info.description = kptfileState.description;
+    thisKptfile.info.keywords = kptfileState.keywords.trim()
+      ? kptfileState.keywords.split(',').map(keyword => keyword.trim())
+      : undefined;
+    thisKptfile.info.site = kptfileState.site || undefined;
+
+    const updatedKptfileYaml = dumpYaml(thisKptfile);
+
+    const updatedResourceMap = updateResourceInResourcesMap(
+      resourcesMap,
+      kptfileResource,
+      updatedKptfileYaml,
+    );
+
+    const packageRevisionResources = getPackageRevisionResourcesResource(
+      thisPackageName,
+      updatedResourceMap,
+    );
+    await api.replacePackageRevisionResources(packageRevisionResources);
+  };
+
   const createPackage = async (): Promise<void> => {
     const resourceJson = getNewPackageRevisionResource();
 
@@ -300,6 +392,8 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
       resourceJson,
     );
     const newPackageRevisionName = newPackageRevisionResource.metadata.name;
+
+    await updatePackageResources(newPackageRevisionName);
 
     navigate(
       packageRef({
@@ -375,7 +469,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
                       )?.repository,
                     )
                   }
-                  selected={targetRepository?.metadata.name ?? ''}
+                  selected={emptyIfUndefined(targetRepository?.metadata.name)}
                   items={targetRepositorySelectItems}
                   helperText={`The repository to create the new ${targetRepositoryPackageDescriptorLowercase} in.`}
                 />
@@ -403,7 +497,9 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
                           )?.repository,
                         )
                       }
-                      selected={sourceRepository?.metadata.name ?? ''}
+                      selected={emptyIfUndefined(
+                        sourceRepository?.metadata.name,
+                      )}
                       items={sourceRepositorySelectItems}
                       helperText={`The repository that contains the ${sourceRepositoryPackageDescriptorLowercase} you want to clone.`}
                     />
@@ -417,7 +513,9 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
                           )?.packageRevision,
                         )
                       }
-                      selected={sourcePackageRevision?.metadata.name ?? ''}
+                      selected={emptyIfUndefined(
+                        sourcePackageRevision?.metadata.name,
+                      )}
                       items={sourcePackageRevisionSelectItems}
                       helperText={`The ${sourceRepositoryPackageDescriptorLowercase} to clone.`}
                     />
@@ -433,52 +531,53 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
             <TextField
               label="Name"
               variant="outlined"
-              value={newPackageName}
+              value={kptfileState.name}
               name="name"
-              onChange={e => setNewPackageName(e.target.value)}
+              onChange={e =>
+                setKptfileState(s => ({
+                  ...s,
+                  name: e.target.value,
+                }))
+              }
               fullWidth
               helperText={`The name of the ${targetRepositoryPackageDescriptorLowercase} to create.`}
             />
 
-            {!sourcePackageRevision && (
-              <Fragment>
-                <TextField
-                  label="Description"
-                  variant="outlined"
-                  value={kptfileState.description}
-                  onChange={e =>
-                    setKptfileState(s => ({
-                      ...s,
-                      description: e.target.value,
-                    }))
-                  }
-                  fullWidth
-                  helperText={`The short description of this ${targetRepositoryPackageDescriptorLowercase}.`}
-                />
+            <TextField
+              label="Description"
+              variant="outlined"
+              value={kptfileState.description}
+              onChange={e =>
+                setKptfileState(s => ({
+                  ...s,
+                  description: e.target.value,
+                }))
+              }
+              fullWidth
+              helperText={`The short description of this ${targetRepositoryPackageDescriptorLowercase}.`}
+            />
 
-                <TextField
-                  label="Keywords"
-                  variant="outlined"
-                  value={kptfileState.keywords}
-                  onChange={e =>
-                    setKptfileState(s => ({ ...s, keywords: e.target.value }))
-                  }
-                  fullWidth
-                  helperText="Optional. Comma separated list of keywords."
-                />
+            <TextField
+              label="Keywords"
+              variant="outlined"
+              value={kptfileState.keywords}
+              onChange={e =>
+                setKptfileState(s => ({ ...s, keywords: e.target.value }))
+              }
+              fullWidth
+              helperText="Optional. Comma separated list of keywords."
+            />
 
-                <TextField
-                  label="Site"
-                  variant="outlined"
-                  value={kptfileState.site}
-                  onChange={e =>
-                    setKptfileState(s => ({ ...s, site: e.target.value }))
-                  }
-                  fullWidth
-                  helperText={`Optional. The URL for the ${targetRepositoryPackageDescriptorLowercase}'s web page.`}
-                />
-              </Fragment>
-            )}
+            <TextField
+              label="Site"
+              variant="outlined"
+              value={kptfileState.site}
+              onChange={e =>
+                setKptfileState(s => ({ ...s, site: e.target.value }))
+              }
+              fullWidth
+              helperText={`Optional. The URL for the ${targetRepositoryPackageDescriptorLowercase}'s web page.`}
+            />
           </div>
         </SimpleStepperStep>
 
@@ -493,7 +592,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
             <Typography>
               Confirm creation of the{' '}
               <strong>
-                {newPackageName} {targetRepositoryPackageDescriptorLowercase}
+                {kptfileState.name} {targetRepositoryPackageDescriptorLowercase}
               </strong>{' '}
               in the {targetRepository?.metadata.name} repository?
             </Typography>

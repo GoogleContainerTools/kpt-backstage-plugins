@@ -298,3 +298,13 @@ export const diffPackageResources = (
 
   return diffSummary;
 };
+
+export const getRootKptfile = (
+  resources: PackageResource[],
+): PackageResource => {
+  const kptfileResource = resources.find(r => r.filename === 'Kptfile');
+
+  if (!kptfileResource) throw new Error('Kptfile not found');
+
+  return kptfileResource;
+};
