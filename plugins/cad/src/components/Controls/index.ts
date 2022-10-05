@@ -16,6 +16,7 @@
 
 export { Autocomplete } from './Autocomplete';
 export { ConfirmationDialog } from './ConfirmationDialog';
+export { Checkbox } from './Checkbox';
 export { IconButton } from './IconButton';
 export { MultiSelect } from './MultiSelect';
 export { PackageIcon } from './PackageIcon';

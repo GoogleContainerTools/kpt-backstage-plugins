@@ -25,18 +25,27 @@ import {
 import { useApi, useRouteRef } from '@backstage/core-plugin-api';
 import { makeStyles, TextField, Typography } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
+import { dump } from 'js-yaml';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
 import { ConfigAsDataApi, configAsDataApiRef } from '../../apis';
 import { packageRouteRef } from '../../routes';
+import { ConfigMap } from '../../types/ConfigMap';
 import { Kptfile } from '../../types/Kptfile';
+import { KubernetesResource } from '../../types/KubernetesResource';
 import {
   PackageRevision,
   PackageRevisionLifecycle,
 } from '../../types/PackageRevision';
 import { PackageRevisionResourcesMap } from '../../types/PackageRevisionResource';
 import { Repository } from '../../types/Repository';
+import {
+  findKptfileFunction,
+  getLatestFunction,
+  GroupFunctionsByName,
+  groupFunctionsByName,
+} from '../../utils/function';
 import {
   canCloneRevision,
   getCloneTask,
@@ -50,6 +59,7 @@ import {
   getRootKptfile,
   PackageResource,
   updateResourceInResourcesMap,
+  updateResourcesMap,
 } from '../../utils/packageRevisionResources';
 import {
   ContentSummary,
@@ -60,7 +70,7 @@ import {
 import { sortByLabel } from '../../utils/selectItem';
 import { emptyIfUndefined, toLowerCase } from '../../utils/string';
 import { dumpYaml, loadYaml } from '../../utils/yaml';
-import { Select } from '../Controls/Select';
+import { Checkbox, Select } from '../Controls';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
 
 const useStyles = makeStyles(() => ({
@@ -96,6 +106,10 @@ type KptfileState = {
   site: string;
 };
 
+type ValidateResourcesState = {
+  setKubeval: boolean;
+};
+
 const mapPackageRevisionToSelectItem = (
   packageRevision: PackageRevision,
 ): PackageRevisionSelectItem => ({
@@ -123,6 +137,44 @@ const getPackageResources = async (
   const resources = getPackageResourcesFromResourcesMap(resourcesMap);
 
   return [resources, resourcesMap];
+};
+
+const createResource = (
+  apiVersion: string,
+  kind: string,
+  name: string,
+  localConfig: boolean = true,
+): KubernetesResource => {
+  const resource: KubernetesResource = {
+    apiVersion: apiVersion,
+    kind: kind,
+    metadata: {
+      name: name,
+    },
+  };
+
+  if (localConfig) {
+    resource.metadata.annotations = {
+      'config.kubernetes.io/local-config': 'true',
+    };
+  }
+
+  return resource;
+};
+
+const addPackageResource = (
+  packageResources: PackageResource[],
+  resource: KubernetesResource,
+  filename: string,
+): PackageResource => {
+  const packageResource: PackageResource = {
+    filename: filename,
+    yaml: dumpYaml(resource),
+  } as PackageResource;
+
+  packageResources.push(packageResource);
+
+  return packageResource;
 };
 
 export const AddPackagePage = ({ action }: AddPackagePageProps) => {
@@ -156,6 +208,11 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
     keywords: '',
     site: '',
   });
+
+  const [validateResourcesState, setValidateResourcesState] =
+    useState<ValidateResourcesState>({
+      setKubeval: true,
+    });
 
   const [isCreatingPackage, setIsCreatingPackage] = useState<boolean>(false);
 
@@ -303,6 +360,15 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
           keywords: emptyIfUndefined(thisKptfile.info?.keywords?.join(', ')),
           site: emptyIfUndefined(thisKptfile.info?.site),
         });
+
+        const kubevalValidatorFn = findKptfileFunction(
+          thisKptfile.pipeline?.validators || [],
+          'kubeval',
+        );
+
+        setValidateResourcesState({
+          setKubeval: !!kubevalValidatorFn,
+        });
       };
 
       updateKptfileState(sourcePackageRevision.metadata.name);
@@ -312,6 +378,10 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
         description: '',
         keywords: '',
         site: '',
+      });
+
+      setValidateResourcesState({
+        setKubeval: true,
       });
     }
   }, [api, sourcePackageRevision]);
@@ -346,17 +416,89 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
     return thisPackage?.spec.packageName || packageName;
   };
 
-  const updatePackageResources = async (
-    thisPackageName: string,
-  ): Promise<void> => {
-    const updateRequired = !!sourcePackageRevision;
+  const applyValidateResourcesState = async (
+    resourcesMap: PackageRevisionResourcesMap,
+    kptFunctions: GroupFunctionsByName,
+  ): Promise<PackageRevisionResourcesMap> => {
+    const resources = getPackageResourcesFromResourcesMap(resourcesMap);
 
-    if (!updateRequired) return;
+    const kptfileResource = getRootKptfile(resources);
+    const kptfileYaml = loadYaml(kptfileResource.yaml) as Kptfile;
+    kptfileYaml.pipeline = kptfileYaml.pipeline || {};
+    kptfileYaml.pipeline.validators = kptfileYaml.pipeline.validators || [];
+    const validators = kptfileYaml.pipeline.validators;
 
-    const [resources, resourcesMap] = await getPackageResources(
-      api,
-      thisPackageName,
+    const newPackageResources: PackageResource[] = [];
+    const updatedPackageResources: PackageResource[] = [];
+    const deletedPackgeResources: PackageResource[] = [];
+
+    const kubevalValidatorFn = findKptfileFunction(validators, 'kubeval');
+
+    if (validateResourcesState.setKubeval) {
+      if (!kubevalValidatorFn) {
+        const kubevalFn = getLatestFunction(kptFunctions, 'kubeval');
+
+        const kubevalConfigResource: ConfigMap = {
+          ...createResource('v1', 'ConfigMap', 'kubeval-config'),
+          data: {
+            ignore_missing_schemas: 'true',
+          },
+        };
+
+        const kubevalConfigPackageResource = addPackageResource(
+          newPackageResources,
+          kubevalConfigResource,
+          'kubeval-config.yaml',
+        );
+
+        validators.push({
+          image: kubevalFn.spec.image,
+          configPath: kubevalConfigPackageResource.filename,
+        });
+
+        kptfileResource.yaml = dump(kptfileYaml);
+        updatedPackageResources.push(kptfileResource);
+      }
+    } else {
+      if (kubevalValidatorFn) {
+        kptfileYaml.pipeline.validators = validators.filter(
+          fn => fn !== kubevalValidatorFn,
+        );
+
+        kptfileResource.yaml = dump(kptfileYaml);
+        updatedPackageResources.push(kptfileResource);
+
+        if (kubevalValidatorFn.configPath) {
+          const referenceResource = resources.find(
+            resource =>
+              resource.filename === kubevalValidatorFn.configPath &&
+              !!resource.isLocalConfigResource,
+          );
+          if (referenceResource) {
+            deletedPackgeResources.push(referenceResource);
+          }
+        }
+      }
+    }
+
+    return updateResourcesMap(
+      resourcesMap,
+      newPackageResources,
+      updatedPackageResources,
+      deletedPackgeResources,
     );
+  };
+
+  const updateKptfileInfo = (
+    resourcesMap: PackageRevisionResourcesMap,
+  ): PackageRevisionResourcesMap => {
+    const isClonePackageAction = !!sourcePackageRevision;
+
+    if (!isClonePackageAction) {
+      return resourcesMap;
+    }
+
+    const resources = getPackageResourcesFromResourcesMap(resourcesMap);
 
     const kptfileResource = getRootKptfile(resources);
 
@@ -376,11 +518,32 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
       updatedKptfileYaml,
     );
 
-    const packageRevisionResources = getPackageRevisionResourcesResource(
-      thisPackageName,
-      updatedResourceMap,
+    return updatedResourceMap;
+  };
+
+  const updatePackageResources = async (
+    newPackageName: string,
+  ): Promise<void> => {
+    const allKptFunctions = await api.listCatalogFunctions();
+    const kptFunctions = groupFunctionsByName(allKptFunctions);
+
+    const [_, resourcesMap] = await getPackageResources(api, newPackageName);
+
+    let updatedResourcesMap = await applyValidateResourcesState(
+      resourcesMap,
+      kptFunctions,
     );
-    await api.replacePackageRevisionResources(packageRevisionResources);
+
+    updatedResourcesMap = updateKptfileInfo(updatedResourcesMap);
+
+    if (updatedResourcesMap !== resourcesMap) {
+      const packageRevisionResources = getPackageRevisionResourcesResource(
+        newPackageName,
+        updatedResourcesMap,
+      );
+
+      await api.replacePackageRevisionResources(packageRevisionResources);
+    }
   };
 
   const createPackage = async (): Promise<void> => {
@@ -577,6 +740,22 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
               }
               fullWidth
               helperText={`Optional. The URL for the ${targetRepositoryPackageDescriptorLowercase}'s web page.`}
+            />
+          </div>
+        </SimpleStepperStep>
+
+        <SimpleStepperStep title="Validate Resources">
+          <div className={classes.stepContent}>
+            <Checkbox
+              label="Validate resources for any OpenAPI schema errors"
+              checked={validateResourcesState.setKubeval}
+              onChange={isChecked =>
+                setValidateResourcesState(s => ({
+                  ...s,
+                  setKubeval: isChecked,
+                }))
+              }
+              helperText="This validates each resource ensuring it is syntactically correct against its schema. These errors will cause a resource not to deploy to a cluster correctly otherwise. Validation is limited to kubernetes built-in types and GCP CRDs."
             />
           </div>
         </SimpleStepperStep>
