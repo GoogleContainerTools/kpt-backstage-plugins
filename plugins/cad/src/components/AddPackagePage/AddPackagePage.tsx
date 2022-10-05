@@ -64,6 +64,12 @@ import { dumpYaml, loadYaml } from '../../utils/yaml';
 import { Checkbox, Select } from '../Controls';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
 import {
+  applyNamespaceState,
+  getNamespaceDefaultState,
+  getNamespaceState,
+  NamespaceState,
+} from './utils/namespaceState';
+import {
   applyValidateResourcesState,
   getValidateResourcesDefaultState,
   getValidateResourcesState,
@@ -73,6 +79,13 @@ import {
 const useStyles = makeStyles(() => ({
   stepContent: {
     maxWidth: '600px',
+    '& > *': {
+      marginTop: '16px',
+    },
+  },
+  checkboxConditionalElements: {
+    marginLeft: '32px',
+    marginTop: '8px',
     '& > *': {
       marginTop: '16px',
     },
@@ -169,6 +182,10 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
     keywords: '',
     site: '',
   });
+
+  const [namespaceState, setNamespaceState] = useState<NamespaceState>(
+    getNamespaceDefaultState(),
+  );
 
   const [validateResourcesState, setValidateResourcesState] =
     useState<ValidateResourcesState>(getValidateResourcesDefaultState());
@@ -325,6 +342,9 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
           site: emptyIfUndefined(thisKptfile.info?.site),
         });
 
+        const thisNamespaceState = getNamespaceState(thisKptfile, resources);
+        setNamespaceState(thisNamespaceState);
+
         const validateState = getValidateResourcesState(thisKptfile);
         setValidateResourcesState(validateState);
       };
@@ -338,6 +358,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
         site: '',
       });
 
+      setNamespaceState(getNamespaceDefaultState);
       setValidateResourcesState(getValidateResourcesDefaultState());
     }
   }, [api, sourcePackageRevision]);
@@ -419,7 +440,11 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
       updatedResourcesMap,
       kptFunctions,
     );
-
+    updatedResourcesMap = await applyNamespaceState(
+      namespaceState,
+      updatedResourcesMap,
+      kptFunctions,
+    );
     updatedResourcesMap = updateKptfileInfo(updatedResourcesMap);
 
     if (updatedResourcesMap !== resourcesMap) {
@@ -606,12 +631,21 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
               variant="outlined"
               value={kptfileState.name}
               name="name"
-              onChange={e =>
+              onChange={e => {
+                const newPackageName = e.target.value;
+
                 setKptfileState(s => ({
                   ...s,
-                  name: e.target.value,
-                }))
-              }
+                  name: newPackageName,
+                }));
+
+                if (!sourcePackageRevision) {
+                  setNamespaceState(s => ({
+                    ...s,
+                    namespace: newPackageName,
+                  }));
+                }
+              }}
               fullWidth
               helperText={`The name of the ${targetRepositoryPackageDescriptorLowercase} to create.`}
             />
@@ -651,6 +685,94 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
               fullWidth
               helperText={`Optional. The URL for the ${targetRepositoryPackageDescriptorLowercase}'s web page.`}
             />
+          </div>
+        </SimpleStepperStep>
+
+        <SimpleStepperStep title="Namespace">
+          <div className={classes.stepContent}>
+            {namespaceState.advancedConfiguration && (
+              <Alert severity="info" icon={false}>
+                The namespace is configured using advanced settings on the{' '}
+                {sourcePackageRevision?.spec.packageName}{' '}
+                {sourceRepositoryPackageDescriptorLowercase} and can only be
+                updated after the {targetRepositoryPackageDescriptorLowercase}{' '}
+                is created.
+              </Alert>
+            )}
+
+            {!namespaceState.advancedConfiguration && (
+              <Fragment>
+                <Checkbox
+                  label="Set the same namespace for all namespace scoped resources"
+                  checked={namespaceState.setNamespace}
+                  onChange={isChecked =>
+                    setNamespaceState(s => ({
+                      ...s,
+                      setNamespace: isChecked,
+                    }))
+                  }
+                  helperText="This ensures that all resources have the namespace that can be easily changed in a single place. The namespace can either be static or set to the name of a deployment when a deployment instance is created."
+                />
+
+                {namespaceState.setNamespace && (
+                  <div className={classes.checkboxConditionalElements}>
+                    {!sourcePackageRevision && (
+                      <Checkbox
+                        label={`Add namespace resource to the ${targetRepositoryPackageDescriptorLowercase}`}
+                        checked={namespaceState.createNamespace}
+                        onChange={isChecked =>
+                          setNamespaceState(s => ({
+                            ...s,
+                            createNamespace: isChecked,
+                          }))
+                        }
+                        helperText={`If checked, a namespace resource will be added to the ${targetRepositoryPackageDescriptorLowercase}.`}
+                      />
+                    )}
+
+                    <Select
+                      label="Namespace Option"
+                      onChange={value =>
+                        setNamespaceState(s => ({
+                          ...s,
+                          namespaceOption: value,
+                          namespace: s.namespace || kptfileState.name,
+                        }))
+                      }
+                      selected={namespaceState.namespaceOption}
+                      items={[
+                        {
+                          label: 'Set specific namespace',
+                          value: 'user-defined',
+                        },
+                        {
+                          label:
+                            'Set namespace to the name of the deployment instance',
+                          value: 'deployment',
+                        },
+                      ]}
+                      helperText="The logic to set the name of the namespace."
+                    />
+
+                    {namespaceState.namespaceOption === 'user-defined' && (
+                      <TextField
+                        label="Namespace"
+                        variant="outlined"
+                        value={namespaceState.namespace}
+                        onChange={e =>
+                          setNamespaceState(s => ({
+                            ...s,
+                            namespace: e.target.value,
+                          }))
+                        }
+                        fullWidth
+                        helperText="The namespace all namespace scoped resources will be set to."
+                      />
+                    )}
+                  </div>
+                )}
+              </Fragment>
+            )}
           </div>
         </SimpleStepperStep>
 
