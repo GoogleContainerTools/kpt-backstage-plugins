@@ -225,6 +225,39 @@ export const removeResourceFromResourcesMap = (
   return updatedResourcesMap;
 };
 
+export const updateResourcesMap = (
+  resourcesMap: PackageRevisionResourcesMap,
+  resourcesToAdd: PackageResource[],
+  resourcesToUpdate: PackageResource[],
+  resourcesToRemove: PackageResource[],
+): PackageRevisionResourcesMap => {
+  let newResourcesMap = resourcesMap;
+
+  for (const packageResource of resourcesToAdd) {
+    newResourcesMap = addResourceToResourcesMap(
+      newResourcesMap,
+      packageResource,
+    );
+  }
+
+  for (const packageResource of resourcesToUpdate) {
+    newResourcesMap = updateResourceInResourcesMap(
+      newResourcesMap,
+      packageResource,
+      packageResource.yaml,
+    );
+  }
+
+  for (const packageResource of resourcesToRemove) {
+    newResourcesMap = removeResourceFromResourcesMap(
+      newResourcesMap,
+      packageResource,
+    );
+  }
+
+  return newResourcesMap;
+};
+
 export const diffPackageResource = (
   originalResource?: PackageResource,
   currentResource?: PackageResource,
