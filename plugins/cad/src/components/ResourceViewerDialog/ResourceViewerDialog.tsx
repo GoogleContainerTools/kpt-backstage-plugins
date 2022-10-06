@@ -38,9 +38,9 @@ type ResourceViewerProps = {
 
 const useStyles = makeStyles({
   container: {
-    width: '620px',
-    minHeight: '300px',
-    maxHeight: '50vh',
+    width: '640px',
+    minHeight: '340px',
+    maxHeight: 'calc(80vh - 120px)',
     marginBottom: '10px',
     overflowY: 'scroll',
     whiteSpace: 'pre',
