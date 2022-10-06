@@ -35,7 +35,13 @@ type ContentDetail = {
   isDeployment?: boolean;
   repositoryContentLabelValue?: string;
   notContent?: ContentSummary[];
-  cloneTo: ContentSummary[];
+  cloneTo: ContentCloneToDetail[];
+};
+
+type ContentCloneToDetail = {
+  content: ContentSummary;
+  preferred: boolean;
+  message?: string;
 };
 
 const REPOSITORY_CONTENT_LABEL = 'kpt.dev/repository-content';
@@ -83,7 +89,10 @@ export const RepositoryContentDetails: ContentDetails = {
       ContentSummary.ORGANIZATIONAL_BLUEPRINT,
       ContentSummary.EXTERNAL_BLUEPRINT,
     ],
-    cloneTo: [ContentSummary.DEPLOYMENT, ContentSummary.TEAM_BLUEPRINT],
+    cloneTo: [
+      { content: ContentSummary.DEPLOYMENT, preferred: true },
+      { content: ContentSummary.TEAM_BLUEPRINT, preferred: true },
+    ],
   },
   [ContentSummary.ORGANIZATIONAL_BLUEPRINT]: {
     repositoryContent: RepositoryContent.PACKAGE,
@@ -91,9 +100,14 @@ export const RepositoryContentDetails: ContentDetails = {
     description:
       'Organizational Blueprints are packages that your organization owns. An Organizational Blueprint package is expected to be cloned and customized in a Team Blueprint repository before a Deployment Package is created.',
     cloneTo: [
-      ContentSummary.DEPLOYMENT,
-      ContentSummary.TEAM_BLUEPRINT,
-      ContentSummary.ORGANIZATIONAL_BLUEPRINT,
+      {
+        content: ContentSummary.DEPLOYMENT,
+        preferred: false,
+        message:
+          'An Organizational Blueprint package is expected to be cloned and customized in a Team Blueprint repository before a Deployment Package is created.',
+      },
+      { content: ContentSummary.TEAM_BLUEPRINT, preferred: true },
+      { content: ContentSummary.ORGANIZATIONAL_BLUEPRINT, preferred: true },
     ],
   },
   [ContentSummary.EXTERNAL_BLUEPRINT]: {
@@ -102,10 +116,15 @@ export const RepositoryContentDetails: ContentDetails = {
     description:
       'External Blueprints are packages that your organization does not own. An External Blueprint package is expected to be cloned and customized in an Organization or Team Blueprint repository before a Deployment Package is created.',
     cloneTo: [
-      ContentSummary.DEPLOYMENT,
-      ContentSummary.TEAM_BLUEPRINT,
-      ContentSummary.ORGANIZATIONAL_BLUEPRINT,
-      ContentSummary.EXTERNAL_BLUEPRINT,
+      {
+        content: ContentSummary.DEPLOYMENT,
+        preferred: false,
+        message:
+          'An External Blueprint is expected to be cloned and customized in an Organization or Team Blueprint repository before a Deployment Package is created.',
+      },
+      { content: ContentSummary.TEAM_BLUEPRINT, preferred: true },
+      { content: ContentSummary.ORGANIZATIONAL_BLUEPRINT, preferred: true },
+      { content: ContentSummary.EXTERNAL_BLUEPRINT, preferred: true },
     ],
   },
   [ContentSummary.FUNCTION]: {

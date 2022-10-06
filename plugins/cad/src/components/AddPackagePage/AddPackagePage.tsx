@@ -91,6 +91,11 @@ type AddPackagePageProps = {
   action: AddPackagePageAction;
 };
 
+type AddPackageSelectItem = SelectItem & {
+  preferred: boolean;
+  message?: string;
+};
+
 type PackageRevisionSelectItem = SelectItem & {
   packageRevision?: PackageRevision;
 };
@@ -189,9 +194,10 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
 
   const newPackageRevision = 'v1';
 
-  const [addPackageAction, setAddPackageAction] = useState<string>('');
+  const [addPackageAction, setAddPackageAction] =
+    useState<AddPackageSelectItem>();
   const [addPackageSelectItems, setAddPackageSelectItems] = useState<
-    SelectItem[]
+    AddPackageSelectItem[]
   >([]);
 
   const allRepositories = useRef<Repository[]>([]);
@@ -255,33 +261,35 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
       thisRepository,
     ) as ContentSummary;
 
+    const actionSelectItems: AddPackageSelectItem[] = [];
+
     if (isAddPackageAction) {
       setTargetRepository(thisRepository);
       const packageDescriptorLowerCase = toLowerCase(packageDescriptor);
 
-      const actionSelectItems: SelectItem[] = [
-        {
-          label: `Create a new ${packageDescriptorLowerCase} from scratch`,
-          value: 'none',
-        },
-      ];
+      actionSelectItems.push({
+        label: `Create a new ${packageDescriptorLowerCase} from scratch`,
+        value: 'none',
+        preferred: true,
+      });
 
       for (const contentType of Object.keys(RepositoryContentDetails)) {
         const cloneTo = RepositoryContentDetails[contentType].cloneTo;
         const contentTypeLowerCase = toLowerCase(contentType);
 
-        if (cloneTo.includes(packageDescriptor)) {
+        const cloneToDetails = cloneTo.find(
+          clone => clone.content === packageDescriptor,
+        );
+
+        if (cloneToDetails) {
           actionSelectItems.push({
             label: `Create a new ${packageDescriptorLowerCase} by cloning a ${contentTypeLowerCase}`,
             value: contentType,
+            preferred: cloneToDetails.preferred,
+            message: cloneToDetails.message,
           });
         }
       }
-
-      setAddPackageSelectItems(actionSelectItems);
-      setAddPackageAction(
-        emptyIfUndefined(actionSelectItems?.[0].value as string),
-      );
     }
 
     if (isCloneNamedPackageAction) {
@@ -289,26 +297,29 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
 
       for (const contentType of RepositoryContentDetails[packageDescriptor]
         .cloneTo) {
-        addPackageSelectItems.push({
-          label: `Create a new ${toLowerCase(contentType)} by cloning the ${
+        actionSelectItems.push({
+          label: `Create a new ${toLowerCase(
+            contentType.content,
+          )} by cloning the ${
             thisPackageRevision.spec.packageName
           } ${toLowerCase(packageDescriptor)}`,
-          value: contentType,
+          value: contentType.content,
+          preferred: contentType.preferred,
+          message: contentType.message,
         });
       }
 
       setSourceRepository(thisRepository);
       setSourcePackageRevision(thisPackageRevision);
-      setAddPackageSelectItems(addPackageSelectItems);
-      setAddPackageAction(
-        emptyIfUndefined(addPackageSelectItems?.[0].value as string),
-      );
     }
+
+    setAddPackageSelectItems(actionSelectItems);
+    setAddPackageAction(actionSelectItems.find(item => item.preferred));
   }, [api, packageName]);
 
   useEffect(() => {
     const repositoryFilter = (repository: Repository): boolean =>
-      getPackageDescriptor(repository) === addPackageAction;
+      getPackageDescriptor(repository) === addPackageAction?.value;
 
     const filteredRepositories =
       allRepositories.current.filter(repositoryFilter);
@@ -617,8 +628,14 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
               <Fragment>
                 <Select
                   label="Action"
-                  onChange={value => setAddPackageAction(value)}
-                  selected={addPackageAction}
+                  onChange={value =>
+                    setAddPackageAction(
+                      addPackageSelectItems.find(
+                        packageAction => packageAction.value === value,
+                      ),
+                    )
+                  }
+                  selected={emptyIfUndefined(addPackageAction?.value as string)}
                   items={addPackageSelectItems}
                   helperText={`The action to be taken with the ${sourcePackageRevision?.spec.packageName} ${sourceRepositoryPackageDescriptorLowercase}.`}
                 />
@@ -636,6 +653,12 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
                   items={targetRepositorySelectItems}
                   helperText={`The repository to create the new ${targetRepositoryPackageDescriptorLowercase} in.`}
                 />
+
+                {!!addPackageAction?.message && (
+                  <Alert severity="info" icon={false}>
+                    {addPackageAction.message}
+                  </Alert>
+                )}
               </Fragment>
             )}
 
@@ -643,13 +666,19 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
               <Fragment>
                 <Select
                   label="Action"
-                  onChange={value => setAddPackageAction(value)}
-                  selected={addPackageAction}
+                  onChange={value =>
+                    setAddPackageAction(
+                      addPackageSelectItems.find(
+                        packageAction => packageAction.value === value,
+                      ),
+                    )
+                  }
+                  selected={emptyIfUndefined(addPackageAction?.value as string)}
                   items={addPackageSelectItems}
                   helperText={`The action to be taken in creating the new ${targetRepositoryPackageDescriptorLowercase}.`}
                 />
 
-                {addPackageAction !== 'none' && (
+                {addPackageAction?.value !== 'none' && (
                   <Fragment>
                     <Select
                       label={`Source ${sourceRepositoryPackageDescriptor} Repository`}
@@ -683,6 +712,12 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
                       helperText={`The ${sourceRepositoryPackageDescriptorLowercase} to clone.`}
                     />
                   </Fragment>
+                )}
+
+                {!!addPackageAction?.message && (
+                  <Alert severity="info" icon={false}>
+                    {addPackageAction.message}
+                  </Alert>
                 )}
               </Fragment>
             )}
