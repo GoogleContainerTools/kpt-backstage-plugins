@@ -44,7 +44,20 @@ type ContentCloneToDetail = {
   message?: string;
 };
 
+type EnvironmentDetails = {
+  [key: string]: EnvironmentDetail;
+};
+
+type EnvironmentDetail = {
+  shortName: string;
+  description: string;
+  repositoryEnvironmentLabelValue?: string;
+  notDeploymentEnvironment?: DeploymentEnvironment[];
+};
+
 const REPOSITORY_CONTENT_LABEL = 'kpt.dev/repository-content';
+const REPOSITORY_DEPLOYMENT_ENVIRONMENT_LABEL =
+  'kpt.dev/deployment-environment';
 
 export enum ContentSummary {
   EXTERNAL_BLUEPRINT = 'External Blueprint',
@@ -52,6 +65,12 @@ export enum ContentSummary {
   TEAM_BLUEPRINT = 'Team Blueprint',
   DEPLOYMENT = 'Deployment',
   FUNCTION = 'Function',
+}
+
+export enum DeploymentEnvironment {
+  DEVELOPMENT = 'Development',
+  STAGING = 'Staging',
+  PRODUCTION = 'Production',
 }
 
 export const PackageContentSummaryOrder = [
@@ -77,7 +96,7 @@ export const RepositoryContentDetails: ContentDetails = {
   [ContentSummary.DEPLOYMENT]: {
     repositoryContent: RepositoryContent.PACKAGE,
     description:
-      'Deployment Packages are packages ready for deployment to live clusters.',
+      "Deployment Packages are packages ready for deployment to live clusters. If selected, you'll need to specify if the repository is for a development, staging, or production cluster.",
     isDeployment: true,
     cloneTo: [],
   },
@@ -135,6 +154,30 @@ export const RepositoryContentDetails: ContentDetails = {
   },
 };
 
+export const DeploymentEnvironmentDetails: EnvironmentDetails = {
+  [DeploymentEnvironment.DEVELOPMENT]: {
+    shortName: 'dev',
+    description:
+      'The development environment is the environment your team uses for day-to-day development. A Team Blueprint package is expected to be cloned to this environment first.',
+    notDeploymentEnvironment: [
+      DeploymentEnvironment.STAGING,
+      DeploymentEnvironment.PRODUCTION,
+    ],
+  },
+  [DeploymentEnvironment.STAGING]: {
+    shortName: 'staging',
+    description:
+      'The staging environment is similar to the production environment, except it does not receive live traffic. A Team Blueprint package is expected to be cloned to this environment after it is cloned, published, and tested in the development environment.',
+    repositoryEnvironmentLabelValue: 'staging',
+  },
+  [DeploymentEnvironment.PRODUCTION]: {
+    shortName: 'prod',
+    description:
+      'The production environment receives live traffic. A Team Blueprint package is expected to be cloned to this environment after it is cloned, published, and tested in the staging environment.',
+    repositoryEnvironmentLabelValue: 'production',
+  },
+};
+
 const isRepositoryContent = (
   repository: Repository,
   contentType: ContentSummary,
@@ -164,6 +207,36 @@ export const getPackageDescriptor = (repository: Repository): string => {
   for (const contentType of Object.keys(RepositoryContentDetails)) {
     if (isRepositoryContent(repository, contentType as ContentSummary)) {
       return contentType;
+    }
+  }
+
+  return 'Unknown';
+};
+
+const isDeploymentEnviroment = (
+  repository: Repository,
+  environment: DeploymentEnvironment,
+): boolean => {
+  const environmentDetails = DeploymentEnvironmentDetails[environment];
+
+  const isLabelMatch =
+    !environmentDetails.repositoryEnvironmentLabelValue ||
+    repository.metadata.labels?.[REPOSITORY_DEPLOYMENT_ENVIRONMENT_LABEL] ===
+      environmentDetails.repositoryEnvironmentLabelValue;
+
+  const isDeployment = isDeploymentRepository(repository);
+  const notContent = environmentDetails.notDeploymentEnvironment ?? [];
+  const noDisqualifiers = !notContent
+    .map(env => isDeploymentEnviroment(repository, env))
+    .includes(true);
+
+  return isDeployment && isLabelMatch && noDisqualifiers;
+};
+
+export const getDeploymentEnvironment = (repository: Repository): string => {
+  for (const env of Object.keys(DeploymentEnvironmentDetails)) {
+    if (isDeploymentEnviroment(repository, env as DeploymentEnvironment)) {
+      return env;
     }
   }
 
@@ -212,6 +285,7 @@ export const getRepositoryResource = (
   contentSummary: ContentSummary,
   git?: RepositoryGitDetails,
   oci?: RepositoryOciDetails,
+  deploymentEnvironment?: DeploymentEnvironment,
 ): Repository => {
   const namespace = 'default';
 
@@ -227,6 +301,16 @@ export const getRepositoryResource = (
   if (contentDetails.repositoryContentLabelValue) {
     labels[REPOSITORY_CONTENT_LABEL] =
       contentDetails.repositoryContentLabelValue;
+  }
+
+  if (contentSummary === ContentSummary.DEPLOYMENT && deploymentEnvironment) {
+    const environmentDetails =
+      DeploymentEnvironmentDetails[deploymentEnvironment];
+
+    if (environmentDetails.repositoryEnvironmentLabelValue) {
+      labels[REPOSITORY_DEPLOYMENT_ENVIRONMENT_LABEL] =
+        environmentDetails.repositoryEnvironmentLabelValue;
+    }
   }
 
   const resource: Repository = {

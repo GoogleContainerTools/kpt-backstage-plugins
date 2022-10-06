@@ -40,6 +40,8 @@ import { Secret } from '../../types/Secret';
 import { allowFunctionRepositoryRegistration } from '../../utils/featureFlags';
 import {
   ContentSummary,
+  DeploymentEnvironment,
+  DeploymentEnvironmentDetails,
   getRepositoryGitDetails,
   getRepositoryOciDetails,
   getRepositoryResource,
@@ -79,6 +81,7 @@ export const RegisterRepositoryPage = () => {
     name: '',
     repoUrl: '',
     contentSummary: '',
+    deploymentEnvironment: '',
     type: '',
     description: '',
     repoBranch: '',
@@ -133,6 +136,7 @@ export const RegisterRepositoryPage = () => {
 
     let gitDetails: RepositoryGitDetails | undefined = undefined;
     let ociDetails: RepositoryOciDetails | undefined = undefined;
+    let deploymentEnvironment: DeploymentEnvironment | undefined = undefined;
 
     if (state.type === RepositoryType.GIT) {
       const createBranch = true;
@@ -152,12 +156,18 @@ export const RegisterRepositoryPage = () => {
 
     const contentSummary = state.contentSummary as ContentSummary;
 
+    if (contentSummary === ContentSummary.DEPLOYMENT) {
+      deploymentEnvironment =
+        state.deploymentEnvironment as DeploymentEnvironment;
+    }
+
     const resource = getRepositoryResource(
       state.name,
       state.description,
       contentSummary,
       gitDetails,
       ociDetails,
+      deploymentEnvironment,
     );
 
     return resource;
@@ -234,6 +244,14 @@ export const RegisterRepositoryPage = () => {
         }
       }
 
+      for (const [environment, details] of Object.entries(
+        DeploymentEnvironmentDetails,
+      )) {
+        if (repositoryUrl.includes(details.shortName)) {
+          toSet.deploymentEnvironment = environment;
+        }
+      }
+
       const suggestedName = kebabCase(
         repositoryUrl
           .split('/')
@@ -288,6 +306,16 @@ export const RegisterRepositoryPage = () => {
 
     return selectItems;
   }, []);
+
+  const deploymentEnvironmentRadioOptions = useMemo(
+    () =>
+      Object.keys(DeploymentEnvironmentDetails).map(env => ({
+        label: env,
+        value: env,
+        description: DeploymentEnvironmentDetails[env].description,
+      })),
+    [],
+  );
 
   return (
     <div>
@@ -441,6 +469,22 @@ export const RegisterRepositoryPage = () => {
             />
           </div>
         </SimpleStepperStep>
+
+        {state.contentSummary === ContentSummary.DEPLOYMENT && (
+          <SimpleStepperStep title="Deployment Environment">
+            <div className={classes.stepContent}>
+              <RadioGroup
+                label="Development Environment"
+                onChange={value =>
+                  updateStateValue('deploymentEnvironment', value)
+                }
+                value={state.deploymentEnvironment}
+                options={deploymentEnvironmentRadioOptions}
+                helperText="Select the environment that maps to your repository."
+              />
+            </div>
+          </SimpleStepperStep>
+        )}
 
         <SimpleStepperStep
           title="Confirm"

@@ -18,7 +18,11 @@ import { InfoCard, StructuredMetadataTable } from '@backstage/core-components';
 import React from 'react';
 import { Repository } from '../../../types/Repository';
 import { RepositorySummary } from '../../../types/RepositorySummary';
-import { getPackageDescriptor } from '../../../utils/repository';
+import {
+  getDeploymentEnvironment,
+  getPackageDescriptor,
+  isDeploymentRepository,
+} from '../../../utils/repository';
 
 type RepositoryDetailsProps = {
   repositorySummary: RepositorySummary;
@@ -60,8 +64,13 @@ const getRepositoryMetadata = (repository: Repository): Metadata => {
     name: repository.metadata.name,
     description: repository.spec.description ?? '',
     content: `${getPackageDescriptor(repository)}s`,
+    deploymentEnvironment: getDeploymentEnvironment(repository),
     ...getRepositoryStoreMetadata(repository),
   };
+
+  if (!isDeploymentRepository(repository)) {
+    delete metadata.deploymentEnvironment;
+  }
 
   return metadata;
 };
