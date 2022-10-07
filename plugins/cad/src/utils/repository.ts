@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { trimEnd } from 'lodash';
 import { KubernetesKeyValueObject } from '../types/KubernetesResource';
 import {
   Repository,
@@ -24,6 +23,7 @@ import {
   RepositorySecretRef,
   RepositoryType,
 } from '../types/Repository';
+import { toLowerCase } from './string';
 
 type ContentDetails = {
   [key: string]: ContentDetail;
@@ -203,6 +203,25 @@ const isRepositoryContent = (
   );
 };
 
+const normalizeRepositoryUrl = (repositoryUrl?: string): string => {
+  const normalizeHTTPS = (url: string): string =>
+    url.replace('https://', '').replace('.git', '');
+  const normalizeSSH = (url: string): string =>
+    url.replace('git@', '').replace(':', '/');
+
+  const thisRepositoryUrl = toLowerCase(repositoryUrl ?? '');
+
+  if (thisRepositoryUrl.startsWith('https://')) {
+    return normalizeHTTPS(thisRepositoryUrl);
+  }
+
+  if (thisRepositoryUrl.startsWith('git@')) {
+    return normalizeSSH(thisRepositoryUrl);
+  }
+
+  return thisRepositoryUrl;
+};
+
 export const getPackageDescriptor = (repository: Repository): string => {
   for (const contentType of Object.keys(RepositoryContentDetails)) {
     if (isRepositoryContent(repository, contentType as ContentSummary)) {
@@ -267,12 +286,11 @@ export const findRepository = (
   { repositoryUrl }: { repositoryUrl?: string },
 ): Repository | undefined => {
   if (repositoryUrl) {
-    const normalize = (repository?: string): string =>
-      trimEnd(repository, '.git');
+    const normalizedUrl = normalizeRepositoryUrl(repositoryUrl);
 
     return allRepositories.find(
       repository =>
-        normalize(repository.spec.git?.repo) === normalize(repositoryUrl),
+        normalizeRepositoryUrl(repository.spec.git?.repo) === normalizedUrl,
     );
   }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-export const toLowerCase = (str: string): string | undefined => {
+export const toLowerCase = (str: string): string => {
   return str.toLocaleLowerCase('us-EN');
 };
 
