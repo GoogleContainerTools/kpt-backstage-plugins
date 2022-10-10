@@ -20,6 +20,7 @@ import { ClassNameMap } from '@material-ui/core/styles/withStyles';
 import { diffArrays } from 'diff';
 import React, { Fragment } from 'react';
 import { KubernetesResource } from '../../../../../types/KubernetesResource';
+import { removeInternalKptAnnotations } from '../../../../../utils/kubernetesResource';
 import { loadYaml } from '../../../../../utils/yaml';
 
 export type Metadata = {
@@ -76,10 +77,11 @@ const getMetadataForResource = (
 
   const resource = loadYaml(yaml) as KubernetesResource;
 
+  removeInternalKptAnnotations(resource);
+
   const baseMetadata = {
-    name: resource.metadata.name,
+    resource: `${resource.kind} ${resource.metadata.name}`,
     namespace: resource.metadata.namespace,
-    kind: resource.kind,
     labels: resource.metadata.labels,
     annotations: resource.metadata.annotations,
   };
