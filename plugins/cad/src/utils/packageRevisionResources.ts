@@ -21,8 +21,10 @@ import {
   PackageRevisionResources,
   PackageRevisionResourcesMap,
 } from '../types/PackageRevisionResource';
+import { removeInternalKptAnnotations } from './kubernetesResource';
 import {
   createMultiResourceYaml,
+  dumpYaml,
   getResourcesFromMultiResourceYaml,
   loadYaml,
 } from './yaml';
@@ -77,6 +79,14 @@ export type PackageResourceDiff =
   | PackageResourceDiffUnchanged
   | PackageResourceDiffUpdated
   | PackageResourceDiffRemoved;
+
+const normalizeYamlForDiff = (yaml: string): string => {
+  const resource: KubernetesResource = loadYaml(yaml);
+
+  removeInternalKptAnnotations(resource);
+
+  return dumpYaml(resource);
+};
 
 export const getPackageRevisionResources = (
   packageRevisionResources: PackageRevisionResources[],
@@ -281,13 +291,23 @@ export const diffPackageResource = (
       };
     }
 
-    const thisDiff = diffLines(originalResource.yaml, currentResource.yaml, {
-      ignoreWhitespace: true,
-    });
+    const thisDiff = diffLines(
+      normalizeYamlForDiff(originalResource.yaml),
+      normalizeYamlForDiff(currentResource.yaml),
+    );
+
     const linesAdded = sum(thisDiff.filter(d => !!d.added).map(d => d.count));
     const linesRemoved = sum(
       thisDiff.filter(d => !!d.removed).map(d => d.count),
     );
+
+    if (linesAdded === 0 && linesRemoved === 0) {
+      return {
+        diffStatus: ResourceDiffStatus.UNCHANGED,
+        originalResource,
+        currentResource,
+      };
+    }
 
     return {
       diffStatus: ResourceDiffStatus.UPDATED,
