@@ -119,21 +119,19 @@ export const KptFunctionEditorAccordion = ({
     setFunctionNames(allFunctionNames);
 
     if (stateImage.current) {
-      const fnName = getFunctionNameFromImage(stateImage.current);
-      const fnVersion = getFunctionVersionFromImage(stateImage.current);
+      const kptKnownFunction = allKptFunctions.find(
+        fn => fn.spec.image === stateImage.current,
+      );
 
-      if (allFunctionNames.includes(fnName)) {
-        const allFunctionVersionsForFunction = allKptFunctionsGroupedByName[
-          fnName
-        ].map(fn => getFunctionVersionFromImage(fn.spec.image));
+      if (kptKnownFunction) {
+        const fnName = getFunctionNameFromImage(stateImage.current);
+        const fnVersion = getFunctionVersionFromImage(stateImage.current);
 
-        if (allFunctionVersionsForFunction.includes(fnVersion)) {
-          setFunctionNameSelected(fnName);
-          setFunctionVersionSelected(fnVersion);
-        }
+        setFunctionNameSelected(fnName);
+        setFunctionVersionSelected(fnVersion);
       }
     }
-  }, [allKptFunctionsGroupedByName]);
+  }, [allKptFunctionsGroupedByName, allKptFunctions]);
 
   useEffect(() => {
     let imageValue = customImageName;
