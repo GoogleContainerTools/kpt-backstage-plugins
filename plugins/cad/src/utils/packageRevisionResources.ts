@@ -361,3 +361,12 @@ export const getRootKptfile = (
 
   return kptfileResource;
 };
+
+export const getDeployableResources = (
+  resources: PackageResource[],
+  kind: string,
+): PackageResource[] => {
+  return resources.filter(
+    resource => resource.kind === kind && !resource.isLocalConfigResource,
+  );
+};

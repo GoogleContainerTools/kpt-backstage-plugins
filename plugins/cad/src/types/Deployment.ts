@@ -33,5 +33,24 @@ export type DeploymentMetadata = {
 
 export type DeploymentSpec = {
   replicas?: number;
+  selector: LabelSelector;
   template: PodTemplateSpec;
+  strategy?: DeploymentStrategy;
+  minReadySeconds?: number;
+  progressDeadlineSeconds?: number;
+  revisionHistoryLimit?: number;
+};
+
+export type LabelSelector = {
+  matchLabels: KubernetesKeyValueObject;
+};
+
+export type DeploymentStrategy = {
+  type?: string;
+  rollingUpdate?: RollingUpdateDeployment;
+};
+
+export type RollingUpdateDeployment = {
+  maxUnavailable?: number | string;
+  maxSurge?: number | string;
 };
