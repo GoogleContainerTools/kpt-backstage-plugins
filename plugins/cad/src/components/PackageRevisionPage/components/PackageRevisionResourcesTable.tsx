@@ -93,6 +93,11 @@ export const PackageRevisionResourcesTable = ({
 
   const addResourcesGVKs: KubernetesGKV[] = [
     {
+      apiVersion: 'apps/v1',
+      kind: 'Deployment',
+      namespaceScoped: true,
+    },
+    {
       apiVersion: 'fn.kpt.dev/v1alpha1',
       kind: 'ApplyReplacements',
       k8LocalConfig: true,
