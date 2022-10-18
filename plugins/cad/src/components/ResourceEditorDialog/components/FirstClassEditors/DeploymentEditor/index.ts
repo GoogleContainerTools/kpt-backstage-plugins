@@ -14,24 +14,4 @@
  * limitations under the License.
  */
 
-export const toLowerCase = (str: string): string => {
-  return str.toLocaleLowerCase('us-EN');
-};
-
-export const emptyIfUndefined = (str?: string): string => {
-  return str ?? '';
-};
-
-export const isNumber = (value: string): boolean => {
-  return !!value && /^\d*$/.test(value);
-};
-
-export const getNumber = (value: string): number | undefined => {
-  return isNumber(value) ? parseInt(value, 10) : undefined;
-};
-
-export const getNumberOrString = (
-  value: string,
-): string | number | undefined => {
-  return isNumber(value) ? parseInt(value, 10) : value || undefined;
-};
+export { DeploymentEditor } from './DeploymentEditor';

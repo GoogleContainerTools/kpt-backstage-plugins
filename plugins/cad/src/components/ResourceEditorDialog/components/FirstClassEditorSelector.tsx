@@ -18,6 +18,7 @@ import React, { useEffect, useRef } from 'react';
 import { PackageResource } from '../../../utils/packageRevisionResources';
 import { ApplyReplacementsEditor } from './FirstClassEditors/ApplyReplacementsEditor';
 import { ConfigMapEditor } from './FirstClassEditors/ConfigMapEditor';
+import { DeploymentEditor } from './FirstClassEditors/DeploymentEditor';
 import { IngressEditor } from './FirstClassEditors/IngressEditor';
 import { KptfileEditor } from './FirstClassEditors/KptfileEditor';
 import { NamespaceEditor } from './FirstClassEditors/NamespaceEditor';
@@ -58,6 +59,15 @@ export const FirstClassEditorSelector = ({
   }, [onNoNamedEditor]);
 
   switch (groupVersionKind) {
+    case 'apps/v1/Deployment':
+      return (
+        <DeploymentEditor
+          yaml={yaml}
+          onUpdatedYaml={onUpdatedYaml}
+          packageResources={packageResources}
+        />
+      );
+
     case 'fn.kpt.dev/v1alpha1/ApplyReplacements':
       return (
         <ApplyReplacementsEditor

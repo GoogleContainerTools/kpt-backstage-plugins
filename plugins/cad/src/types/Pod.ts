@@ -32,6 +32,9 @@ export type PodSpec = {
   serviceAccountName?: string;
   volumes?: Volume[];
   containers: Container[];
+  securityContext?: PodSecurityContext;
+  restartPolicy?: string;
+  terminationGracePeriodSeconds?: number;
 };
 
 export type Volume = {
@@ -44,17 +47,21 @@ export type Volume = {
 
 export type PersistentVolumeClaimVolumeSource = {
   claimName: string;
+  readOnly?: boolean;
 };
 
 export type ConfigMapVolumeSource = {
   name: string;
   items?: KeyToPath[];
+  optional?: boolean;
 };
 
 export type EmptyDirVolumeSource = {};
 
 export type SecretVolumeSource = {
   secretName?: string;
+  items?: KeyToPath[];
+  optional?: boolean;
 };
 
 export type Container = {
@@ -66,6 +73,13 @@ export type Container = {
   volumeMounts?: VolumeMount[];
   env?: EnvVar[];
   envFrom?: EnvFromSource[];
+  resources?: ResourceRequirements;
+  startupProbe?: Probe;
+  livenessProbe?: Probe;
+  readinessProbe?: Probe;
+  imagePullPolicy?: string;
+  imagePullSecrets?: string[];
+  securityContext?: SecurityContext;
 };
 
 export type ContainerPort = {
@@ -135,4 +149,55 @@ export type ConfigMapEnvSource = {
 export type SecretEnvSource = {
   name?: string;
   optional?: boolean;
+};
+
+export type ResourceRequirements = {
+  requests?: KubernetesKeyValueObject;
+  limits?: KubernetesKeyValueObject;
+};
+
+export type Probe = {
+  exec?: ExecAction;
+  httpGet?: HTTPGetAction;
+  tcpSocket?: TCPSocketAction;
+  initialDelaySeconds?: number;
+  timeoutSeconds?: number;
+  periodSeconds?: number;
+  successThreshold?: number;
+  failureThreshold?: number;
+};
+
+export type HTTPGetAction = {
+  path?: string;
+  port: string | number;
+};
+
+export type TCPSocketAction = {
+  port: string | number;
+};
+
+export type ExecAction = {
+  command?: string[];
+};
+
+export type PodSecurityContext = {
+  runAsUser?: number;
+  runAsGroup?: number;
+  runAsNonRoot?: boolean;
+  fsGroup?: number;
+};
+
+export type SecurityContext = {
+  capabilities?: Capabilities;
+  privileged?: boolean;
+  runAsUser?: number;
+  runAsGroup?: number;
+  runAsNonRoot?: boolean;
+  readOnlyRootFilesystem?: boolean;
+  allowPrivilegeEscalation?: boolean;
+};
+
+export type Capabilities = {
+  add?: string[];
+  drop?: string[];
 };

@@ -23,6 +23,7 @@ type AutocompleteProps = {
   options: string[];
   value: string;
   onInputChange: (newValue: string) => void;
+  allowArbitraryValues?: boolean;
 };
 
 export const Autocomplete = ({
@@ -30,6 +31,7 @@ export const Autocomplete = ({
   options,
   value,
   onInputChange,
+  allowArbitraryValues,
 }: AutocompleteProps) => {
   const thisValue = useRef<string>(value);
   const inputValue = useRef<string>(value);
@@ -59,6 +61,7 @@ export const Autocomplete = ({
   return (
     <MaterialAutocomplete
       fullWidth
+      freeSolo={allowArbitraryValues ?? false}
       options={options}
       renderInput={params => (
         <TextField {...params} label={label} variant="outlined" fullWidth />
