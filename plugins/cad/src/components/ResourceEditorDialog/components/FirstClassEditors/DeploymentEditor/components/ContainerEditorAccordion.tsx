@@ -33,7 +33,7 @@ import {
 } from '../../Controls/EditorAccordion';
 import { useEditorStyles } from '../../styles';
 import { CommandArgsEditorAccordion } from './container/CommandArgsEditorAccordion';
-import { EnvironmentEditorAccordion } from './container/EnviornmentEditorAccordion';
+import { EnvironmentEditorAccordion } from './container/EnvironmentEditorAccordion';
 import { HealthEditorAccordion } from './container/HealthEditorAccordion';
 import { ImageOptionsEditorAccordion } from './container/ImageOptionsEditorAccordion';
 import { NetworkingEditorAccordion } from './container/NetworkingEditorAccordion';
