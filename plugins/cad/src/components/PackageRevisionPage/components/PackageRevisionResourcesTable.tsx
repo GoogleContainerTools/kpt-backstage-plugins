@@ -98,6 +98,11 @@ export const PackageRevisionResourcesTable = ({
       namespaceScoped: true,
     },
     {
+      apiVersion: 'apps/v1',
+      kind: 'StatefulSet',
+      namespaceScoped: true,
+    },
+    {
       apiVersion: 'fn.kpt.dev/v1alpha1',
       kind: 'ApplyReplacements',
       k8LocalConfig: true,
