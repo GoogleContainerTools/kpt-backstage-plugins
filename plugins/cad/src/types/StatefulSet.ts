@@ -33,8 +33,27 @@ export type StatefulSetMetadata = {
 };
 
 export type StatefulSetSpec = {
-  serviceName: string;
   replicas?: number;
+  selector: LabelSelector;
+  serviceName: string;
   template: PodTemplateSpec;
+  podManagementPolicy?: string;
+  updateStrategy?: StatefulSetUpdateStrategy;
+  revisionHistoryLimit?: number;
+  minReadySeconds?: number;
   volumeClaimTemplates?: PersistentVolumeClaim[];
+};
+
+export type LabelSelector = {
+  matchLabels: KubernetesKeyValueObject;
+};
+
+export type StatefulSetUpdateStrategy = {
+  type?: string;
+  rollingUpdate?: RollingUpdateStatefulSetStrategy;
+};
+
+export type RollingUpdateStatefulSetStrategy = {
+  partition?: number;
+  maxUnavailable?: number | string;
 };
