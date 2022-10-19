@@ -18,7 +18,10 @@ import React, { useEffect, useRef } from 'react';
 import { PackageResource } from '../../../utils/packageRevisionResources';
 import { ApplyReplacementsEditor } from './FirstClassEditors/ApplyReplacementsEditor';
 import { ConfigMapEditor } from './FirstClassEditors/ConfigMapEditor';
-import { DeploymentEditor } from './FirstClassEditors/DeploymentEditor';
+import {
+  DeploymentEditor,
+  StatefulSetEditor,
+} from './FirstClassEditors/DeploymentEditor';
 import { IngressEditor } from './FirstClassEditors/IngressEditor';
 import { KptfileEditor } from './FirstClassEditors/KptfileEditor';
 import { NamespaceEditor } from './FirstClassEditors/NamespaceEditor';
@@ -62,6 +65,15 @@ export const FirstClassEditorSelector = ({
     case 'apps/v1/Deployment':
       return (
         <DeploymentEditor
+          yaml={yaml}
+          onUpdatedYaml={onUpdatedYaml}
+          packageResources={packageResources}
+        />
+      );
+
+    case 'apps/v1/StatefulSet':
+      return (
+        <StatefulSetEditor
           yaml={yaml}
           onUpdatedYaml={onUpdatedYaml}
           packageResources={packageResources}

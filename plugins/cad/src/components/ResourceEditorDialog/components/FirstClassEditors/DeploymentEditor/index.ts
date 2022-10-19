@@ -15,3 +15,4 @@
  */
 
 export { DeploymentEditor } from './DeploymentEditor';
+export { StatefulSetEditor } from './StatefulSetEditor';
