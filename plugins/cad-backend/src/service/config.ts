@@ -24,6 +24,7 @@ export enum ClusterLocatorMethodType {
 export enum ClusterLocatorAuthProvider {
   CURRENT_CONTEXT = 'current-context',
   GOOGLE = 'google',
+  SERVICE_ACCOUNT = 'service-account',
 }
 
 export const getClusterLocatorMethodType = (
@@ -50,4 +51,16 @@ export const getClusterLocatorMethodAuthProvider = (
   }
 
   return authProvider as ClusterLocatorAuthProvider;
+};
+
+export const getClusterLocatorMethodServiceAccountToken = (
+  config: Config,
+): string => {
+  const authProvider = getClusterLocatorMethodAuthProvider(config);
+
+  if (authProvider === ClusterLocatorAuthProvider.SERVICE_ACCOUNT) {
+    return config.getString('clusterLocatorMethod.serviceAccountToken');
+  }
+
+  return '';
 };

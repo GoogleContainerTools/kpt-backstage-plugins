@@ -55,18 +55,13 @@ The following configuration will need to be added to `app-config.yaml`:
 configAsData:
   clusterLocatorMethod:
     # Determines how the client will locate the Kubernetes cluster.
-    #
-    # values:
-    #   'current-context' uses kubeconfig current context to locate the cluster
-    #   'in-cluster' uses the same cluster that Backstage is running in
     type: current-context
 
     # Determines how the client will authenticate with the Kubernetes cluster.
-    #
-    # values:
-    #   'current-context' uses the same user as set by kubeconfig current context
-    #   'google' uses the current user's Google auth token
     authProvider: current-context
+
+    # The service account token to be used when using the 'service-account' auth provider.
+    serviceAccountToken: ${CAD_SERVICE_ACCOUNT_TOKEN}
 ```
 
 `clusterLocatorMethod` determines where to receive the cluster configuration
@@ -88,3 +83,13 @@ Valid values:
 | ------ | ----------- |
 | current-context | Authenticate to the cluster with the user in the kubeconfig current context |
 | google | Authenticate to the cluster using the user's authentication token from the [Google auth plugin](https://backstage.io/docs/auth/) |
+| service-account | Authenticate to the cluster using a Kubernetes service account token |
+
+`clusterLocatorMethod.serviceAccountToken` defines the service account token to be used with the `service-account` auth provider. You can get the service account token with the following command:
+
+```bash
+kubectl -n <NAMESPACE> get secret $(kubectl -n <NAMESPACE> get sa <SERVICE_ACCOUNT_NAME> -o=json \
+  | jq -r '.secrets[0].name') -o=json \
+  | jq -r '.data["token"]' \
+  | base64 --decode
+```
