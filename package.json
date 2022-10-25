@@ -10,7 +10,6 @@
     "start": "yarn workspace app start",
     "start-backend": "yarn workspace backend start",
     "build": "backstage-cli repo build --all",
-    "build-local-image": "docker build --target backstage-app-local --tag kpt-backstage-plugins .",
     "build-image": "docker build --target backstage-app --tag kpt-backstage-plugins .",
     "tsc": "tsc",
     "tsc:full": "tsc --skipLibCheck false --incremental false",
