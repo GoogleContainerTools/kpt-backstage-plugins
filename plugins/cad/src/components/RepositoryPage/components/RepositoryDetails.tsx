@@ -29,7 +29,7 @@ type RepositoryDetailsProps = {
 };
 
 type Metadata = {
-  [key: string]: string;
+  [key: string]: any;
 };
 
 const getRepositoryStoreMetadata = (repository: Repository): Metadata => {
@@ -59,6 +59,29 @@ const getRepositoryStoreMetadata = (repository: Repository): Metadata => {
   return {};
 };
 
+const getRepositoryStatusConditions = (repository: Repository): Metadata => {
+  const conditions: Metadata = {};
+
+  if (repository.status?.conditions) {
+    for (const condition of repository.status.conditions) {
+      const conditionDetails = [
+        `type: ${condition.type}`,
+        `status: ${condition.status}`,
+        `reason: ${condition.reason}`,
+        `last transition: ${condition.lastTransitionTime}`,
+      ];
+
+      if (condition.message) {
+        conditionDetails.push(`message: ${condition.message}`);
+      }
+
+      conditions[`${condition.type} Status Condition`] = conditionDetails;
+    }
+  }
+
+  return conditions;
+};
+
 const getRepositoryMetadata = (repository: Repository): Metadata => {
   const metadata: Metadata = {
     name: repository.metadata.name,
@@ -66,6 +89,7 @@ const getRepositoryMetadata = (repository: Repository): Metadata => {
     content: `${getPackageDescriptor(repository)}s`,
     deploymentEnvironment: getDeploymentEnvironment(repository),
     ...getRepositoryStoreMetadata(repository),
+    ...getRepositoryStatusConditions(repository),
   };
 
   if (!isDeploymentRepository(repository)) {
