@@ -65,31 +65,7 @@ COPY --from=build /app/packages/backend/dist/bundle.tar.gz .
 RUN tar xzf bundle.tar.gz && rm bundle.tar.gz
 
 
-# backstage-app-local: Build the actual image with gke-gcloud-auth-plugin to allow the image to be ran locally
-FROM base-backstage-app as backstage-app-local
-
-# Copy configuration file
-COPY app-config.yaml ./
-
-# Install gcloud and gke-gcloud-auth-plugin
-# https://cloud.google.com/sdk/docs/install#other_installation_options
-
-RUN apt-get update && \
-    apt-get install -y curl
-
-RUN curl https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-392.0.0-linux-x86_64.tar.gz --output google-cloud-sdk.tar.gz && \
-    tar -xzf ./google-cloud-sdk.tar.gz && \
-    google-cloud-sdk/install.sh && \
-    rm -rf ./google-cloud-sdk.tar.gz
-
-RUN google-cloud-sdk/bin/gcloud components install gke-gcloud-auth-plugin
-
-ENV PATH="/app/google-cloud-sdk/bin:${PATH}"
-
-CMD ["node", "packages/backend", "--config", "app-config.yaml"]
-
-
-# backstage-app: Build the actual image that can be deployed to GKE
+# Stage 4 - Build the actual Backstage image that can be deployed to an environment
 FROM base-backstage-app as backstage-app
 
 # Copy any other files that we need at runtime
