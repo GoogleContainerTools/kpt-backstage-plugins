@@ -27,6 +27,7 @@ export type Repository = {
   kind: string;
   metadata: RepositoryMetadata;
   spec: RepositorySpec;
+  status?: RepositoryStatus;
 };
 
 export type RepositoryMetadata = {
@@ -42,6 +43,18 @@ export type RepositorySpec = {
   deployment?: boolean;
   git?: RepositoryGitDetails;
   oci?: RepositoryOciDetails;
+};
+
+export type RepositoryStatus = {
+  conditions?: Condition[];
+};
+
+export type Condition = {
+  type: string;
+  status: string;
+  lastTransitionTime: string;
+  reason: string;
+  message: string;
 };
 
 export enum RepositoryType {
