@@ -31,6 +31,7 @@ import { PackageLink, RepositoryLink } from '../Links';
 import { SyncStatusVisual } from './components/SyncStatusVisual';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 import { Repository } from '../../types/Repository';
+import { getPackageRevisionRevision } from '../../utils/packageRevision';
 
 type PackagesTableProps = {
   title: string;
@@ -174,7 +175,7 @@ const mapToUnpublishedRevision = (
     return {
       name: unpublishedRevision.metadata.name,
       packageName: unpublishedRevision.spec.packageName,
-      revision: unpublishedRevision.spec.revision,
+      revision: getPackageRevisionRevision(unpublishedRevision),
       lifecycle: unpublishedRevision.spec.lifecycle,
       created: formatCreationTimestamp(
         unpublishedRevision.metadata.creationTimestamp,
@@ -197,7 +198,7 @@ const mapToPackageSummaryRow = (
     id: onePackage.metadata.name,
     name: onePackage.metadata.name,
     packageName: onePackage.spec.packageName,
-    revision: onePackage.spec.revision,
+    revision: getPackageRevisionRevision(onePackage),
     lifecycle: onePackage.spec.lifecycle,
     syncStatus: getRootSyncStatus(packageSummary),
     created: formatCreationTimestamp(onePackage.metadata.creationTimestamp),
