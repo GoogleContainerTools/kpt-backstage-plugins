@@ -34,7 +34,8 @@ export type PackageRevisionMetadata = {
 export type PackageRevisionSpec = {
   packageName: string;
   repository: string;
-  revision: string;
+  workspaceName?: string;
+  revision?: string;
   lifecycle: PackageRevisionLifecycle;
   tasks: PackageRevisionTask[];
 };

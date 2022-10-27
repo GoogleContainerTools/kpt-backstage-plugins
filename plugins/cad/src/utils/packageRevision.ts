@@ -48,14 +48,6 @@ type UpstreamPackageRevisionDetails = {
   revision: string;
 };
 
-export const getPackageRevisionTitle = (
-  packageRevision: PackageRevision,
-): string => {
-  const { packageName, revision } = packageRevision.spec;
-
-  return `${packageName} ${revision}`;
-};
-
 export const getUpstreamPackageRevisionDetails = (
   packageRevision: PackageRevision,
 ): UpstreamPackageRevisionDetails | undefined => {
@@ -111,6 +103,23 @@ export const findPackageRevision = (
   );
 };
 
+export const getPackageRevisionRevision = (
+  packageRevision: PackageRevision,
+): string => {
+  const { revision, workspaceName } = packageRevision.spec;
+
+  return revision || workspaceName || '';
+};
+
+export const getPackageRevisionTitle = (
+  packageRevision: PackageRevision,
+): string => {
+  const packageName = packageRevision.spec.packageName;
+  const revision = getPackageRevisionRevision(packageRevision);
+
+  return `${packageName} ${revision}`;
+};
+
 export const filterPackageRevisions = (
   packageRevisions: PackageRevision[],
   packageName: string,
@@ -120,7 +129,9 @@ export const filterPackageRevisions = (
     packageRevision =>
       packageRevision.spec.packageName === packageName &&
       packageRevision.spec.repository === repositoryName &&
-      Number.isFinite(getRevisionNumber(packageRevision.spec.revision)),
+      Number.isFinite(
+        getRevisionNumber(getPackageRevisionRevision(packageRevision)),
+      ),
   );
 };
 
@@ -204,7 +215,7 @@ export const getUpdateTask = (
 export const getPackageRevisionResource = (
   repositoryName: string,
   packageName: string,
-  revision: string,
+  workspaceName: string,
   lifecycle: PackageRevisionLifecycle,
   tasks: PackageRevisionTask[],
 ): PackageRevision => {
@@ -217,7 +228,7 @@ export const getPackageRevisionResource = (
     },
     spec: {
       packageName: packageName,
-      revision: revision,
+      workspaceName: workspaceName,
       repository: repositoryName,
       lifecycle: lifecycle,
       tasks: tasks,
@@ -230,8 +241,10 @@ export const getPackageRevisionResource = (
 export const getNextPackageRevisionResource = (
   currentRevision: PackageRevision,
 ): PackageRevision => {
-  const { repository, packageName, revision, tasks } = currentRevision.spec;
-  const nextRevision = getNextRevision(revision);
+  const { repository, packageName, tasks } = currentRevision.spec;
+  const nextRevision = getNextRevision(
+    getPackageRevisionRevision(currentRevision),
+  );
 
   const resource = getPackageRevisionResource(
     repository,
@@ -248,8 +261,10 @@ export const getUpgradePackageRevisionResource = (
   currentRevision: PackageRevision,
   upgradePackageRevisionName: string,
 ): PackageRevision => {
-  const { repository, packageName, revision, tasks } = currentRevision.spec;
-  const nextRevision = getNextRevision(revision);
+  const { repository, packageName, tasks } = currentRevision.spec;
+  const nextRevision = getNextRevision(
+    getPackageRevisionRevision(currentRevision),
+  );
 
   const upgradePackageTasks = [
     ...cloneDeep(tasks),
@@ -276,8 +291,8 @@ export const sortByPackageNameAndRevisionComparison = (
 
   if (packageSpec1.packageName === packageSpec2.packageName) {
     return (
-      getRevisionNumber(packageSpec2.revision, -1) -
-      getRevisionNumber(packageSpec1.revision, -1)
+      getRevisionNumber(getPackageRevisionRevision(packageRevision2), -1) -
+      getRevisionNumber(getPackageRevisionRevision(packageRevision1), -1)
     );
   }
 

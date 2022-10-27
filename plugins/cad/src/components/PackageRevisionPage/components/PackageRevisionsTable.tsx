@@ -22,6 +22,7 @@ import { packageRouteRef } from '../../../routes';
 import { PackageRevisionLifecycle } from '../../../types/PackageRevision';
 import { Repository } from '../../../types/Repository';
 import { formatCreationTimestamp } from '../../../utils/formatDate';
+import { getPackageRevisionRevision } from '../../../utils/packageRevision';
 import {
   diffPackageResources,
   getPackageResourcesFromResourcesMap,
@@ -138,7 +139,7 @@ const mapToPackageRevisionRow = (
     id: revision.metadata.name,
     name: revision.metadata.name,
     packageName: revision.spec.packageName,
-    revision: revision.spec.revision,
+    revision: getPackageRevisionRevision(revision),
     lifecycle: revision.spec.lifecycle,
     created: creationTimestamp,
     resourcesCount: getPackageResourcesFromResourcesMap(resourcesMap).length,
