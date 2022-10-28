@@ -45,7 +45,6 @@ export const getStatefulSetStructuredMetadata = (
   return {
     replicas: statefulSet.spec.replicas,
     serviceName: statefulSet.spec.serviceName,
-    serviceAccountName: statefulSet.spec.template.spec.serviceAccountName,
     ...podMetadata,
     ...volumeClaimMetadata,
   };
