@@ -30,7 +30,6 @@ export const getDeploymentStructuredMetadata = (
 
   return {
     replicas: deployment.spec.replicas,
-    serviceAccountName: deployment.spec.template.spec.serviceAccountName,
     ...podMetadata,
   };
 };
