@@ -20,7 +20,7 @@ import {
   Progress,
   Tabs,
 } from '@backstage/core-components';
-import { useApi, useRouteRef } from '@backstage/core-plugin-api';
+import { errorApiRef, useApi, useRouteRef } from '@backstage/core-plugin-api';
 import { makeStyles, Typography } from '@material-ui/core';
 import Alert, { Color } from '@material-ui/lab/Alert';
 import { cloneDeep, uniq } from 'lodash';
@@ -33,7 +33,10 @@ import {
   PackageRevision,
   PackageRevisionLifecycle,
 } from '../../types/PackageRevision';
-import { PackageRevisionResourcesMap } from '../../types/PackageRevisionResource';
+import {
+  PackageRevisionResourcesMap,
+  Result,
+} from '../../types/PackageRevisionResource';
 import { Repository } from '../../types/Repository';
 import { RepositorySummary } from '../../types/RepositorySummary';
 import { RootSync } from '../../types/RootSync';
@@ -46,6 +49,7 @@ import {
   SyncStatusState,
 } from '../../utils/configSync';
 import { isConfigSyncEnabled } from '../../utils/featureFlags';
+import { getFunctionNameFromImage } from '../../utils/function';
 import {
   filterPackageRevisions,
   findLatestPublishedRevision,
@@ -75,6 +79,10 @@ import {
   getRepositorySummaries,
   getRepositorySummary,
 } from '../../utils/repositorySummary';
+import {
+  getRevisionSummary,
+  RevisionSummary,
+} from '../../utils/revisionSummary';
 import { toLowerCase } from '../../utils/string';
 import { ConfirmationDialog } from '../Controls';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
@@ -85,16 +93,12 @@ import {
   RevisionOption,
 } from './components/PackageRevisionOptions';
 import { PackageRevisionsTable } from './components/PackageRevisionsTable';
+import { RelatedPackagesContent } from './components/RelatedPackagesContent';
 import {
   AlertMessage,
   ResourcesTabContent,
 } from './components/ResourcesTabContent';
-import { RelatedPackagesContent } from './components/RelatedPackagesContent';
 import { processUpdatedResourcesMap } from './updatedResourcesMap/processUpdatedResourcesMap';
-import {
-  getRevisionSummary,
-  RevisionSummary,
-} from '../../utils/revisionSummary';
 
 export enum PackageRevisionPageMode {
   EDIT = 'edit',
@@ -114,6 +118,11 @@ type ConditionalTabProps = TabProps & {
   showTab?: boolean;
 };
 
+type RenderErrorMessage = {
+  title: string;
+  message: string;
+};
+
 const useStyles = makeStyles({
   packageRevisionOptions: {
     display: 'inherit',
@@ -127,7 +136,7 @@ const useStyles = makeStyles({
   syncStatusBanner: {
     padding: '2px 16px',
   },
-  syncErrorBanner: {
+  messageBanner: {
     whiteSpace: 'break-spaces',
     marginBottom: '16px',
   },
@@ -184,6 +193,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const classes = useStyles();
   const navigate = useNavigate();
   const api = useApi(configAsDataApiRef);
+  const errorApi = useApi(errorApiRef);
 
   const packageRef = useRouteRef(packageRouteRef);
 
@@ -211,6 +221,10 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
   const [openRestoreDialog, setOpenRestoreDialog] = useState<boolean>(false);
   const [isUpgradeAvailable, setIsUpgradeAvailable] = useState<boolean>(false);
+
+  const [renderErrorMessages, setRenderErrorMessages] = useState<
+    RenderErrorMessage[]
+  >([]);
 
   const latestPublishedUpstream = useRef<PackageRevision>();
 
@@ -650,9 +664,57 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       resourcesMap,
     );
 
-    await api.replacePackageRevisionResources(packageRevisionResources);
+    const resourcesResponse = await api.replacePackageRevisionResources(
+      packageRevisionResources,
+    );
+    const resourcesResponseStatus = resourcesResponse.status;
 
-    navigate(packageRef({ repositoryName, packageName }));
+    const renderErrors: RenderErrorMessage[] = [];
+
+    if (resourcesResponseStatus) {
+      const functionResults: Result[] =
+        resourcesResponseStatus.renderStatus?.result.items || [];
+
+      for (const fn of functionResults) {
+        if (fn.results) {
+          const fnResults = fn.results.filter(
+            result => result.severity === 'error',
+          );
+          renderErrors.push(
+            ...fnResults.map(r => ({
+              title: `${getFunctionNameFromImage(fn.image)} function`,
+              message: r.message,
+              severity: r.severity,
+            })),
+          );
+        }
+      }
+
+      if (renderErrors.length === 0) {
+        const renderError = resourcesResponseStatus.renderStatus?.error;
+
+        if (renderError) {
+          renderErrors.push({
+            title: 'rendering error',
+            message: renderError,
+          });
+        }
+      }
+    }
+
+    setRenderErrorMessages(renderErrors);
+
+    const anyRenderingErrors = renderErrors.length > 0;
+
+    if (anyRenderingErrors) {
+      errorApi.post(
+        new Error(
+          `Porch is unable to render the package. Please correct any errors and resave the package.`,
+        ),
+      );
+    } else {
+      navigate(packageRef({ repositoryName, packageName }));
+    }
   };
 
   const handleUpdatedResourcesMap = async (
@@ -821,8 +883,20 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
       <Fragment>
         {syncStatus?.errors?.map((syncError: string) => (
-          <Alert severity="error" className={classes.syncErrorBanner}>
+          <Alert severity="error" className={classes.messageBanner}>
             {syncError}
+          </Alert>
+        ))}
+      </Fragment>
+
+      <Fragment>
+        {renderErrorMessages.map((message: RenderErrorMessage) => (
+          <Alert
+            key={message.message}
+            severity="error"
+            className={classes.messageBanner}
+          >
+            {message.title}: {message.message}
           </Alert>
         ))}
       </Fragment>
