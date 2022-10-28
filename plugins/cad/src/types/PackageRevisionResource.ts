@@ -25,6 +25,7 @@ export type PackageRevisionResources = {
   kind: string;
   metadata: PackageRevisionResourcesMetadata;
   spec: PackageRevisionResourcesSpec;
+  status?: PackageRevisionResourcesStatus;
 };
 
 export type PackageRevisionResourcesMetadata = {
@@ -38,4 +39,27 @@ export type PackageRevisionResourcesSpec = {
 
 export type PackageRevisionResourcesMap = {
   [key: string]: string;
+};
+
+export type PackageRevisionResourcesStatus = {
+  renderStatus?: RenderStatus;
+};
+
+export type RenderStatus = {
+  error: string;
+  result: ResultList;
+};
+
+export type ResultList = {
+  items: Result[];
+};
+
+export type Result = {
+  image: string;
+  results: ResultItem[];
+};
+
+export type ResultItem = {
+  message: string;
+  severity: string;
 };

@@ -311,16 +311,18 @@ export class PorchRestAPI implements ConfigAsDataApi {
 
   async replacePackageRevisionResources(
     packageRevisionResources: PackageRevisionResources,
-  ): Promise<void> {
+  ): Promise<PackageRevisionResources> {
     const packageName = packageRevisionResources.metadata.name;
 
-    await this.cadFetch(
+    const resourcesResponse = await this.cadFetch(
       `apis/porch.kpt.dev/v1alpha1/namespaces/default/packagerevisionresources/${packageName}`,
       {
         method: 'PUT',
         body: JSON.stringify(packageRevisionResources),
       },
     );
+
+    return resourcesResponse;
   }
 
   async getPackageRevisionResources(

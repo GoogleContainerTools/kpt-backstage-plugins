@@ -70,7 +70,7 @@ export type ConfigAsDataApi = {
 
   replacePackageRevisionResources(
     packageRevisionResources: PackageRevisionResources,
-  ): Promise<void>;
+  ): Promise<PackageRevisionResources>;
 
   getPackageRevisionResources(
     packageName: string,
