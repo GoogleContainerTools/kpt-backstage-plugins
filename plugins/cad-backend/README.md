@@ -60,7 +60,10 @@ configAsData:
     # Determines how the client will authenticate with the Kubernetes cluster.
     authProvider: current-context
 
-    # The service account token to be used when using the 'service-account' auth provider.
+    # Optional. Determines the OIDC token provider to use when using the 'oidc' auth provider.
+    oidcTokenProvider: okta
+
+    # Optional. The service account token to be used when using the 'service-account' auth provider.
     serviceAccountToken: ${CAD_SERVICE_ACCOUNT_TOKEN}
 ```
 
@@ -83,7 +86,16 @@ Valid values:
 | ------ | ----------- |
 | current-context | Authenticate to the cluster with the user in the kubeconfig current context |
 | google | Authenticate to the cluster using the user's authentication token from the [Google auth plugin](https://backstage.io/docs/auth/) |
+| oidc | Authenticate to the cluster using OIDC (OpenID Connect) |
 | service-account | Authenticate to the cluster using a Kubernetes service account token |
+
+`clusterLocatorMethod.oidcTokenProvider` determines which configured [Backstage auth provider](https://backstage.io/docs/auth/) to
+use to authenticate to the cluster with. This field is required with the `oidc` auth provider.
+
+Valid values:
+| Values | Description |
+| ------ | ----------- |
+| okta | Authenticate to the cluster with the [Okta Backstage auth provider](https://backstage.io/docs/auth/okta/provider) |
 
 `clusterLocatorMethod.serviceAccountToken` defines the service account token to be used with the `service-account` auth provider. You can get the service account token with the following command:
 

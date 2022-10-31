@@ -24,7 +24,13 @@ export enum ClusterLocatorMethodType {
 export enum ClusterLocatorAuthProvider {
   CURRENT_CONTEXT = 'current-context',
   GOOGLE = 'google',
+  OIDC = 'oidc',
   SERVICE_ACCOUNT = 'service-account',
+}
+
+export enum OIDCTokenProvider {
+  NONE = 'none',
+  OKTA = 'okta',
 }
 
 export const getClusterLocatorMethodType = (
@@ -51,6 +57,28 @@ export const getClusterLocatorMethodAuthProvider = (
   }
 
   return authProvider as ClusterLocatorAuthProvider;
+};
+
+export const getClusterLocatorMethodOIDCTokenProvider = (
+  config: Config,
+): OIDCTokenProvider => {
+  const authProvider = getClusterLocatorMethodAuthProvider(config);
+
+  if (authProvider === ClusterLocatorAuthProvider.OIDC) {
+    const oidcTokenProvider = config.getString(
+      'clusterLocatorMethod.oidcTokenProvider',
+    );
+
+    if (!Object.values(OIDCTokenProvider)) {
+      throw new Error(
+        `Unknown clusterLocatorMethod.oidcTokenProvider, ${oidcTokenProvider}`,
+      );
+    }
+
+    return oidcTokenProvider as OIDCTokenProvider;
+  }
+
+  return OIDCTokenProvider.NONE;
 };
 
 export const getClusterLocatorMethodServiceAccountToken = (
