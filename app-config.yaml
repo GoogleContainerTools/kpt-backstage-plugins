@@ -76,15 +76,7 @@ techdocs:
 configAsData:
   clusterLocatorMethod:
     # Determines how the client will locate the Kubernetes cluster.
-    #
-    # values:
-    #   'current-context' uses kubeconfig current context to locate the cluster
-    #   'in-cluster' uses the same cluster that Backstage is running in
     type: current-context
 
     # Determines how the client will authenticate with the Kubernetes cluster.
-    #
-    # values:
-    #   'current-context' uses the same user as set by kubeconfig current context
-    #   'google' uses the current user's Google auth token
     authProvider: current-context

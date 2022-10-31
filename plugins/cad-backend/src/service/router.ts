@@ -23,6 +23,7 @@ import { Logger } from 'winston';
 import {
   ClusterLocatorAuthProvider,
   getClusterLocatorMethodAuthProvider,
+  getClusterLocatorMethodServiceAccountToken,
   getClusterLocatorMethodType,
 } from './config';
 import { getKubernetesConfig } from './lib';
@@ -51,6 +52,9 @@ export async function createRouter({
   if (!currentCluster) {
     throw new Error(`Current cluster is not set`);
   }
+
+  const serviceAccountToken =
+    getClusterLocatorMethodServiceAccountToken(cadConfig);
 
   const k8sApiServerUrl = currentCluster.server;
 
@@ -110,12 +114,21 @@ export async function createRouter({
 
     kubeConfig.applyToRequest(requestOptions);
 
-    const useEndUserAuthz =
-      clusterLocatorMethodAuthProvider !==
-      ClusterLocatorAuthProvider.CURRENT_CONTEXT;
+    const endUserProviders = [ClusterLocatorAuthProvider.GOOGLE];
+    const useEndUserAuthz = endUserProviders.includes(
+      clusterLocatorMethodAuthProvider,
+    );
     if (useEndUserAuthz) {
       requestOptions.headers = requestOptions.headers ?? {};
       requestOptions.headers.authorization = request.headers.authorization;
+    }
+
+    const useServiceAccount =
+      clusterLocatorMethodAuthProvider ===
+      ClusterLocatorAuthProvider.SERVICE_ACCOUNT;
+    if (useServiceAccount) {
+      requestOptions.headers = requestOptions.headers ?? {};
+      requestOptions.headers.authorization = `Bearer ${serviceAccountToken}`;
     }
 
     requestLibrary(requestOptions, (k8Error, k8Response, k8Body) => {
