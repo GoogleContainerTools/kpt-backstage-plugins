@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-import { DiscoveryApi, FetchApi, OAuthApi } from '@backstage/core-plugin-api';
+import {
+  DiscoveryApi,
+  FetchApi,
+  OAuthApi,
+  OpenIdConnectApi,
+} from '@backstage/core-plugin-api';
 import { ConfigAsDataApi } from '.';
 import { ListApiGroups } from '../types/ApiGroup';
 import { ListConfigManagements } from '../types/ConfigManagement';
@@ -77,18 +82,31 @@ export class PorchRestAPI implements ConfigAsDataApi {
     private discovery: DiscoveryApi,
     private fetchApi: FetchApi,
     private googleAuthApi: OAuthApi,
+    private oktaAuthApi: OpenIdConnectApi,
   ) {}
 
   private async getAuthorizationToken(): Promise<string | undefined> {
-    if (this.authentication === 'google') {
-      const accessToken = await this.googleAuthApi.getAccessToken(
+    const authProvider = this.authentication;
+
+    if (authProvider === 'google') {
+      const googleAccessToken = await this.googleAuthApi.getAccessToken(
         'https://www.googleapis.com/auth/cloud-platform.read-only',
       );
 
-      return `Bearer ${accessToken}`;
+      return `Bearer ${googleAccessToken}`;
     }
 
-    return undefined;
+    if (authProvider === 'oidc.okta') {
+      const oktaIdToken = await this.oktaAuthApi.getIdToken();
+
+      return `Bearer ${oktaIdToken}`;
+    }
+
+    if (authProvider === 'none') {
+      return undefined;
+    }
+
+    throw new Error(`Authentication provider ${authProvider} not found`);
   }
 
   private async cadFetch(path: string, init?: RequestInit): Promise<any> {

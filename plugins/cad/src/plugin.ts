@@ -21,6 +21,7 @@ import {
   discoveryApiRef,
   fetchApiRef,
   googleAuthApiRef,
+  oktaAuthApiRef,
 } from '@backstage/core-plugin-api';
 import { configAsDataApiRef, PorchRestAPI } from './apis';
 import { rootRouteRef } from './routes';
@@ -37,9 +38,10 @@ export const cadPlugin = createPlugin({
         discoveryApi: discoveryApiRef,
         fetchApi: fetchApiRef,
         googleAuthApi: googleAuthApiRef,
+        oktaAuthApi: oktaAuthApiRef,
       },
-      factory: ({ discoveryApi, fetchApi, googleAuthApi }) =>
-        new PorchRestAPI(discoveryApi, fetchApi, googleAuthApi),
+      factory: ({ discoveryApi, fetchApi, googleAuthApi, oktaAuthApi }) =>
+        new PorchRestAPI(discoveryApi, fetchApi, googleAuthApi, oktaAuthApi),
     }),
   ],
 });

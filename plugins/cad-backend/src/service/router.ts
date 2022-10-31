@@ -23,8 +23,10 @@ import { Logger } from 'winston';
 import {
   ClusterLocatorAuthProvider,
   getClusterLocatorMethodAuthProvider,
+  getClusterLocatorMethodOIDCTokenProvider,
   getClusterLocatorMethodServiceAccountToken,
   getClusterLocatorMethodType,
+  OIDCTokenProvider,
 } from './config';
 import { getKubernetesConfig } from './lib';
 
@@ -32,6 +34,36 @@ export interface RouterOptions {
   config: Config;
   logger: Logger;
 }
+
+const getClientAuthentication = (
+  authProvider: ClusterLocatorAuthProvider,
+  oidcTokenProvider: OIDCTokenProvider,
+): string => {
+  switch (authProvider) {
+    case ClusterLocatorAuthProvider.GOOGLE:
+      return 'google';
+
+    case ClusterLocatorAuthProvider.OIDC:
+      switch (oidcTokenProvider) {
+        case OIDCTokenProvider.OKTA:
+          return 'oidc.okta';
+
+        default:
+          throw new Error(
+            `Client authenticaiton cannot be determined for OIDC token provider ${oidcTokenProvider}`,
+          );
+      }
+
+    case ClusterLocatorAuthProvider.SERVICE_ACCOUNT:
+    case ClusterLocatorAuthProvider.CURRENT_CONTEXT:
+      return 'none';
+
+    default:
+      throw new Error(
+        `Client authenticaiton cannot be determined for auth provider ${authProvider}`,
+      );
+  }
+};
 
 export async function createRouter({
   config,
@@ -45,6 +77,7 @@ export async function createRouter({
   const clusterLocatorMethodType = getClusterLocatorMethodType(cadConfig);
   const clusterLocatorMethodAuthProvider =
     getClusterLocatorMethodAuthProvider(cadConfig);
+  const oidcTokenProvider = getClusterLocatorMethodOIDCTokenProvider(cadConfig);
 
   const kubeConfig = getKubernetesConfig(clusterLocatorMethodType);
   const currentCluster = kubeConfig.getCurrentCluster();
@@ -55,6 +88,13 @@ export async function createRouter({
 
   const serviceAccountToken =
     getClusterLocatorMethodServiceAccountToken(cadConfig);
+
+  const clientAuthentication = getClientAuthentication(
+    clusterLocatorMethodAuthProvider,
+    oidcTokenProvider,
+  );
+
+  logger.info(`Using '${clientAuthentication}' for client authentication`);
 
   const k8sApiServerUrl = currentCluster.server;
 
@@ -69,13 +109,8 @@ export async function createRouter({
     _: express.Request,
     response: express.Response,
   ): void => {
-    const authentication =
-      clusterLocatorMethodAuthProvider === ClusterLocatorAuthProvider.GOOGLE
-        ? 'google'
-        : 'none';
-
     response.send({
-      authentication,
+      authentication: clientAuthentication,
     });
   };
 
@@ -114,10 +149,7 @@ export async function createRouter({
 
     kubeConfig.applyToRequest(requestOptions);
 
-    const endUserProviders = [ClusterLocatorAuthProvider.GOOGLE];
-    const useEndUserAuthz = endUserProviders.includes(
-      clusterLocatorMethodAuthProvider,
-    );
+    const useEndUserAuthz = clientAuthentication !== 'none';
     if (useEndUserAuthz) {
       requestOptions.headers = requestOptions.headers ?? {};
       requestOptions.headers.authorization = request.headers.authorization;
