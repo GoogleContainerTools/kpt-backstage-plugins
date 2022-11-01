@@ -33,7 +33,7 @@ export type Secret = {
 
 export type SecretMetadata = {
   name: string;
-  namespace: string;
+  namespace?: string;
   labels?: KubernetesKeyValueObject;
   annotations?: KubernetesKeyValueObject;
 };

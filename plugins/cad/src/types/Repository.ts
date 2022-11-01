@@ -32,7 +32,7 @@ export type Repository = {
 
 export type RepositoryMetadata = {
   name: string;
-  namespace: string;
+  namespace?: string;
   labels?: KubernetesKeyValueObject;
 };
 

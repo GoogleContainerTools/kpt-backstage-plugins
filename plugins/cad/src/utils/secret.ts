@@ -27,7 +27,6 @@ export const getBasicAuthSecret = (
     kind: 'Secret',
     metadata: {
       name: name,
-      namespace: 'default',
     },
     type: 'kubernetes.io/basic-auth',
     data: {
