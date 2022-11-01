@@ -45,6 +45,9 @@ const getClientAuthentication = (
 
     case ClusterLocatorAuthProvider.OIDC:
       switch (oidcTokenProvider) {
+        case OIDCTokenProvider.GOOGLE:
+          return 'oidc.google';
+
         case OIDCTokenProvider.OKTA:
           return 'oidc.okta';
 

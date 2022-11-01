@@ -30,6 +30,7 @@ export enum ClusterLocatorAuthProvider {
 
 export enum OIDCTokenProvider {
   NONE = 'none',
+  GOOGLE = 'google',
   OKTA = 'okta',
 }
 

@@ -81,7 +81,7 @@ export class PorchRestAPI implements ConfigAsDataApi {
   constructor(
     private discovery: DiscoveryApi,
     private fetchApi: FetchApi,
-    private googleAuthApi: OAuthApi,
+    private googleAuthApi: OAuthApi & OpenIdConnectApi,
     private oktaAuthApi: OpenIdConnectApi,
   ) {}
 
@@ -94,6 +94,12 @@ export class PorchRestAPI implements ConfigAsDataApi {
       );
 
       return `Bearer ${googleAccessToken}`;
+    }
+
+    if (authProvider === 'oidc.google') {
+      const googleIdToken = await this.googleAuthApi.getIdToken();
+
+      return `Bearer ${googleIdToken}`;
     }
 
     if (authProvider === 'oidc.okta') {
