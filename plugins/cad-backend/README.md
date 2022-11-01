@@ -85,7 +85,7 @@ Valid values:
 | Values | Description |
 | ------ | ----------- |
 | current-context | Authenticate to the cluster with the user in the kubeconfig current context |
-| google | Authenticate to the cluster using the user's authentication token from the [Google auth plugin](https://backstage.io/docs/auth/) |
+| google | Authenticate to the cluster using the user's access token token from the [Google auth provider](https://backstage.io/docs/auth/google/provider) |
 | oidc | Authenticate to the cluster using OIDC (OpenID Connect) |
 | service-account | Authenticate to the cluster using a Kubernetes service account token |
 
@@ -95,7 +95,8 @@ use to authenticate to the cluster with. This field is required with the `oidc` 
 Valid values:
 | Values | Description |
 | ------ | ----------- |
-| okta | Authenticate to the cluster with the [Okta Backstage auth provider](https://backstage.io/docs/auth/okta/provider) |
+| google | Authenticate to the cluster with the [Google auth provider](https://backstage.io/docs/auth/google/provider) |
+| okta | Authenticate to the cluster with the [Okta auth provider](https://backstage.io/docs/auth/okta/provider) |
 
 `clusterLocatorMethod.serviceAccountToken` defines the service account token to be used with the `service-account` auth provider. You can get the service account token with the following command:
 
