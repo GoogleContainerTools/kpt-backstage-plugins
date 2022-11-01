@@ -106,7 +106,6 @@ export const getPackageRevisionResourcesResource = (
     kind: 'PackageRevisionResources',
     metadata: {
       name: fullPackageName,
-      namespace: 'default',
     },
     spec: {
       resources: resourcesMap,

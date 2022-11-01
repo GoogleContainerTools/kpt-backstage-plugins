@@ -305,8 +305,6 @@ export const getRepositoryResource = (
   oci?: RepositoryOciDetails,
   deploymentEnvironment?: DeploymentEnvironment,
 ): Repository => {
-  const namespace = 'default';
-
   const contentDetails = RepositoryContentDetails[contentSummary];
 
   const content: RepositoryContent = contentDetails.repositoryContent;
@@ -336,7 +334,6 @@ export const getRepositoryResource = (
     kind: 'Repository',
     metadata: {
       name,
-      namespace,
       labels,
     },
     spec: {

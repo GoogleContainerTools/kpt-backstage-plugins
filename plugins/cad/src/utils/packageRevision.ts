@@ -224,7 +224,6 @@ export const getPackageRevisionResource = (
     kind: 'PackageRevision',
     metadata: {
       name: '', // Porch will populate
-      namespace: 'default',
     },
     spec: {
       packageName: packageName,

@@ -26,7 +26,7 @@ export type PackageRevision = {
 
 export type PackageRevisionMetadata = {
   name: string;
-  namespace: string;
+  namespace?: string;
   creationTimestamp?: string;
   labels?: KubernetesKeyValueObject;
 };
