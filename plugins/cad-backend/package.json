@@ -27,8 +27,8 @@
     "clean": "backstage-cli package clean"
   },
   "dependencies": {
-    "@backstage/backend-common": "^0.15.0",
-    "@backstage/config": "^1.0.0",
+    "@backstage/backend-common": "^0.15.2",
+    "@backstage/config": "^1.0.3",
     "@kubernetes/client-node": "^0.16.0",
     "@types/express": "*",
     "express": "^4.17.1",
