@@ -69,9 +69,8 @@ export const RadioGroup = ({
         onChange={e => onChange((e.target as HTMLInputElement).value)}
       >
         {options.map(option => (
-          <Fragment>
+          <Fragment key={option.value}>
             <FormControlLabel
-              key={option.value}
               value={option.value}
               control={<Radio color="primary" />}
               label={option.label}
