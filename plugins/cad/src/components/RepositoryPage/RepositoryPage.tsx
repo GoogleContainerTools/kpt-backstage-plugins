@@ -51,9 +51,8 @@ import {
   getRepositorySummary,
 } from '../../utils/repositorySummary';
 import { RepositoriesLink } from '../Links';
-import { PackagesTable } from '../PackagesTable';
 import { AdvancedRepositoryOptions } from './components/AdvancedRepositoryOptions';
-import { FunctionsTable } from './components/FunctionsTable';
+import { PackagesTabContent } from './components/PackagesTabContent';
 
 export const RepositoryPage = () => {
   const { repositoryName } = useParams();
@@ -171,38 +170,6 @@ export const RepositoryPage = () => {
 
   const packageDescriptor = getPackageDescriptor(thisRepository);
 
-  const renderTable = (): JSX.Element => {
-    if (packagesError) {
-      return <Alert severity="error">{packagesError.message}</Alert>;
-    }
-
-    if (isPackageRepository(repositorySummary.repository)) {
-      const showSyncStatusColumn = isDeploymentRepository(
-        repositorySummary.repository,
-      );
-
-      return (
-        <PackagesTable
-          title={`${packageDescriptor}s`}
-          packages={packageSummaries}
-          showSyncStatusColumn={showSyncStatusColumn}
-        />
-      );
-    }
-
-    if (isFunctionRepository(repositorySummary.repository)) {
-      return (
-        <FunctionsTable
-          title={`${packageDescriptor}s`}
-          functions={functions}
-          showLatestVersionOnly
-        />
-      );
-    }
-
-    throw new Error('Cannot determine the table to render');
-  };
-
   return (
     <div>
       <Breadcrumbs>
@@ -224,7 +191,14 @@ export const RepositoryPage = () => {
         tabs={[
           {
             label: `${packageDescriptor}s`,
-            content: renderTable(),
+            content: (
+              <PackagesTabContent
+                repository={thisRepository}
+                packages={packageSummaries}
+                functions={functions}
+                packagesError={packagesError}
+              />
+            ),
           },
           {
             label: 'Advanced',
