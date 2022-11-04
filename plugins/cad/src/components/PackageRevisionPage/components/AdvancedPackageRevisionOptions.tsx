@@ -16,12 +16,18 @@
 
 import { useApi, useRouteRef } from '@backstage/core-plugin-api';
 import { Button } from '@material-ui/core';
+import { Alert } from '@material-ui/lab';
 import React, { Fragment, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { configAsDataApiRef } from '../../../apis';
 import { repositoryRouteRef } from '../../../routes';
 import { Repository } from '../../../types/Repository';
 import { RootSync } from '../../../types/RootSync';
+import {
+  getPackageDescriptor,
+  isReadOnlyRepository,
+} from '../../../utils/repository';
+import { toLowerCase } from '../../../utils/string';
 import { ConfirmationDialog } from '../../Controls/ConfirmationDialog';
 
 type AdvancedPackageRevisionOptionsProps = {
@@ -85,6 +91,15 @@ export const AdvancedPackageRevisionOptions = ({
 
     navigate(repositoryRef({ repositoryName }));
   };
+
+  if (isReadOnlyRepository(repository)) {
+    return (
+      <Alert severity="info">
+        Advanced options are hidden since this{' '}
+        {toLowerCase(getPackageDescriptor(repository))} is read-only.
+      </Alert>
+    );
+  }
 
   return (
     <Fragment>

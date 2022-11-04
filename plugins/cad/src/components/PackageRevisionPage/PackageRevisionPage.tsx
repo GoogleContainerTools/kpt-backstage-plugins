@@ -74,6 +74,7 @@ import {
   findRepository,
   getPackageDescriptor,
   isDeploymentRepository,
+  isReadOnlyRepository,
 } from '../../utils/repository';
 import {
   getRepositorySummaries,
@@ -819,7 +820,23 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     return upgradeMessage;
   };
 
-  const alertMessages = isUpgradeAvailable ? [getUpgradeMessage()] : [];
+  const alertMessages: AlertMessage[] = [];
+
+  if (isReadOnlyRepository(repository)) {
+    alertMessages.push({
+      key: 'read-only',
+      message: (
+        <Fragment>
+          This {toLowerCase(packageDescriptor)} is read-only since this{' '}
+          {toLowerCase(packageDescriptor)} exists in a read-only repository.
+        </Fragment>
+      ),
+    });
+  }
+
+  if (isUpgradeAvailable) {
+    alertMessages.push(getUpgradeMessage());
+  }
 
   if (isLatestPublishedPackageRevision) {
     const downstreamPackagesPendingUpgrade = downstreamPackageSummaries.filter(
