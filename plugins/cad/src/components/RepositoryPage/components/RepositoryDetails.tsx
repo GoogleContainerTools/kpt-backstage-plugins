@@ -22,6 +22,7 @@ import {
   getDeploymentEnvironment,
   getPackageDescriptor,
   isDeploymentRepository,
+  isReadOnlyRepository,
 } from '../../../utils/repository';
 
 type RepositoryDetailsProps = {
@@ -83,11 +84,14 @@ const getRepositoryStatusConditions = (repository: Repository): Metadata => {
 };
 
 const getRepositoryMetadata = (repository: Repository): Metadata => {
+  const isReadOnly = isReadOnlyRepository(repository);
+
   const metadata: Metadata = {
     name: repository.metadata.name,
     description: repository.spec.description ?? '',
     content: `${getPackageDescriptor(repository)}s`,
     deploymentEnvironment: getDeploymentEnvironment(repository),
+    repositoryAccess: isReadOnly ? 'read-only access' : 'write access',
     ...getRepositoryStoreMetadata(repository),
     ...getRepositoryStatusConditions(repository),
   };

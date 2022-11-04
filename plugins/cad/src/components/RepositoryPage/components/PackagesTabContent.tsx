@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { makeStyles } from '@material-ui/core';
 import Alert from '@material-ui/lab/Alert';
 import React, { Fragment } from 'react';
 import { Function } from '../../../types/Function';
@@ -24,7 +25,9 @@ import {
   isDeploymentRepository,
   isFunctionRepository,
   isPackageRepository,
+  isReadOnlyRepository,
 } from '../../../utils/repository';
+import { toLowerCase } from '../../../utils/string';
 import { PackagesTable } from '../../PackagesTable';
 import { FunctionsTable } from '../components/FunctionsTable';
 
@@ -35,13 +38,22 @@ type PackagesTabContentProps = {
   packagesError?: Error;
 };
 
+const useStyles = makeStyles({
+  messageBanner: {
+    marginBottom: '16px',
+  },
+});
+
 export const PackagesTabContent = ({
   repository,
   packages,
   functions,
   packagesError,
 }: PackagesTabContentProps) => {
+  const classes = useStyles();
+
   const pluralPackageDescriptor = `${getPackageDescriptor(repository)}s`;
+  const isReadOnly = isReadOnlyRepository(repository);
 
   if (packagesError) {
     return <Alert severity="error">{packagesError.message}</Alert>;
@@ -49,6 +61,14 @@ export const PackagesTabContent = ({
 
   return (
     <Fragment>
+      {isReadOnly && (
+        <Alert className={classes.messageBanner} severity="info">
+          This repository is read-only. You will not be able to add or make any
+          changes to the {toLowerCase(pluralPackageDescriptor)} in this
+          repository.
+        </Alert>
+      )}
+
       {isPackageRepository(repository) && (
         <PackagesTable
           title={pluralPackageDescriptor}

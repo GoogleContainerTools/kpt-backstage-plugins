@@ -58,6 +58,7 @@ type EnvironmentDetail = {
 const REPOSITORY_CONTENT_LABEL = 'kpt.dev/repository-content';
 const REPOSITORY_DEPLOYMENT_ENVIRONMENT_LABEL =
   'kpt.dev/deployment-environment';
+const REPOSITORY_ACCESS_LABEL = 'kpt.dev/repository-access';
 
 export enum ContentSummary {
   EXTERNAL_BLUEPRINT = 'External Blueprint',
@@ -71,6 +72,11 @@ export enum DeploymentEnvironment {
   DEVELOPMENT = 'Development',
   STAGING = 'Staging',
   PRODUCTION = 'Production',
+}
+
+export enum RepositoryAccess {
+  FULL = 'full',
+  READ_ONLY = 'read-only',
 }
 
 export const PackageContentSummaryOrder = [
@@ -222,6 +228,14 @@ const normalizeRepositoryUrl = (repositoryUrl?: string): string => {
   return thisRepositoryUrl;
 };
 
+export const isReadOnlyRepository = (repository: Repository): boolean => {
+  const isReadOnly =
+    repository.metadata.labels?.[REPOSITORY_ACCESS_LABEL] ===
+    RepositoryAccess.READ_ONLY;
+
+  return isReadOnly;
+};
+
 export const getPackageDescriptor = (repository: Repository): string => {
   for (const contentType of Object.keys(RepositoryContentDetails)) {
     if (isRepositoryContent(repository, contentType as ContentSummary)) {
@@ -301,6 +315,7 @@ export const getRepositoryResource = (
   name: string,
   description: string,
   contentSummary: ContentSummary,
+  repositoryAccess: RepositoryAccess,
   git?: RepositoryGitDetails,
   oci?: RepositoryOciDetails,
   deploymentEnvironment?: DeploymentEnvironment,
@@ -327,6 +342,10 @@ export const getRepositoryResource = (
       labels[REPOSITORY_DEPLOYMENT_ENVIRONMENT_LABEL] =
         environmentDetails.repositoryEnvironmentLabelValue;
     }
+  }
+
+  if (repositoryAccess === RepositoryAccess.READ_ONLY) {
+    labels[REPOSITORY_ACCESS_LABEL] = RepositoryAccess.READ_ONLY;
   }
 
   const resource: Repository = {

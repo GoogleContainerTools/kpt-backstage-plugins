@@ -37,6 +37,7 @@ import {
 import {
   getPackageDescriptor,
   isDeploymentRepository,
+  isReadOnlyRepository,
   RepositoryContentDetails,
 } from '../../../utils/repository';
 import { PackageRevisionPageMode } from '../PackageRevisionPage';
@@ -64,6 +65,7 @@ type PackageRevisionOptionsProps = {
 };
 
 const DraftPackageRevisionOptions = ({
+  repositorySummary,
   packageRevision,
   mode,
   onClick,
@@ -76,6 +78,11 @@ const DraftPackageRevisionOptions = ({
   const repositoryName = packageRevision.spec.repository;
 
   const isEditMode = mode === PackageRevisionPageMode.EDIT;
+  const isViewOnly = isReadOnlyRepository(repositorySummary.repository);
+
+  if (isViewOnly) {
+    return <Fragment />;
+  }
 
   if (isEditMode) {
     return (
@@ -125,9 +132,16 @@ const DraftPackageRevisionOptions = ({
 };
 
 const ProposedPackageRevisionOptions = ({
+  repositorySummary,
   onClick,
   disabled,
 }: PackageRevisionOptionsProps) => {
+  const isViewOnly = isReadOnlyRepository(repositorySummary.repository);
+
+  if (isViewOnly) {
+    return <Fragment />;
+  }
+
   return (
     <Fragment>
       <MaterialButton
@@ -169,6 +183,7 @@ const PublishedPackageRevisionOptions = ({
   const latestRevision = packageRevisions[0];
   const latestPublishedRevision = findLatestPublishedRevision(packageRevisions);
 
+  const isReadOnly = isReadOnlyRepository(repositorySummary.repository);
   const isLatestPublishedPackageRevision =
     packageRevision && isLatestPublishedRevision(packageRevision);
 
@@ -179,14 +194,16 @@ const PublishedPackageRevisionOptions = ({
   if (!isLatestPublishedPackageRevision) {
     return (
       <Fragment>
-        <MaterialButton
-          onClick={() => onClick(RevisionOption.RESTORE_REVISION)}
-          color="primary"
-          variant="outlined"
-          disabled={disabled}
-        >
-          Restore Revision
-        </MaterialButton>
+        {!isReadOnly && (
+          <MaterialButton
+            onClick={() => onClick(RevisionOption.RESTORE_REVISION)}
+            color="primary"
+            variant="outlined"
+            disabled={disabled}
+          >
+            Restore Revision
+          </MaterialButton>
+        )}
 
         <Button
           to={packageRef({
@@ -205,18 +222,23 @@ const PublishedPackageRevisionOptions = ({
 
   const packageContentType = getPackageDescriptor(repositorySummary.repository);
 
+  const isNewerUnpublishedRevision = latestRevision !== latestPublishedRevision;
+
+  const showUpgrade =
+    !isReadOnly && isUpgradeAvailable && !isNewerUnpublishedRevision;
+  const showCreateNewRevision = !isReadOnly && !isNewerUnpublishedRevision;
   const showClone =
     RepositoryContentDetails[packageContentType].cloneTo.length > 0 &&
     canCloneRevision(packageRevision);
 
-  const isNewerUnpublishedRevision = latestRevision !== latestPublishedRevision;
-
   const showCreateSync =
-    isDeploymentRepository(repositorySummary.repository) && rootSync === null;
+    !isReadOnly &&
+    isDeploymentRepository(repositorySummary.repository) &&
+    rootSync === null;
 
   return (
     <Fragment>
-      {isUpgradeAvailable && !isNewerUnpublishedRevision && (
+      {showUpgrade && (
         <MaterialButton
           variant="outlined"
           color="primary"
@@ -227,7 +249,7 @@ const PublishedPackageRevisionOptions = ({
         </MaterialButton>
       )}
 
-      {!isNewerUnpublishedRevision && (
+      {showCreateNewRevision && (
         <MaterialButton
           variant="outlined"
           color="primary"
