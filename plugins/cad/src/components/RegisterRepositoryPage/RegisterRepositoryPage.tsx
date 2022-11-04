@@ -47,6 +47,7 @@ import {
   getRepositoryResource,
   getSecretRef,
   PackageContentSummaryOrder,
+  RepositoryAccess,
   RepositoryContentDetails,
 } from '../../utils/repository';
 import { getBasicAuthSecret, isBasicAuthSecret } from '../../utils/secret';
@@ -86,7 +87,8 @@ export const RegisterRepositoryPage = () => {
     description: '',
     repoBranch: '',
     repoDir: '',
-    authType: '',
+    authType: AuthenticationType.GITHUB_ACCESS_TOKEN,
+    repositoryAccess: RepositoryAccess.FULL,
     useSecret: 'new',
     authSecretName: '',
     authPassword: '',
@@ -155,6 +157,7 @@ export const RegisterRepositoryPage = () => {
     }
 
     const contentSummary = state.contentSummary as ContentSummary;
+    const repositoryAccess = state.repositoryAccess as RepositoryAccess;
 
     if (contentSummary === ContentSummary.DEPLOYMENT) {
       deploymentEnvironment =
@@ -165,6 +168,7 @@ export const RegisterRepositoryPage = () => {
       state.name,
       state.description,
       contentSummary,
+      repositoryAccess,
       gitDetails,
       ociDetails,
       deploymentEnvironment,
@@ -384,7 +388,9 @@ export const RegisterRepositoryPage = () => {
           <div className={classes.stepContent}>
             <Select
               label="Authentication Type"
-              onChange={value => setState({ ...state, authType: value })}
+              onChange={value =>
+                setState({ ...state, authType: value as AuthenticationType })
+              }
               selected={state.authType}
               items={selectAuthTypeItems}
               helperText="The authentication type of the repository. Select None if the repository does not require any authentication."
@@ -432,6 +438,28 @@ export const RegisterRepositoryPage = () => {
                   />
                 </Fragment>
               )}
+
+            <Select
+              label="Repository Access"
+              onChange={value =>
+                setState({
+                  ...state,
+                  repositoryAccess: value as RepositoryAccess,
+                })
+              }
+              selected={state.repositoryAccess}
+              items={[
+                {
+                  value: RepositoryAccess.FULL,
+                  label: 'Write access',
+                },
+                {
+                  value: RepositoryAccess.READ_ONLY,
+                  label: 'Read-only access',
+                },
+              ]}
+              helperText="The access anyone using the UI will have to the repository. Write access allows packages to be created and updated in the repository, whereas read-only access allows packages to be viewed. Select read-only access if the repository authentication only allows read access."
+            />
           </div>
         </SimpleStepperStep>
 

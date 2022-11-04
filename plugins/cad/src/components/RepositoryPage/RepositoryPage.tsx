@@ -45,6 +45,7 @@ import {
   isDeploymentRepository,
   isFunctionRepository,
   isPackageRepository,
+  isReadOnlyRepository,
 } from '../../utils/repository';
 import {
   getRepositorySummaries,
@@ -167,6 +168,7 @@ export const RepositoryPage = () => {
 
   const thisRepository = repositorySummary.repository;
   const repoTitle = getRepositoryTitle(thisRepository);
+  const isReadOnly = isReadOnlyRepository(thisRepository);
 
   const packageDescriptor = getPackageDescriptor(thisRepository);
 
@@ -178,13 +180,15 @@ export const RepositoryPage = () => {
       </Breadcrumbs>
 
       <ContentHeader title={repoTitle}>
-        <Button
-          to={addPackageRef({ repositoryName: repositoryName })}
-          color="primary"
-          variant="contained"
-        >
-          Add {packageDescriptor}
-        </Button>
+        {!isReadOnly && (
+          <Button
+            to={addPackageRef({ repositoryName: repositoryName })}
+            color="primary"
+            variant="contained"
+          >
+            Add {packageDescriptor}
+          </Button>
+        )}
       </ContentHeader>
 
       <Tabs

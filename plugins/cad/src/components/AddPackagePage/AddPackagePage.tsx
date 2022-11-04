@@ -56,6 +56,7 @@ import {
   ContentSummary,
   getPackageDescriptor,
   getRepository,
+  isReadOnlyRepository,
   RepositoryContentDetails,
 } from '../../utils/repository';
 import { sortByLabel } from '../../utils/selectItem';
@@ -553,6 +554,15 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
                   items={targetRepositorySelectItems}
                   helperText={`The repository to create the new ${targetRepositoryPackageDescriptorLowercase} in.`}
                 />
+
+                {!!targetRepository && isReadOnlyRepository(targetRepository) && (
+                  <Alert severity="info" icon={false}>
+                    A new {targetRepositoryPackageDescriptorLowercase} cannot be
+                    created in the {targetRepository.metadata.name} repository
+                    since the repository is read-only. Another destination
+                    repository will need to be selected.
+                  </Alert>
+                )}
 
                 {!!addPackageAction?.message && (
                   <Alert severity="info" icon={false}>
