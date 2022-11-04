@@ -22,7 +22,7 @@ import {
   SimpleStepper,
   SimpleStepperStep,
 } from '@backstage/core-components';
-import { useApi, useRouteRef } from '@backstage/core-plugin-api';
+import { errorApiRef, useApi, useRouteRef } from '@backstage/core-plugin-api';
 import { makeStyles, TextField, Typography } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
@@ -153,6 +153,8 @@ const getPackageResources = async (
 
 export const AddPackagePage = ({ action }: AddPackagePageProps) => {
   const api = useApi(configAsDataApiRef);
+  const errorApi = useApi(errorApiRef);
+
   const classes = useStyles();
   const navigate = useNavigate();
 
@@ -163,6 +165,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
 
   const newPackageRevision = 'v1';
 
+  const [activeStep, setActiveStep] = useState<number>(0);
   const [addPackageAction, setAddPackageAction] =
     useState<AddPackageSelectItem>();
   const [addPackageSelectItems, setAddPackageSelectItems] = useState<
@@ -463,19 +466,30 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
 
     setIsCreatingPackage(true);
 
-    const newPackageRevisionResource = await api.createPackageRevision(
-      resourceJson,
-    );
-    const newPackageRevisionName = newPackageRevisionResource.metadata.name;
+    try {
+      const newPackageRevisionResource = await api.createPackageRevision(
+        resourceJson,
+      );
+      const newPackageRevisionName = newPackageRevisionResource.metadata.name;
 
-    await updatePackageResources(newPackageRevisionName);
+      try {
+        await updatePackageResources(newPackageRevisionName);
+      } catch (resourcesError) {
+        errorApi.post(resourcesError as Error);
+      }
 
-    navigate(
-      packageRef({
-        repositoryName: resourceJson.spec.repository,
-        packageName: newPackageRevisionName,
-      }),
-    );
+      navigate(
+        packageRef({
+          repositoryName: resourceJson.spec.repository,
+          packageName: newPackageRevisionName,
+        }),
+      );
+    } catch (createError) {
+      errorApi.post(createError as Error);
+      setActiveStep(stepNumber => stepNumber - 1);
+    } finally {
+      setIsCreatingPackage(false);
+    }
   };
 
   if (loading || isCreatingPackage) {
@@ -522,7 +536,10 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
         </Fragment>
       )}
 
-      <SimpleStepper>
+      <SimpleStepper
+        activeStep={activeStep}
+        onStepChange={(_, next) => setActiveStep(next)}
+      >
         <SimpleStepperStep title="Action">
           <div className={classes.stepContent}>
             {isCloneNamedPackageAction && (
