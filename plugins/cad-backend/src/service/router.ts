@@ -26,6 +26,7 @@ import {
   getClusterLocatorMethodOIDCTokenProvider,
   getClusterLocatorMethodServiceAccountToken,
   getClusterLocatorMethodType,
+  getResourcesNamespace,
   OIDCTokenProvider,
 } from './config';
 import { getKubernetesConfig } from './lib';
@@ -77,6 +78,7 @@ export async function createRouter({
 
   const cadConfig = config.getConfig('configAsData');
 
+  const namespace = getResourcesNamespace(cadConfig);
   const clusterLocatorMethodType = getClusterLocatorMethodType(cadConfig);
   const clusterLocatorMethodAuthProvider =
     getClusterLocatorMethodAuthProvider(cadConfig);
@@ -98,6 +100,7 @@ export async function createRouter({
   );
 
   logger.info(`Using '${clientAuthentication}' for client authentication`);
+  logger.info(`Using '${namespace}' as the resources namespace`);
 
   const k8sApiServerUrl = currentCluster.server;
 
@@ -114,6 +117,7 @@ export async function createRouter({
   ): void => {
     response.send({
       authentication: clientAuthentication,
+      namespace: namespace,
     });
   };
 

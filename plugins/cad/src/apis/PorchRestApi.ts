@@ -77,7 +77,7 @@ class KubernetesStatusError extends Error {
 
 export class PorchRestAPI implements ConfigAsDataApi {
   private authentication: string = 'none';
-  private namespace: string = 'default';
+  private namespace: string = '';
 
   constructor(
     private discovery: DiscoveryApi,
@@ -166,6 +166,13 @@ export class PorchRestAPI implements ConfigAsDataApi {
     const features = await this.cadFetch('v1/features');
 
     this.authentication = features.authentication;
+    this.namespace = features.namespace;
+
+    if (!this.namespace) {
+      throw new Error(
+        'The Configuration as Data backend is not returning all expected features. Pleae update the Backstage Configuration as Data Plugins to the latest version.',
+      );
+    }
   }
 
   async listApiGroups(): Promise<ListApiGroups> {

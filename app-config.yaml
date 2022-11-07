@@ -74,6 +74,9 @@ techdocs:
     type: 'local' # Alternatives - 'googleGcs' or 'awsS3'. Read documentation for using alternatives.
 
 configAsData:
+  # The namespace where Porch managed resources live.
+  resourcesNamespace: default
+
   clusterLocatorMethod:
     # Determines how the client will locate the Kubernetes cluster.
     type: current-context
