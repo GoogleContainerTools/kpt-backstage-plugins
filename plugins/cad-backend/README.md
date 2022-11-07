@@ -53,6 +53,9 @@ The following configuration will need to be added to `app-config.yaml`:
 
 ```yaml
 configAsData:
+  # The namespace where Porch managed resources live.
+  resourcesNamespace: default
+
   clusterLocatorMethod:
     # Determines how the client will locate the Kubernetes cluster.
     type: current-context
@@ -66,6 +69,8 @@ configAsData:
     # Optional. The service account token to be used when using the 'service-account' auth provider.
     serviceAccountToken: ${CAD_SERVICE_ACCOUNT_TOKEN}
 ```
+
+`resourcesNamespace` defines the namespace where Porch managed resources live
 
 `clusterLocatorMethod` determines where to receive the cluster configuration
 from

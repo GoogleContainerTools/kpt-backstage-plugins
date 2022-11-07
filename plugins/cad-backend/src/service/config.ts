@@ -34,6 +34,12 @@ export enum OIDCTokenProvider {
   OKTA = 'okta',
 }
 
+export const getResourcesNamespace = (config: Config): string => {
+  const namespace = config.getString('resourcesNamespace');
+
+  return namespace;
+};
+
 export const getClusterLocatorMethodType = (
   config: Config,
 ): ClusterLocatorMethodType => {
