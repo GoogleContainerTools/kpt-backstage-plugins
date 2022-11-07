@@ -16,10 +16,13 @@
 
 import { Table, TableColumn } from '@backstage/core-components';
 import { useRouteRef } from '@backstage/core-plugin-api';
-import React, { Fragment } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { packageRouteRef } from '../../../routes';
-import { PackageRevisionLifecycle } from '../../../types/PackageRevision';
+import {
+  PackageRevision,
+  PackageRevisionLifecycle,
+} from '../../../types/PackageRevision';
 import { Repository } from '../../../types/Repository';
 import { formatCreationTimestamp } from '../../../utils/formatDate';
 import { getPackageRevisionRevision } from '../../../utils/packageRevision';
@@ -30,9 +33,11 @@ import {
 } from '../../../utils/packageRevisionResources';
 import { RevisionSummary } from '../../../utils/revisionSummary';
 import { IconButton, PackageIcon } from '../../Controls';
+import ArrowForwardIcon from '@material-ui/icons/ArrowForward';
 
 type PackageRevisionsTableProps = {
   repository: Repository;
+  currentRevision: PackageRevision;
   revisions: RevisionSummary[];
 };
 
@@ -45,21 +50,27 @@ type PackageRevisionRow = {
   resourcesCount: number;
   changesSummary: string;
   created: string;
+  isCurrentRevision: boolean;
 };
 
-const renderStatusColumn = (revision: PackageRevisionRow): JSX.Element => {
+const renderStatusColumn = (row: PackageRevisionRow): JSX.Element => {
   const isUnpublishedRevision =
-    revision.lifecycle !== PackageRevisionLifecycle.PUBLISHED;
+    row.lifecycle !== PackageRevisionLifecycle.PUBLISHED;
 
-  if (isUnpublishedRevision) {
-    return (
-      <IconButton title={`${revision.lifecycle} revision`} inTable>
-        <PackageIcon lifecycle={revision.lifecycle} />
-      </IconButton>
-    );
-  }
-
-  return <Fragment />;
+  return (
+    <div style={{ position: 'absolute', transform: 'translateY(-50%)' }}>
+      {row.isCurrentRevision && (
+        <IconButton title="Revision being viewed">
+          <ArrowForwardIcon />
+        </IconButton>
+      )}
+      {isUnpublishedRevision && (
+        <IconButton title={`${row.lifecycle} revision`}>
+          <PackageIcon lifecycle={row.lifecycle} />
+        </IconButton>
+      )}
+    </div>
+  );
 };
 
 const getTableColumns = (): TableColumn<PackageRevisionRow>[] => {
@@ -123,33 +134,43 @@ const getResourcesChangesSummary = (
   return changeSummary;
 };
 
-const mapToPackageRevisionRow = (
-  summary: RevisionSummary,
-  index: number,
-  allSummaries: RevisionSummary[],
-): PackageRevisionRow => {
-  const { revision, resourcesMap } = summary;
-  const previousSummary = allSummaries[index + 1];
-  const creationTimestamp = formatCreationTimestamp(
-    revision.metadata.creationTimestamp,
-    true,
-  );
+const mapPackageRevisionsToRows = (
+  revisions: RevisionSummary[],
+  currentRevision: PackageRevision,
+): PackageRevisionRow[] => {
+  const mapToPackageRevisionRow = (
+    summary: RevisionSummary,
+    index: number,
+    allSummaries: RevisionSummary[],
+  ): PackageRevisionRow => {
+    const { revision, resourcesMap } = summary;
+    const previousSummary = allSummaries[index + 1];
+    const creationTimestamp = formatCreationTimestamp(
+      revision.metadata.creationTimestamp,
+      true,
+    );
 
-  return {
-    id: revision.metadata.name,
-    name: revision.metadata.name,
-    packageName: revision.spec.packageName,
-    revision: getPackageRevisionRevision(revision),
-    lifecycle: revision.spec.lifecycle,
-    created: creationTimestamp,
-    resourcesCount: getPackageResourcesFromResourcesMap(resourcesMap).length,
-    changesSummary: getResourcesChangesSummary(summary, previousSummary),
+    return {
+      id: revision.metadata.name,
+      name: revision.metadata.name,
+      packageName: revision.spec.packageName,
+      revision: getPackageRevisionRevision(revision),
+      lifecycle: revision.spec.lifecycle,
+      created: creationTimestamp,
+      resourcesCount: getPackageResourcesFromResourcesMap(resourcesMap).length,
+      changesSummary: getResourcesChangesSummary(summary, previousSummary),
+      isCurrentRevision:
+        revision.metadata.name === currentRevision.metadata.name,
+    };
   };
+
+  return revisions.map(mapToPackageRevisionRow);
 };
 
 export const PackageRevisionsTable = ({
   repository,
   revisions,
+  currentRevision,
 }: PackageRevisionsTableProps) => {
   const navigate = useNavigate();
 
@@ -164,7 +185,7 @@ export const PackageRevisionsTable = ({
   };
 
   const columns = getTableColumns();
-  const data = revisions.map(mapToPackageRevisionRow);
+  const data = mapPackageRevisionsToRows(revisions, currentRevision);
 
   return (
     <Table
