@@ -16,6 +16,8 @@
 
 import { cloneDeep } from 'lodash';
 import {
+  Condition,
+  ConditionStatus,
   PackageRevision,
   PackageRevisionLifecycle,
   PackageRevisionTask,
@@ -296,4 +298,35 @@ export const sortByPackageNameAndRevisionComparison = (
   }
 
   return packageSpec1.packageName > packageSpec2.packageName ? 1 : -1;
+};
+
+export const getPackageConditions = (
+  packageRevision: PackageRevision,
+): Condition[] => {
+  if (!packageRevision.status) {
+    throw new Error('Package revision status is undefined');
+  }
+
+  const readinessGates = packageRevision.spec.readinessGates ?? [];
+  const conditions = packageRevision.status.conditions ?? [];
+
+  const allConditions = cloneDeep(conditions);
+
+  const readinessConditions = readinessGates.map(gate => gate.conditionType);
+  const existingConditions = conditions.map(condition => condition.type);
+
+  const missingReadinessConditions = readinessConditions.filter(
+    type => !existingConditions.includes(type),
+  );
+  missingReadinessConditions.forEach(type =>
+    allConditions.push({
+      type: type,
+      status: ConditionStatus.UNKNOWN,
+      reason: 'missing',
+      message:
+        'condition exists as readiness gate however does not exist as status condition',
+    }),
+  );
+
+  return allConditions;
 };

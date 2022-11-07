@@ -21,7 +21,7 @@ import {
   Tabs,
 } from '@backstage/core-components';
 import { errorApiRef, useApi, useRouteRef } from '@backstage/core-plugin-api';
-import { makeStyles, Typography } from '@material-ui/core';
+import { Badge, makeStyles, Typography } from '@material-ui/core';
 import Alert, { Color } from '@material-ui/lab/Alert';
 import { cloneDeep, uniq } from 'lodash';
 import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
@@ -30,6 +30,7 @@ import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../apis';
 import { packageRouteRef } from '../../routes';
 import {
+  ConditionStatus,
   PackageRevision,
   PackageRevisionLifecycle,
 } from '../../types/PackageRevision';
@@ -55,6 +56,7 @@ import {
   findLatestPublishedRevision,
   findPackageRevision,
   getNextPackageRevisionResource,
+  getPackageConditions,
   getPackageRevision,
   getPackageRevisionTitle,
   getUpgradePackageRevisionResource,
@@ -88,6 +90,7 @@ import { toLowerCase } from '../../utils/string';
 import { ConfirmationDialog } from '../Controls';
 import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
 import { AdvancedPackageRevisionOptions } from './components/AdvancedPackageRevisionOptions';
+import { ConditionsTable } from './components/ConditionsTable';
 import { DownstreamTabContent } from './components/DownstreamTabContent';
 import {
   PackageRevisionOptions,
@@ -111,7 +114,8 @@ type PackageRevisionPageProps = {
 };
 
 type TabProps = {
-  label: string;
+  label?: string;
+  icon?: JSX.Element;
   content: JSX.Element;
 };
 
@@ -860,6 +864,11 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     return tabs.filter(tab => tab.showTab !== false);
   };
 
+  const packageConditions = getPackageConditions(packageRevision);
+  const incompleteConditions = packageConditions.filter(
+    c => c.status !== ConditionStatus.TRUE,
+  ).length;
+
   return (
     <div>
       <Breadcrumbs>
@@ -942,6 +951,14 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
                 alertMessages={alertMessages}
               />
             ),
+          },
+          {
+            icon: (
+              <Badge badgeContent={incompleteConditions} color="primary">
+                Conditions
+              </Badge>
+            ),
+            content: <ConditionsTable conditions={packageConditions} />,
           },
           {
             label: 'Revisions',
