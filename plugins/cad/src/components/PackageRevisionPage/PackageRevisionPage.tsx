@@ -948,6 +948,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
             content: (
               <PackageRevisionsTable
                 repository={repositorySummary.repository}
+                currentRevision={packageRevision}
                 revisions={revisionSummaries ?? []}
               />
             ),
