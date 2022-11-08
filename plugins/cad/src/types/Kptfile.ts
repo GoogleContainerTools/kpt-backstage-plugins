@@ -35,6 +35,11 @@ export type KptfileInfo = {
   description?: string;
   keywords?: string[];
   site?: string;
+  readinessGates?: ReadinessGate[];
+};
+
+export type ReadinessGate = {
+  conditionType: string;
 };
 
 export type KptfilePipeline = {

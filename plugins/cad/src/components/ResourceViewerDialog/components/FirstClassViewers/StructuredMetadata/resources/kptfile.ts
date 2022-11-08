@@ -33,10 +33,15 @@ export const getKptfileStructuredMetadata = (
   resource: KubernetesResource,
 ): Metadata => {
   const kptFile = resource as Kptfile;
+  const readinessGates = kptFile.info.readinessGates;
 
   return {
     description: kptFile.info.description,
     keywords: kptFile.info.keywords,
+    site: kptFile.info.site,
+    readinessGates: readinessGates
+      ? readinessGates.map(gate => gate.conditionType)
+      : undefined,
     upstream: kptFile.upstream?.git
       ? `${kptFile.upstream.git.repo}/${kptFile.upstream.git.directory}@${kptFile.upstream?.git?.ref}`
       : '',
