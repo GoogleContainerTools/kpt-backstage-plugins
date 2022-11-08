@@ -24,6 +24,7 @@ import { Function } from '../../../../../types/Function';
 import {
   Kptfile,
   KptfileFunction,
+  KptfileInfo,
   KptfileMetadata,
 } from '../../../../../types/Kptfile';
 import {
@@ -32,10 +33,7 @@ import {
 } from '../../../../../utils/function';
 import { PackageResource } from '../../../../../utils/packageRevisionResources';
 import { dumpYaml, loadYaml } from '../../../../../utils/yaml';
-import {
-  ResourceMetadataAccordion,
-  SingleTextFieldAccordion,
-} from '../Controls';
+import { ResourceMetadataAccordion } from '../Controls';
 import { useEditorStyles } from '../styles';
 import {
   Deletable,
@@ -44,6 +42,7 @@ import {
   undefinedIfEmpty,
   updateList,
 } from '../util/deletable';
+import { KptfileInfoEditorAccordion } from './components/KptfileInfoEditorAccordion';
 import { KptFunctionEditorAccordion } from './components/KptFunctionEditorAccordion';
 
 type OnUpdatedYamlFn = (yaml: string) => void;
@@ -56,7 +55,7 @@ type KptfileEditorProps = {
 
 type State = {
   metadata: KptfileMetadata;
-  description: string;
+  info: KptfileInfo;
   mutators: Deletable<KptfileFunction>[];
   validators: Deletable<KptfileFunction>[];
 };
@@ -71,7 +70,7 @@ export const KptfileEditor = ({
 
   const createResourceState = (): State => ({
     metadata: resourceYaml.metadata,
-    description: resourceYaml.info?.description || '',
+    info: resourceYaml.info,
     mutators: resourceYaml.pipeline?.mutators ?? [],
     validators: resourceYaml.pipeline?.validators ?? [],
   });
@@ -101,7 +100,7 @@ export const KptfileEditor = ({
     if (!resourceYaml.pipeline) resourceYaml.pipeline = {};
 
     resourceYaml.metadata = state.metadata;
-    resourceYaml.info.description = state.description;
+    resourceYaml.info = state.info;
     resourceYaml.pipeline.mutators = undefinedIfEmpty(
       getActiveElements(state.mutators),
     );
@@ -122,12 +121,11 @@ export const KptfileEditor = ({
         onUpdate={metadata => setState(s => ({ ...s, metadata }))}
       />
 
-      <SingleTextFieldAccordion
-        id="package-description"
-        title="Package Description"
+      <KptfileInfoEditorAccordion
+        id="info"
         state={[expanded, setExpanded]}
-        value={state.description}
-        onValueUpdated={value => setState(s => ({ ...s, description: value }))}
+        value={state.info}
+        onUpdate={info => setState(s => ({ ...s, info }))}
       />
 
       {state.mutators.map(
