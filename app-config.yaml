@@ -77,6 +77,9 @@ configAsData:
   # The namespace where Porch managed resources live.
   resourcesNamespace: default
 
+  # Determines the GitOps delivery tool to use.
+  gitOpsDeliveryTool: config-sync
+
   clusterLocatorMethod:
     # Determines how the client will locate the Kubernetes cluster.
     type: current-context

@@ -16,26 +16,28 @@
 
 import { ConfigAsDataApi } from '../apis';
 
-let isConfigSyncInstalled = false;
+let configSyncEnabled = false;
 
-export const isConfigSyncEnabled = (): boolean => isConfigSyncInstalled;
+export const isConfigSyncEnabled = (): boolean => configSyncEnabled;
 
 export const allowFunctionRepositoryRegistration = (): boolean => false;
 
 export const showRegisteredFunctionRepositories = (): boolean => false;
 
 export const loadFeatures = async (api: ConfigAsDataApi): Promise<void> => {
-  await api.getFeatures();
+  const features = await api.getFeatures();
 
-  const { groups } = await api.listApiGroups();
+  if (features.gitOps === 'config-sync') {
+    const { groups } = await api.listApiGroups();
 
-  const configManagementGroupExists = !!groups.find(
-    apiGroup => apiGroup.name === 'configmanagement.gke.io',
-  );
+    const configManagementGroupExists = !!groups.find(
+      apiGroup => apiGroup.name === 'configmanagement.gke.io',
+    );
 
-  if (configManagementGroupExists) {
-    const { items: configManagements } = await api.listConfigManagements();
+    if (configManagementGroupExists) {
+      const { items: configManagements } = await api.listConfigManagements();
 
-    isConfigSyncInstalled = configManagements.length > 0;
+      configSyncEnabled = configManagements.length > 0;
+    }
   }
 };

@@ -17,6 +17,7 @@
 import { createApiRef } from '@backstage/core-plugin-api';
 import { ListApiGroups } from '../types/ApiGroup';
 import { ListConfigManagements } from '../types/ConfigManagement';
+import { GetFeaturesResponse } from '../types/Features';
 import { Function } from '../types/Function';
 import { PackageRevision } from '../types/PackageRevision';
 import {
@@ -28,7 +29,7 @@ import { ListRootSyncs, RootSync } from '../types/RootSync';
 import { ListSecrets, Secret } from '../types/Secret';
 
 export type ConfigAsDataApi = {
-  getFeatures(): Promise<void>;
+  getFeatures(): Promise<GetFeaturesResponse>;
 
   listApiGroups(): Promise<ListApiGroups>;
 

@@ -26,6 +26,7 @@ import {
   getClusterLocatorMethodOIDCTokenProvider,
   getClusterLocatorMethodServiceAccountToken,
   getClusterLocatorMethodType,
+  getGitOpsDeliveryTool,
   getResourcesNamespace,
   OIDCTokenProvider,
 } from './config';
@@ -79,6 +80,8 @@ export async function createRouter({
   const cadConfig = config.getConfig('configAsData');
 
   const namespace = getResourcesNamespace(cadConfig);
+  const gitOpsTool = getGitOpsDeliveryTool(cadConfig);
+
   const clusterLocatorMethodType = getClusterLocatorMethodType(cadConfig);
   const clusterLocatorMethodAuthProvider =
     getClusterLocatorMethodAuthProvider(cadConfig);
@@ -118,6 +121,7 @@ export async function createRouter({
     response.send({
       authentication: clientAuthentication,
       namespace: namespace,
+      gitOps: gitOpsTool,
     });
   };
 

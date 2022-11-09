@@ -23,6 +23,7 @@ import {
 import { ConfigAsDataApi } from '.';
 import { ListApiGroups } from '../types/ApiGroup';
 import { ListConfigManagements } from '../types/ConfigManagement';
+import { GetFeaturesResponse } from '../types/Features';
 import { Function } from '../types/Function';
 import { KubernetesStatus } from '../types/KubernetesStatus';
 import { PackageRevision } from '../types/PackageRevision';
@@ -162,7 +163,7 @@ export class PorchRestAPI implements ConfigAsDataApi {
     return await response.json();
   }
 
-  async getFeatures(): Promise<void> {
+  async getFeatures(): Promise<GetFeaturesResponse> {
     const features = await this.cadFetch('v1/features');
 
     this.authentication = features.authentication;
@@ -173,6 +174,8 @@ export class PorchRestAPI implements ConfigAsDataApi {
         'The Configuration as Data backend is not returning all expected features. Pleae update the Backstage Configuration as Data Plugins to the latest version.',
       );
     }
+
+    return features;
   }
 
   async listApiGroups(): Promise<ListApiGroups> {
