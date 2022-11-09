@@ -16,6 +16,11 @@
 
 import { Config } from '@backstage/config';
 
+export enum GitOpsDeliveryTool {
+  NONE = 'none',
+  CONFIG_SYNC = 'config-sync',
+}
+
 export enum ClusterLocatorMethodType {
   CURRENT_CONTEXT = 'current-context',
   IN_CLUSTER = 'in-cluster',
@@ -38,6 +43,16 @@ export const getResourcesNamespace = (config: Config): string => {
   const namespace = config.getString('resourcesNamespace');
 
   return namespace;
+};
+
+export const getGitOpsDeliveryTool = (config: Config): GitOpsDeliveryTool => {
+  const gitOpsTool = config.getString('gitOpsDeliveryTool');
+
+  if (!Object.values(GitOpsDeliveryTool)) {
+    throw new Error(`Unknown gitOpsDeliveryTool, ${gitOpsTool}`);
+  }
+
+  return gitOpsTool as GitOpsDeliveryTool;
 };
 
 export const getClusterLocatorMethodType = (

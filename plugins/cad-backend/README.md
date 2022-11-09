@@ -56,6 +56,9 @@ configAsData:
   # The namespace where Porch managed resources live.
   resourcesNamespace: default
 
+  # Determines the GitOps delivery tool to use.
+  gitOpsDeliveryTool: config-sync
+
   clusterLocatorMethod:
     # Determines how the client will locate the Kubernetes cluster.
     type: current-context
@@ -71,6 +74,14 @@ configAsData:
 ```
 
 `resourcesNamespace` defines the namespace where Porch managed resources live
+
+`gitOpsDeliveryTool` determines what tool to use for GitOps
+
+Valid values:
+| Values | Description |
+| ------ | ----------- |
+| none | Use no GitOps delivery tool |
+| config-sync | Use [Config Sync](https://github.com/GoogleContainerTools/kpt-config-sync). Config Sync must be installed on the cluster. |
 
 `clusterLocatorMethod` determines where to receive the cluster configuration
 from
