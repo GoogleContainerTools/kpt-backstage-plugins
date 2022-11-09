@@ -89,6 +89,24 @@ export const KptfileInfoEditorAccordion = ({
           }}
           fullWidth
         />
+
+        <TextField
+          label="Readiness Gates"
+          variant="outlined"
+          value={(viewModel.readinessGates ?? [])
+            .map(r => r.conditionType)
+            .join(', ')}
+          onChange={e => {
+            const value = e.target.value;
+
+            viewModel.readinessGates = value
+              ? value.split(',').map(v => ({ conditionType: v.trim() }))
+              : undefined;
+            valueUpdated();
+          }}
+          fullWidth
+          multiline
+        />
       </Fragment>
     </EditorAccordion>
   );
