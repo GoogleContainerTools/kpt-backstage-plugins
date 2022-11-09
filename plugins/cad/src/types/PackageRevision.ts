@@ -38,6 +38,7 @@ export type PackageRevisionSpec = {
   revision?: string;
   lifecycle: PackageRevisionLifecycle;
   tasks: PackageRevisionTask[];
+  readinessGates?: ReadinessGate[];
 };
 
 export enum PackageRevisionLifecycle {
@@ -85,8 +86,13 @@ export type PackageRevisionTaskEvalConfigMap = {
   [key: string]: string;
 };
 
+export type ReadinessGate = {
+  conditionType: string;
+};
+
 export type PackageRevisionStatus = {
   upstreamLock?: PackageRevisionStatusUpstreamLock;
+  conditions?: Condition[];
 };
 
 export type PackageRevisionStatusUpstreamLock = {
@@ -100,3 +106,16 @@ export type PackageRevisionStatusUpstreamLockGit = {
   ref: string;
   commit: string;
 };
+
+export type Condition = {
+  type: string;
+  status: ConditionStatus;
+  reason?: string;
+  message?: string;
+};
+
+export enum ConditionStatus {
+  TRUE = 'True',
+  FALSE = 'False',
+  UNKNOWN = 'Unknown',
+}
