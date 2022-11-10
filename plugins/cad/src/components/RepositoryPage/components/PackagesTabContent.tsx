@@ -19,6 +19,7 @@ import Alert from '@material-ui/lab/Alert';
 import React, { Fragment } from 'react';
 import { Function } from '../../../types/Function';
 import { Repository } from '../../../types/Repository';
+import { isConfigSyncEnabled } from '../../../utils/featureFlags';
 import { PackageSummary } from '../../../utils/packageSummary';
 import {
   getPackageDescriptor,
@@ -73,7 +74,9 @@ export const PackagesTabContent = ({
         <PackagesTable
           title={pluralPackageDescriptor}
           packages={packages}
-          showSyncStatusColumn={isDeploymentRepository(repository)}
+          showSyncStatusColumn={
+            isDeploymentRepository(repository) && isConfigSyncEnabled()
+          }
         />
       )}
 
