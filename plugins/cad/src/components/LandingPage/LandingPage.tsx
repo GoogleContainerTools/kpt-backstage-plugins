@@ -15,7 +15,7 @@
  */
 
 import { Content, Header, Page, Progress } from '@backstage/core-components';
-import { useApi } from '@backstage/core-plugin-api';
+import { configApiRef, useApi } from '@backstage/core-plugin-api';
 import { Alert } from '@material-ui/lab';
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
@@ -37,6 +37,31 @@ import { PackageRevisionPageMode } from '../PackageRevisionPage/PackageRevisionP
 import { RegisterRepositoryPage } from '../RegisterRepositoryPage';
 import { RepositoryListPage } from '../RepositoryListPage';
 import { RepositoryPage } from '../RepositoryPage';
+
+const ConfigAsDataHeader = () => {
+  const configApi = useApi(configApiRef);
+  const cadConfig = configApi.getOptionalConfig('configAsData');
+
+  const getOptionalString = (key: string) =>
+    cadConfig ? cadConfig.getOptionalString(`branding.${key}`) : undefined;
+
+  const title = getOptionalString('title') || 'Configuration as Data';
+  const logoUrl = getOptionalString('header.logoUrl');
+  const backgroundImageUrl = getOptionalString('header.backgroundImageUrl');
+
+  const cssBackgroundImage = backgroundImageUrl
+    ? `url("${backgroundImageUrl}")`
+    : undefined;
+  const logo = <img src={logoUrl} alt="logo" style={{ maxHeight: '45px' }} />;
+
+  return (
+    <Header
+      title={!!logoUrl ? logo : title}
+      pageTitleOverride={title}
+      style={{ backgroundImage: cssBackgroundImage }}
+    />
+  );
+};
 
 export const LandingPage = () => {
   const api = useApi(configAsDataApiRef);
@@ -80,7 +105,7 @@ export const LandingPage = () => {
 
   return (
     <Page themeId="tool">
-      <Header title="Configuration as Data" />
+      <ConfigAsDataHeader />
       <Content>{getContent()}</Content>
     </Page>
   );
