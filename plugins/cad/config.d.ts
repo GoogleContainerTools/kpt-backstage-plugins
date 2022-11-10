@@ -53,5 +53,41 @@ export interface Config {
        */
       serviceAccountToken?: string;
     };
+
+    /**
+     * Optional. Overrides the sidebar title.
+     * @visibility frontend
+     */
+    sidebarTitle?: string;
+
+    /**
+     * Optional. Overrides the branding.
+     * @visibility frontend
+     */
+    branding?: {
+      /**
+       * Optional. Overrides the title of the plugin.
+       * @visibility frontend
+       */
+      title?: string;
+
+      /**
+       * Optional. Overrides the plugin's header.
+       * @visibility frontend
+       */
+      header?: {
+        /**
+         * Optional. Sets the logo.
+         * @visibility frontend
+         */
+        logoUrl?: string;
+
+        /**
+         * Optional. Sets the background image.
+         * @visibility frontend
+         */
+        backgroundImageUrl?: string;
+      };
+    };
   };
 }
