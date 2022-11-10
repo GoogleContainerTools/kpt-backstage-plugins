@@ -33,13 +33,24 @@ backend:
     host: 0.0.0.0
 
 configAsData:
+  # The namespace where Porch managed resources live.
+  resourcesNamespace: ${CAD_RESOURCES_NAMESPACE}
+
+  # Determines the GitOps delivery tool to use.
+  gitOpsDeliveryTool: ${CAD_GITOPS_DELIVERY_TOOL}
+
   clusterLocatorMethod:
     # Determines how the client will locate the Kubernetes cluster.
     type: in-cluster
 
     # Determines how the client will authenticate with the Kubernetes cluster.
-    authProvider: google
+    authProvider: ${CAD_AUTH_PROVDER}
 
+    # Optional. Determines the OIDC token provider to use when using the 'oidc' auth provider.
+    oidcTokenProvider: ${CAD_OIDC_TOKEN_PROVIDER}
+
+    # Optional. The service account token to be used when using the 'service-account' auth provider.
+    serviceAccountToken: ${CAD_SERVICE_ACCOUNT_TOKEN}
 auth:
   # see https://backstage.io/docs/auth/ to learn about auth providers
   providers:
@@ -47,3 +58,9 @@ auth:
       development:
         clientId: ${AUTH_GOOGLE_CLIENT_ID}
         clientSecret: ${AUTH_GOOGLE_CLIENT_SECRET}
+    okta:
+      development:
+        clientId: ${AUTH_OKTA_CLIENT_ID}
+        clientSecret: ${AUTH_OKTA_CLIENT_SECRET}
+        audience: ${AUTH_OKTA_AUDIENCE}
+        authServerId: ${AUTH_OKTA_AUTH_SERVER_ID}

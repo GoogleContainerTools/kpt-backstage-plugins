@@ -69,6 +69,12 @@ RUN tar xzf bundle.tar.gz && rm bundle.tar.gz
 FROM base-backstage-app as backstage-app
 
 # Copy any other files that we need at runtime
-COPY app-config.yaml app-config.production.yaml ./
+COPY app-config.yaml app-config.kubernetes.yaml ./
 
-CMD ["node", "packages/backend", "--config", "app-config.yaml", "--config", "app-config.production.yaml"]
+# Set defaults
+ENV NODE_ENV=development
+ENV CAD_GITOPS_DELIVERY_TOOL=config-sync
+ENV CAD_RESOURCES_NAMESPACE=default
+ENV CAD_AUTH_PROVDER=google
+
+ENTRYPOINT ["node", "packages/backend", "--config", "app-config.yaml", "--config", "app-config.kubernetes.yaml"]
