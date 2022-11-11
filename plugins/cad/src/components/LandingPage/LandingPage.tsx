@@ -32,10 +32,10 @@ import {
 import { loadFeatures } from '../../utils/featureFlags';
 import { AddPackagePage } from '../AddPackagePage';
 import { AddPackagePageAction } from '../AddPackagePage/AddPackagePage';
+import { PackageManagementPage } from '../PackageManagementPage';
 import { PackageRevisionPage } from '../PackageRevisionPage';
 import { PackageRevisionPageMode } from '../PackageRevisionPage/PackageRevisionPage';
 import { RegisterRepositoryPage } from '../RegisterRepositoryPage';
-import { RepositoryListPage } from '../RepositoryListPage';
 import { RepositoryPage } from '../RepositoryPage';
 
 const ConfigAsDataHeader = () => {
@@ -77,7 +77,7 @@ export const LandingPage = () => {
 
     return (
       <Routes>
-        <Route path="/" element={<RepositoryListPage />} />
+        <Route path="/" element={<PackageManagementPage />} />
         <Route
           path={registerRepositoryRouteRef.path}
           element={<RegisterRepositoryPage />}

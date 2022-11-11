@@ -63,7 +63,7 @@ import { sortByLabel } from '../../utils/selectItem';
 import { emptyIfUndefined, toLowerCase } from '../../utils/string';
 import { dumpYaml, loadYaml } from '../../utils/yaml';
 import { Checkbox, Select } from '../Controls';
-import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
+import { LandingPageLink, PackageLink, RepositoryLink } from '../Links';
 import {
   applyNamespaceState,
   getNamespaceDefaultState,
@@ -503,7 +503,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
       {isCloneNamedPackageAction && (
         <Fragment>
           <Breadcrumbs>
-            <RepositoriesLink breadcrumb />
+            <LandingPageLink breadcrumb />
             <RepositoryLink
               repository={sourceRepository as Repository}
               breadcrumb
@@ -524,7 +524,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
       {isAddPackageAction && (
         <Fragment>
           <Breadcrumbs>
-            <RepositoriesLink breadcrumb />
+            <LandingPageLink breadcrumb />
             <RepositoryLink
               repository={targetRepository as Repository}
               breadcrumb

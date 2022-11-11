@@ -52,7 +52,7 @@ import {
 } from '../../utils/repository';
 import { getBasicAuthSecret, isBasicAuthSecret } from '../../utils/secret';
 import { RadioGroup, RadioOption, Select } from '../Controls';
-import { RepositoriesLink } from '../Links';
+import { LandingPageLink } from '../Links';
 
 const useStyles = makeStyles(() => ({
   stepContent: {
@@ -324,8 +324,8 @@ export const RegisterRepositoryPage = () => {
   return (
     <div>
       <Breadcrumbs>
-        <RepositoriesLink breadcrumb />
-        <Typography>Register</Typography>
+        <LandingPageLink breadcrumb />
+        <Typography>Register Repository</Typography>
       </Breadcrumbs>
 
       <ContentHeader title="Register Repository" />

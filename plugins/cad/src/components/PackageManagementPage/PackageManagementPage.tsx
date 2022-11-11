@@ -49,7 +49,7 @@ export const useStyles = makeStyles({
   },
 });
 
-export const RepositoryListPage = () => {
+export const PackageManagementPage = () => {
   const classes = useStyles();
   const api = useApi(configAsDataApiRef);
 
@@ -93,10 +93,10 @@ export const RepositoryListPage = () => {
   return (
     <div>
       <Breadcrumbs>
-        <Typography>Repositories</Typography>
+        <Typography>Package Management</Typography>
       </Breadcrumbs>
 
-      <ContentHeader title="Repositories">
+      <ContentHeader title="Package Management">
         <Button
           component={RouterLink}
           to={registerRepository()}

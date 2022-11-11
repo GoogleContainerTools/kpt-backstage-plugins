@@ -88,7 +88,7 @@ import {
 } from '../../utils/revisionSummary';
 import { toLowerCase } from '../../utils/string';
 import { ConfirmationDialog } from '../Controls';
-import { PackageLink, RepositoriesLink, RepositoryLink } from '../Links';
+import { LandingPageLink, PackageLink, RepositoryLink } from '../Links';
 import { AdvancedPackageRevisionOptions } from './components/AdvancedPackageRevisionOptions';
 import { ConditionsTable } from './components/ConditionsTable';
 import { DownstreamTabContent } from './components/DownstreamTabContent';
@@ -872,7 +872,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   return (
     <div>
       <Breadcrumbs>
-        <RepositoriesLink breadcrumb />
+        <LandingPageLink breadcrumb />
         <RepositoryLink repository={repository} breadcrumb />
         {isViewMode && <Typography>{packageRevisionTitle}</Typography>}
         {!isViewMode && (

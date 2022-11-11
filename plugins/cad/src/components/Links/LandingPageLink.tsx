@@ -24,15 +24,15 @@ type RepositoriesLinkProps = {
   breadcrumb?: boolean;
 };
 
-export const RepositoriesLink = ({ breadcrumb }: RepositoriesLinkProps) => {
-  const repositoriesRef = useRouteRef(rootRouteRef);
+export const LandingPageLink = ({ breadcrumb }: RepositoriesLinkProps) => {
+  const packageManagementRef = useRouteRef(rootRouteRef);
 
   const classes = useLinkStyles();
   const className = breadcrumb ? classes.breadcrumb : '';
 
   return (
-    <Link className={className} to={repositoriesRef()}>
-      Repositories
+    <Link className={className} to={packageManagementRef()}>
+      Package Management
     </Link>
   );
 };

@@ -43,7 +43,7 @@ export const AdvancedRepositoryOptions = ({
   const { repositoryName } = useParams();
   const api = useApi(configAsDataApiRef);
 
-  const repositoriesRef = useRouteRef(rootRouteRef);
+  const packageManagementRef = useRouteRef(rootRouteRef);
 
   const [open, setOpen] = useState(false);
 
@@ -82,7 +82,7 @@ export const AdvancedRepositoryOptions = ({
     } else {
       await api.unregisterRepository(repositoryName);
     }
-    navigate(repositoriesRef());
+    navigate(packageManagementRef());
   };
 
   return (

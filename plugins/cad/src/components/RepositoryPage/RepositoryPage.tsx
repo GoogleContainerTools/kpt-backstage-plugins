@@ -51,7 +51,7 @@ import {
   getRepositorySummaries,
   getRepositorySummary,
 } from '../../utils/repositorySummary';
-import { RepositoriesLink } from '../Links';
+import { LandingPageLink } from '../Links';
 import { AdvancedRepositoryOptions } from './components/AdvancedRepositoryOptions';
 import { PackagesTabContent } from './components/PackagesTabContent';
 
@@ -175,7 +175,7 @@ export const RepositoryPage = () => {
   return (
     <div>
       <Breadcrumbs>
-        <RepositoriesLink breadcrumb />
+        <LandingPageLink breadcrumb />
         <Typography>{repoTitle}</Typography>
       </Breadcrumbs>
 
