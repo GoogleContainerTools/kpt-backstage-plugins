@@ -51,11 +51,13 @@ const renderStatusColumn = (row: ConditionRow): JSX.Element => {
 };
 
 const getTableColumns = (): TableColumn<ConditionRow>[] => {
+  const cellStyle = { lineHeight: '1.5' };
+
   const columns: TableColumn<ConditionRow>[] = [
-    { title: 'Type', field: 'type' },
-    { title: 'Status', render: renderStatusColumn },
-    { title: 'Reason', field: 'reason' },
-    { title: 'Message', field: 'message' },
+    { title: 'Status', render: renderStatusColumn, width: '115px' },
+    { title: 'Type', field: 'type', width: 'fit-content', cellStyle },
+    { title: 'Reason', field: 'reason', width: 'fit-content', cellStyle },
+    { title: 'Message', field: 'message', width: '35vw', cellStyle },
   ];
 
   return columns;
