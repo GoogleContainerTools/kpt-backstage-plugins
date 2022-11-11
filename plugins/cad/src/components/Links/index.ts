@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-export { RepositoriesLink } from './RepositoriesLink';
+export { LandingPageLink } from './LandingPageLink';
 export { RepositoryLink } from './RepositoryLink';
 export { PackageLink } from './PackageLink';

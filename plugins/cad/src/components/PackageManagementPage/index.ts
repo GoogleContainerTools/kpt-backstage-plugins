@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-export { RepositoryListPage } from './RepositoryListPage';
+export { PackageManagementPage } from './PackageManagementPage';
