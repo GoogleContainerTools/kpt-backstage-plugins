@@ -20,8 +20,10 @@ import {
   ConditionStatus,
   PackageRevision,
   PackageRevisionLifecycle,
+  PackageRevisionSpec,
   PackageRevisionTask,
 } from '../types/PackageRevision';
+import { toLowerCase } from './string';
 
 const getRevisionNumber = (
   revision: string,
@@ -108,18 +110,25 @@ export const findPackageRevision = (
 export const getPackageRevisionRevision = (
   packageRevision: PackageRevision,
 ): string => {
-  const { revision, workspaceName } = packageRevision.spec;
+  return packageRevision.spec.revision || '';
+};
 
-  return revision || workspaceName || '';
+export const isPublishedRevision = (
+  packageRevision: PackageRevision,
+): boolean => {
+  return packageRevision.spec.lifecycle === PackageRevisionLifecycle.PUBLISHED;
 };
 
 export const getPackageRevisionTitle = (
   packageRevision: PackageRevision,
 ): string => {
-  const packageName = packageRevision.spec.packageName;
-  const revision = getPackageRevisionRevision(packageRevision);
+  const { packageName, lifecycle, revision } = packageRevision.spec;
 
-  return `${packageName} ${revision}`;
+  if (isPublishedRevision(packageRevision)) {
+    return `${packageName} ${revision}`;
+  }
+
+  return `${packageName} ${toLowerCase(lifecycle)} revision`;
 };
 
 export const filterPackageRevisions = (
@@ -131,9 +140,10 @@ export const filterPackageRevisions = (
     packageRevision =>
       packageRevision.spec.packageName === packageName &&
       packageRevision.spec.repository === repositoryName &&
-      Number.isFinite(
-        getRevisionNumber(getPackageRevisionRevision(packageRevision)),
-      ),
+      (!isPublishedRevision(packageRevision) ||
+        Number.isFinite(
+          getRevisionNumber(packageRevision.spec.revision || ''),
+        )),
   );
 };
 
@@ -160,7 +170,7 @@ export const canCloneRevision = (packageRevision: PackageRevision): boolean => {
 export const isNotAPublishedRevision = (
   packageRevision: PackageRevision,
 ): boolean => {
-  return packageRevision.spec.lifecycle !== PackageRevisionLifecycle.PUBLISHED;
+  return !isPublishedRevision(packageRevision);
 };
 
 export const getInitTask = (
@@ -290,10 +300,14 @@ export const sortByPackageNameAndRevisionComparison = (
   const packageSpec1 = packageRevision1.spec;
   const packageSpec2 = packageRevision2.spec;
 
+  const getRevisionNumberForCompare = (spec: PackageRevisionSpec): number => {
+    return spec.revision ? getRevisionNumber(spec.revision, -1) : Infinity;
+  };
+
   if (packageSpec1.packageName === packageSpec2.packageName) {
     return (
-      getRevisionNumber(getPackageRevisionRevision(packageRevision2), -1) -
-      getRevisionNumber(getPackageRevisionRevision(packageRevision1), -1)
+      getRevisionNumberForCompare(packageSpec2) -
+      getRevisionNumberForCompare(packageSpec1)
     );
   }
 
