@@ -21,6 +21,7 @@ import React, { Fragment } from 'react';
 import { PackageRevisionLifecycle } from '../../../types/PackageRevision';
 import { Repository } from '../../../types/Repository';
 import { PackageSummary } from '../../../utils/packageSummary';
+import { isRepositoryReady } from '../../../utils/repository';
 import { toLowerCase } from '../../../utils/string';
 import { RepositoryLink } from '../../Links';
 
@@ -98,6 +99,10 @@ export const ContentInfoCard = ({
   const title = `${contentType}s`;
   const contentTypeLowerCase = toLowerCase(contentType);
 
+  const repositoriesNotReady = repositories.filter(
+    repository => !isRepositoryReady(repository),
+  );
+
   const published = getPublishedPackages(packages).length;
   const upgradesAvailable = getUpgradePackages(packages).length;
   const pendingReview = getDraftPackages(packages).length;
@@ -123,6 +128,12 @@ export const ContentInfoCard = ({
             {published} {contentTypeLowerCase}s published
           </Alert>
         )}
+
+        {repositoriesNotReady.map(repository => (
+          <Alert severity="error" key={repository.metadata.name}>
+            repository <RepositoryLink repository={repository} /> is not ready
+          </Alert>
+        ))}
 
         {upgradesAvailable > 0 && (
           <Alert severity="info">
