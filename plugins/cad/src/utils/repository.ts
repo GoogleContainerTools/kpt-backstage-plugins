@@ -86,6 +86,14 @@ export const PackageContentSummaryOrder = [
   ContentSummary.EXTERNAL_BLUEPRINT,
 ];
 
+export const isRepositoryReady = (repository: Repository): boolean => {
+  if (!repository.status?.conditions) {
+    return true;
+  }
+
+  return !repository.status.conditions.some(r => r.status !== 'True');
+};
+
 export const isFunctionRepository = (repository: Repository): boolean => {
   return repository.spec.content === RepositoryContent.FUNCTION;
 };
