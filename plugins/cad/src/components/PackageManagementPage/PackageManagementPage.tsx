@@ -16,30 +16,22 @@
 
 import {
   Breadcrumbs,
-  Button,
   ContentHeader,
   Progress,
+  Tabs,
 } from '@backstage/core-components';
-import { useApi, useRouteRef } from '@backstage/core-plugin-api';
+import { useApi } from '@backstage/core-plugin-api';
 import { makeStyles, Typography } from '@material-ui/core';
 import Alert from '@material-ui/lab/Alert';
-import { groupBy } from 'lodash';
 import React from 'react';
-import { Link as RouterLink } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../apis';
-import { registerRepositoryRouteRef } from '../../routes';
-import { showRegisteredFunctionRepositories } from '../../utils/featureFlags';
-import {
-  ContentSummary,
-  getPackageDescriptor,
-  PackageContentSummaryOrder,
-} from '../../utils/repository';
 import {
   getRepositorySummaries,
   populatePackageSummaries,
 } from '../../utils/repositorySummary';
-import { RepositoriesTable } from './components/RepositoriesTable';
+import { DashboardTabContent } from './components/DashboardTabContent';
+import { RepositoriesTabContent } from './components/RepositoriesTabContent';
 
 export const useStyles = makeStyles({
   repositoriesTablesSection: {
@@ -50,13 +42,10 @@ export const useStyles = makeStyles({
 });
 
 export const PackageManagementPage = () => {
-  const classes = useStyles();
   const api = useApi(configAsDataApiRef);
 
-  const registerRepository = useRouteRef(registerRepositoryRouteRef);
-
   const {
-    value: allRepositorySummaries,
+    value: allSummaries,
     loading,
     error,
   } = useAsync(async () => {
@@ -81,14 +70,9 @@ export const PackageManagementPage = () => {
     return <Alert severity="error">{error.message}</Alert>;
   }
 
-  if (!allRepositorySummaries) {
+  if (!allSummaries) {
     throw new Error('Repository summaries is not defined');
   }
-
-  const repositoriesByContentType = groupBy(
-    allRepositorySummaries,
-    ({ repository }) => getPackageDescriptor(repository),
-  );
 
   return (
     <div>
@@ -96,37 +80,20 @@ export const PackageManagementPage = () => {
         <Typography>Package Management</Typography>
       </Breadcrumbs>
 
-      <ContentHeader title="Package Management">
-        <Button
-          component={RouterLink}
-          to={registerRepository()}
-          color="primary"
-          variant="contained"
-        >
-          Register Repository
-        </Button>
-      </ContentHeader>
+      <ContentHeader title="Package Management" />
 
-      <div className={classes.repositoriesTablesSection}>
-        {PackageContentSummaryOrder.map(contentType => (
-          <RepositoriesTable
-            key={contentType}
-            title={`${contentType} Repositories`}
-            contentType={contentType}
-            repositories={repositoriesByContentType[contentType] ?? []}
-          />
-        ))}
-
-        {showRegisteredFunctionRepositories() && (
-          <RepositoriesTable
-            title="Function Repositories"
-            contentType={ContentSummary.FUNCTION}
-            repositories={
-              repositoriesByContentType[ContentSummary.FUNCTION] ?? []
-            }
-          />
-        )}
-      </div>
+      <Tabs
+        tabs={[
+          {
+            label: 'Dashboard',
+            content: <DashboardTabContent summaries={allSummaries} />,
+          },
+          {
+            label: 'Repositories',
+            content: <RepositoriesTabContent summaries={allSummaries} />,
+          },
+        ]}
+      />
     </div>
   );
 };
