@@ -26,6 +26,7 @@ import {
   clonePackageRouteRef,
   editPackageRouteRef,
   packageRouteRef,
+  packagesRouteRef,
   registerRepositoryRouteRef,
   repositoryRouteRef,
 } from '../../routes';
@@ -36,7 +37,7 @@ import { PackageManagementPage } from '../PackageManagementPage';
 import { PackageRevisionPage } from '../PackageRevisionPage';
 import { PackageRevisionPageMode } from '../PackageRevisionPage/PackageRevisionPage';
 import { RegisterRepositoryPage } from '../RegisterRepositoryPage';
-import { RepositoryPage } from '../RepositoryPage';
+import { PackagesPage, RepositoryPage } from '../RepositoryPage';
 
 const ConfigAsDataHeader = () => {
   const configApi = useApi(configApiRef);
@@ -82,6 +83,7 @@ export const LandingPage = () => {
           path={registerRepositoryRouteRef.path}
           element={<RegisterRepositoryPage />}
         />
+        <Route path={packagesRouteRef.path} element={<PackagesPage />} />
         <Route path={repositoryRouteRef.path} element={<RepositoryPage />} />
         <Route
           path={addPackageRouteRef.path}

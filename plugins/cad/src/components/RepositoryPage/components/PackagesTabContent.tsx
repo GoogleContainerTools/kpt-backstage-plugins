@@ -18,25 +18,24 @@ import { makeStyles } from '@material-ui/core';
 import Alert from '@material-ui/lab/Alert';
 import React, { Fragment } from 'react';
 import { Function } from '../../../types/Function';
-import { Repository } from '../../../types/Repository';
+import { Repository, RepositoryContent } from '../../../types/Repository';
 import { isConfigSyncEnabled } from '../../../utils/featureFlags';
 import { PackageSummary } from '../../../utils/packageSummary';
 import {
-  getPackageDescriptor,
-  isDeploymentRepository,
-  isFunctionRepository,
-  isPackageRepository,
   isReadOnlyRepository,
+  RepositoryContentDetails,
 } from '../../../utils/repository';
 import { toLowerCase } from '../../../utils/string';
 import { PackagesTable } from '../../PackagesTable';
 import { FunctionsTable } from '../components/FunctionsTable';
 
 type PackagesTabContentProps = {
-  repository: Repository;
+  packageDescriptor: string;
+  repositories: Repository[];
   packages: PackageSummary[];
   functions: Function[];
   packagesError?: Error;
+  oneRepositoryFocus?: boolean;
 };
 
 const useStyles = makeStyles({
@@ -46,15 +45,24 @@ const useStyles = makeStyles({
 });
 
 export const PackagesTabContent = ({
-  repository,
+  packageDescriptor,
+  repositories,
   packages,
   functions,
   packagesError,
+  oneRepositoryFocus,
 }: PackagesTabContentProps) => {
   const classes = useStyles();
+  const pluralPackageDescriptor = `${packageDescriptor}s`;
+  const pluralPackageDescriptorLowerCase = toLowerCase(pluralPackageDescriptor);
 
-  const pluralPackageDescriptor = `${getPackageDescriptor(repository)}s`;
-  const isReadOnly = isReadOnlyRepository(repository);
+  const isReadOnly =
+    repositories.length > 0 && repositories.every(isReadOnlyRepository);
+
+  const contentDetails = RepositoryContentDetails[packageDescriptor];
+  const repositoryContent = contentDetails.repositoryContent;
+  const showPackagesTable = repositoryContent === RepositoryContent.PACKAGE;
+  const showFunctionsTable = repositoryContent === RepositoryContent.FUNCTION;
 
   if (packagesError) {
     return <Alert severity="error">{packagesError.message}</Alert>;
@@ -64,23 +72,36 @@ export const PackagesTabContent = ({
     <Fragment>
       {isReadOnly && (
         <Alert className={classes.messageBanner} severity="info">
-          This repository is read-only. You will not be able to add or make any
-          changes to the {toLowerCase(pluralPackageDescriptor)} in this
-          repository.
+          {oneRepositoryFocus && (
+            <Fragment>
+              This repository is read-only. You will not be able to add or make
+              any changes to the {pluralPackageDescriptorLowerCase} in this
+              repository.
+            </Fragment>
+          )}
+          {!oneRepositoryFocus && (
+            <Fragment>
+              You will not be able to add or make any changes to the{' '}
+              {pluralPackageDescriptorLowerCase} since the{' '}
+              {pluralPackageDescriptorLowerCase} exist in read-only
+              repositories.
+            </Fragment>
+          )}
         </Alert>
       )}
 
-      {isPackageRepository(repository) && (
+      {showPackagesTable && (
         <PackagesTable
           title={pluralPackageDescriptor}
           packages={packages}
+          showRepositoryColumn={!oneRepositoryFocus}
           showSyncStatusColumn={
-            isDeploymentRepository(repository) && isConfigSyncEnabled()
+            isConfigSyncEnabled() && !!contentDetails.isDeployment
           }
         />
       )}
 
-      {isFunctionRepository(repository) && (
+      {showFunctionsTable && (
         <FunctionsTable
           title={pluralPackageDescriptor}
           functions={functions}
