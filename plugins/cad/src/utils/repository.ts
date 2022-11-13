@@ -31,6 +31,8 @@ type ContentDetails = {
 
 type ContentDetail = {
   repositoryContent: RepositoryContent;
+  contentSummary: ContentSummary;
+  contentLink: string;
   description: string;
   isDeployment?: boolean;
   repositoryContentLabelValue?: string;
@@ -108,14 +110,18 @@ export const isDeploymentRepository = (repository: Repository): boolean => {
 
 export const RepositoryContentDetails: ContentDetails = {
   [ContentSummary.DEPLOYMENT]: {
+    contentSummary: ContentSummary.DEPLOYMENT,
     repositoryContent: RepositoryContent.PACKAGE,
+    contentLink: 'deployments',
     description:
       "Deployment Packages are packages ready for deployment to live clusters. If selected, you'll need to specify if the repository is for a development, staging, or production cluster.",
     isDeployment: true,
     cloneTo: [],
   },
   [ContentSummary.TEAM_BLUEPRINT]: {
+    contentSummary: ContentSummary.TEAM_BLUEPRINT,
     repositoryContent: RepositoryContent.PACKAGE,
+    contentLink: 'team-blueprints',
     description:
       'Team Blueprints are packages that a team in your organization owns. Deployment Packages can be created from packages in this repository.',
     notContent: [
@@ -128,8 +134,10 @@ export const RepositoryContentDetails: ContentDetails = {
     ],
   },
   [ContentSummary.ORGANIZATIONAL_BLUEPRINT]: {
+    contentSummary: ContentSummary.ORGANIZATIONAL_BLUEPRINT,
     repositoryContent: RepositoryContent.PACKAGE,
     repositoryContentLabelValue: 'organizational-blueprints',
+    contentLink: 'organizational-blueprints',
     description:
       'Organizational Blueprints are packages that your organization owns. An Organizational Blueprint package is expected to be cloned and customized in a Team Blueprint repository before a Deployment Package is created.',
     cloneTo: [
@@ -144,8 +152,10 @@ export const RepositoryContentDetails: ContentDetails = {
     ],
   },
   [ContentSummary.EXTERNAL_BLUEPRINT]: {
+    contentSummary: ContentSummary.EXTERNAL_BLUEPRINT,
     repositoryContent: RepositoryContent.PACKAGE,
     repositoryContentLabelValue: 'external-blueprints',
+    contentLink: 'external-blueprints',
     description:
       'External Blueprints are packages that your organization does not own. An External Blueprint package is expected to be cloned and customized in an Organization or Team Blueprint repository before a Deployment Package is created.',
     cloneTo: [
@@ -161,7 +171,9 @@ export const RepositoryContentDetails: ContentDetails = {
     ],
   },
   [ContentSummary.FUNCTION]: {
+    contentSummary: ContentSummary.FUNCTION,
     repositoryContent: RepositoryContent.FUNCTION,
+    contentLink: 'functions',
     description:
       'Functions are containerized programs that can perform CRUD operations on KRM resources.',
     cloneTo: [],

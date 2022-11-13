@@ -197,10 +197,12 @@ export const RepositoryPage = () => {
             label: `${packageDescriptor}s`,
             content: (
               <PackagesTabContent
-                repository={thisRepository}
+                packageDescriptor={packageDescriptor}
+                repositories={[thisRepository]}
                 packages={packageSummaries}
                 functions={functions}
                 packagesError={packagesError}
+                oneRepositoryFocus
               />
             ),
           },

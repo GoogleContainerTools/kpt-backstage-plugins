@@ -14,4 +14,5 @@
  * limitations under the License.
  */
 
+export { PackagesPage } from './PackagesPage';
 export { RepositoryPage } from './RepositoryPage';

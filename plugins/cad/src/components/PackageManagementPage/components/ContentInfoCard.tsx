@@ -15,13 +15,18 @@
  */
 
 import { InfoCard } from '@backstage/core-components';
+import { useRouteRef } from '@backstage/core-plugin-api';
 import { makeStyles } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import React, { Fragment } from 'react';
+import { packagesRouteRef } from '../../../routes';
 import { PackageRevisionLifecycle } from '../../../types/PackageRevision';
 import { Repository } from '../../../types/Repository';
 import { PackageSummary } from '../../../utils/packageSummary';
-import { isRepositoryReady } from '../../../utils/repository';
+import {
+  isRepositoryReady,
+  RepositoryContentDetails,
+} from '../../../utils/repository';
 import { toLowerCase } from '../../../utils/string';
 import { RepositoryLink } from '../../Links';
 
@@ -95,6 +100,7 @@ export const ContentInfoCard = ({
   packages,
 }: ContentInfoCardProps) => {
   const classes = useStyles();
+  const packagesRef = useRouteRef(packagesRouteRef);
 
   const title = `${contentType}s`;
   const contentTypeLowerCase = toLowerCase(contentType);
@@ -115,6 +121,12 @@ export const ContentInfoCard = ({
       title={title}
       subheader={subheader}
       actions={getActions(repositories, classes.actions)}
+      deepLink={{
+        link: packagesRef({
+          packageContent: RepositoryContentDetails[contentType].contentLink,
+        }),
+        title: `${contentType}s`,
+      }}
     >
       <div className={classes.summary}>
         {repositories.length === 0 && (
