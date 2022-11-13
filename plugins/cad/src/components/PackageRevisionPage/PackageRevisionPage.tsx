@@ -91,13 +91,13 @@ import { ConfirmationDialog } from '../Controls';
 import { LandingPageLink, PackageLink, RepositoryLink } from '../Links';
 import { AdvancedPackageRevisionOptions } from './components/AdvancedPackageRevisionOptions';
 import { ConditionsTable } from './components/ConditionsTable';
-import { DownstreamTabContent } from './components/DownstreamTabContent';
 import {
   PackageRevisionOptions,
   RevisionOption,
 } from './components/PackageRevisionOptions';
 import { PackageRevisionsTable } from './components/PackageRevisionsTable';
 import { RelatedPackagesContent } from './components/RelatedPackagesContent';
+import { RelatedTabContent } from './components/RelatedTabContent';
 import {
   AlertMessage,
   ResourcesTabContent,
@@ -111,16 +111,6 @@ export enum PackageRevisionPageMode {
 
 type PackageRevisionPageProps = {
   mode: PackageRevisionPageMode;
-};
-
-type TabProps = {
-  label?: string;
-  icon?: JSX.Element;
-  content: JSX.Element;
-};
-
-type ConditionalTabProps = TabProps & {
-  showTab?: boolean;
 };
 
 type RenderErrorMessage = {
@@ -209,7 +199,12 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const [upstreamRepository, setUpstreamRepository] = useState<Repository>();
   const [upstreamRevisionSummary, setUpstreamRevisionSummary] =
     useState<RevisionSummary>();
+  const [upstreamPackageSummary, setUpstreamPackageSummary] =
+    useState<PackageSummary>();
   const [downstreamPackageSummaries, setDownstreamPackageSummaries] = useState<
+    PackageSummary[]
+  >([]);
+  const [siblingPackageSummaries, setSiblingPackageSummaries] = useState<
     PackageSummary[]
   >([]);
 
@@ -347,17 +342,46 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       }
     }
 
-    const downstreamPackages = getPackageSummaries(
+    const allPackageSummaries = getPackageSummaries(
       thisPackageRevisions,
       getRepositorySummaries(allRepositories.current),
       allRepositories.current,
-    ).filter(
+    );
+
+    const downstreamPackages = allPackageSummaries.filter(
       summary =>
         summary.upstreamPackageName === thisPackageRevision.spec.packageName &&
         summary.upstreamRepositoryName === thisPackageRevision.spec.repository,
     );
 
+    const upstreamPackage = allPackageSummaries.find(
+      summary =>
+        !!thisUpstreamRevisionSummary &&
+        summary.latestRevision.spec.packageName ===
+          thisUpstreamRevisionSummary.revision.spec.packageName &&
+        summary.latestRevision.spec.repository ===
+          thisUpstreamRevisionSummary.revision.spec.repository,
+    );
+
+    const siblingPackages = allPackageSummaries.filter(
+      summary =>
+        !!thisUpstreamRevisionSummary &&
+        summary.upstreamPackageName ===
+          thisUpstreamRevisionSummary.revision.spec.packageName &&
+        summary.upstreamRepositoryName ===
+          thisUpstreamRevisionSummary.revision.spec.repository &&
+        !(
+          summary.latestRevision.spec.packageName ===
+            thisPackageRevision.spec.packageName &&
+          summary.latestRevision.spec.repository ===
+            thisPackageRevision.spec.repository
+        ),
+    );
+
     setDownstreamPackageSummaries(downstreamPackages);
+    setSiblingPackageSummaries(siblingPackages);
+    setUpstreamPackageSummary(upstreamPackage);
+
     setUpstreamRevisionSummary(thisUpstreamRevisionSummary);
     setUpstreamRepository(thisUpstreamRepository);
     setIsUpgradeAvailable(upgradeAvailable);
@@ -860,10 +884,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const showDownstreamPackages =
     !isDeploymentPackage || downstreamPackageSummaries.length > 0;
 
-  const getDisplayTabs = (tabs: ConditionalTabProps[]): TabProps[] => {
-    return tabs.filter(tab => tab.showTab !== false);
-  };
-
   const packageConditions = getPackageConditions(packageRevision);
   const incompleteConditions = packageConditions.filter(
     c => c.status !== ConditionStatus.TRUE,
@@ -937,7 +957,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       />
 
       <Tabs
-        tabs={getDisplayTabs([
+        tabs={[
           {
             label: 'Resources',
             content: (
@@ -971,14 +991,15 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
             ),
           },
           {
-            label: 'Downstream',
+            label: 'Related',
             content: (
-              <DownstreamTabContent
+              <RelatedTabContent
                 packageDescriptor={packageDescriptor}
+                upstreamPackage={upstreamPackageSummary}
+                siblingPackages={siblingPackageSummaries}
                 downstreamPackages={downstreamPackageSummaries}
               />
             ),
-            showTab: showDownstreamPackages,
           },
           {
             label: 'Advanced',
@@ -990,7 +1011,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
               />
             ),
           },
-        ])}
+        ]}
       />
     </div>
   );
