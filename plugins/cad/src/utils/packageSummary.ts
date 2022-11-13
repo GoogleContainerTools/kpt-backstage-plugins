@@ -15,7 +15,10 @@
  */
 
 import { groupBy } from 'lodash';
-import { PackageRevision } from '../types/PackageRevision';
+import {
+  PackageRevision,
+  PackageRevisionLifecycle,
+} from '../types/PackageRevision';
 import { Repository } from '../types/Repository';
 import { RepositorySummary } from '../types/RepositorySummary';
 import { RootSync } from '../types/RootSync';
@@ -180,9 +183,39 @@ export const updatePackageSummariesSyncStatus = (
 
 export const filterPackageSummaries = (
   packageSummaries: PackageSummary[],
-  { repository }: { repository: Repository },
+  {
+    repository,
+    isPublished,
+    isProposed,
+    isDraft,
+    isUpgradeAvailable,
+  }: {
+    repository?: Repository;
+    isPublished?: boolean;
+    isProposed?: boolean;
+    isDraft?: boolean;
+    isUpgradeAvailable?: boolean;
+  },
 ): PackageSummary[] => {
+  const repositoryFilter = (summary: PackageSummary): boolean =>
+    !repository || summary.repository === repository;
+  const publishedFilter = (summary: PackageSummary): boolean =>
+    !isPublished || !!summary.latestPublishedRevision;
+  const proposedFilter = (summary: PackageSummary): boolean =>
+    !isProposed ||
+    summary.latestRevision.spec.lifecycle === PackageRevisionLifecycle.PROPOSED;
+  const draftFilter = (summary: PackageSummary): boolean =>
+    !isDraft ||
+    summary.latestRevision.spec.lifecycle === PackageRevisionLifecycle.DRAFT;
+  const upgradeAvailableFilter = (summary: PackageSummary): boolean =>
+    !isUpgradeAvailable || !!summary.isUpgradeAvailable;
+
   return packageSummaries.filter(
-    packageSummary => packageSummary.repository === repository,
+    summary =>
+      repositoryFilter(summary) &&
+      publishedFilter(summary) &&
+      proposedFilter(summary) &&
+      draftFilter(summary) &&
+      upgradeAvailableFilter(summary),
   );
 };

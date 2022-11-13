@@ -20,9 +20,11 @@ import { makeStyles } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import React, { Fragment } from 'react';
 import { packagesRouteRef } from '../../../routes';
-import { PackageRevisionLifecycle } from '../../../types/PackageRevision';
 import { Repository } from '../../../types/Repository';
-import { PackageSummary } from '../../../utils/packageSummary';
+import {
+  filterPackageSummaries,
+  PackageSummary,
+} from '../../../utils/packageSummary';
 import {
   isRepositoryReady,
   RepositoryContentDetails,
@@ -71,29 +73,6 @@ const getActions = (
   );
 };
 
-const getPublishedPackages = (packages: PackageSummary[]): PackageSummary[] => {
-  return packages.filter(summary => !!summary.latestPublishedRevision);
-};
-
-const getProposedPackages = (packages: PackageSummary[]): PackageSummary[] => {
-  return packages.filter(
-    summary =>
-      summary.latestRevision.spec.lifecycle ===
-      PackageRevisionLifecycle.PROPOSED,
-  );
-};
-
-const getDraftPackages = (packages: PackageSummary[]): PackageSummary[] => {
-  return packages.filter(
-    summary =>
-      summary.latestRevision.spec.lifecycle === PackageRevisionLifecycle.DRAFT,
-  );
-};
-
-const getUpgradePackages = (packages: PackageSummary[]): PackageSummary[] => {
-  return packages.filter(summary => summary.isUpgradeAvailable);
-};
-
 export const ContentInfoCard = ({
   contentType,
   repositories,
@@ -109,10 +88,12 @@ export const ContentInfoCard = ({
     repository => !isRepositoryReady(repository),
   );
 
-  const published = getPublishedPackages(packages).length;
-  const upgradesAvailable = getUpgradePackages(packages).length;
-  const pendingReview = getDraftPackages(packages).length;
-  const drafts = getProposedPackages(packages).length;
+  const published = filterPackageSummaries(packages, { isPublished: true });
+  const upgradesAvailable = filterPackageSummaries(packages, {
+    isUpgradeAvailable: true,
+  });
+  const pendingReview = filterPackageSummaries(packages, { isProposed: true });
+  const drafts = filterPackageSummaries(packages, { isDraft: true });
 
   const subheader = `${repositories.length} repositories registered`;
 
@@ -137,7 +118,7 @@ export const ContentInfoCard = ({
 
         {repositories.length > 0 && (
           <Alert severity="success">
-            {published} {contentTypeLowerCase}s published
+            {published.length} {contentTypeLowerCase}s published
           </Alert>
         )}
 
@@ -147,19 +128,23 @@ export const ContentInfoCard = ({
           </Alert>
         ))}
 
-        {upgradesAvailable > 0 && (
+        {upgradesAvailable.length > 0 && (
           <Alert severity="info">
-            {upgradesAvailable} {contentTypeLowerCase}s with upgrades available
+            {upgradesAvailable.length} {contentTypeLowerCase}s with upgrades
+            available
           </Alert>
         )}
 
-        {pendingReview > 0 && (
+        {pendingReview.length > 0 && (
           <Alert severity="info">
-            {pendingReview} {contentTypeLowerCase} revisions pending review
+            {pendingReview.length} {contentTypeLowerCase} revisions pending
+            review
           </Alert>
         )}
 
-        {drafts > 0 && <Alert severity="info">{drafts} draft revisions</Alert>}
+        {drafts.length > 0 && (
+          <Alert severity="info">{drafts.length} draft revisions</Alert>
+        )}
       </div>
     </InfoCard>
   );
