@@ -21,7 +21,7 @@ import {
   Tabs,
 } from '@backstage/core-components';
 import { errorApiRef, useApi, useRouteRef } from '@backstage/core-plugin-api';
-import { Badge, makeStyles, Typography } from '@material-ui/core';
+import { makeStyles, Typography } from '@material-ui/core';
 import Alert, { Color } from '@material-ui/lab/Alert';
 import { cloneDeep, uniq } from 'lodash';
 import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
@@ -87,7 +87,7 @@ import {
   RevisionSummary,
 } from '../../utils/revisionSummary';
 import { toLowerCase } from '../../utils/string';
-import { ConfirmationDialog } from '../Controls';
+import { Badge, ConfirmationDialog } from '../Controls';
 import { LandingPageLink, PackageLink, RepositoryLink } from '../Links';
 import { AdvancedPackageRevisionOptions } from './components/AdvancedPackageRevisionOptions';
 import { ConditionsTable } from './components/ConditionsTable';
@@ -973,11 +973,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
             ),
           },
           {
-            icon: (
-              <Badge badgeContent={incompleteConditions} color="primary">
-                Conditions
-              </Badge>
-            ),
+            icon: <Badge badgeContent={incompleteConditions}>Conditions</Badge>,
             content: <ConditionsTable conditions={packageConditions} />,
           },
           {
