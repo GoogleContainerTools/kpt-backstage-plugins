@@ -14,18 +14,22 @@
  * limitations under the License.
  */
 
-import { makeStyles } from '@material-ui/core';
+import { Card, CardContent, makeStyles } from '@material-ui/core';
 import Alert from '@material-ui/lab/Alert';
-import React, { Fragment } from 'react';
+import React, { Fragment, useState } from 'react';
 import { Function } from '../../../types/Function';
 import { Repository, RepositoryContent } from '../../../types/Repository';
 import { isConfigSyncEnabled } from '../../../utils/featureFlags';
-import { PackageSummary } from '../../../utils/packageSummary';
+import {
+  filterPackageSummaries,
+  PackageSummary,
+} from '../../../utils/packageSummary';
 import {
   isReadOnlyRepository,
   RepositoryContentDetails,
 } from '../../../utils/repository';
 import { toLowerCase } from '../../../utils/string';
+import { Chip } from '../../Controls';
 import { PackagesTable } from '../../PackagesTable';
 import { FunctionsTable } from '../components/FunctionsTable';
 
@@ -38,11 +42,39 @@ type PackagesTabContentProps = {
   oneRepositoryFocus?: boolean;
 };
 
+enum Display {
+  ALL = 'all',
+  PUBLISHED = 'published',
+  PROPOSED = 'proposed',
+  UPGRADE = 'upgrade',
+  DRAFT = 'draft',
+}
+
 const useStyles = makeStyles({
-  messageBanner: {
-    marginBottom: '16px',
+  root: {
+    '& > *:not(:last-child)': {
+      marginBottom: '16px',
+    },
   },
 });
+
+const getDisplapyPackages = (
+  packages: PackageSummary[],
+  display: string,
+): PackageSummary[] => {
+  switch (display) {
+    case Display.PUBLISHED:
+      return filterPackageSummaries(packages, { isPublished: true });
+    case Display.PROPOSED:
+      return filterPackageSummaries(packages, { isProposed: true });
+    case Display.UPGRADE:
+      return filterPackageSummaries(packages, { isUpgradeAvailable: true });
+    case Display.DRAFT:
+      return filterPackageSummaries(packages, { isDraft: true });
+    default:
+      return packages;
+  }
+};
 
 export const PackagesTabContent = ({
   packageDescriptor,
@@ -53,6 +85,17 @@ export const PackagesTabContent = ({
   oneRepositoryFocus,
 }: PackagesTabContentProps) => {
   const classes = useStyles();
+
+  const [display, setDisplay] = useState<string>(Display.ALL);
+
+  const getChip = (label: string, value: string): JSX.Element => (
+    <Chip
+      label={label}
+      selected={display === value}
+      onClick={() => setDisplay(value)}
+    />
+  );
+
   const pluralPackageDescriptor = `${packageDescriptor}s`;
   const pluralPackageDescriptorLowerCase = toLowerCase(pluralPackageDescriptor);
 
@@ -64,14 +107,16 @@ export const PackagesTabContent = ({
   const showPackagesTable = repositoryContent === RepositoryContent.PACKAGE;
   const showFunctionsTable = repositoryContent === RepositoryContent.FUNCTION;
 
+  const displayPackages = getDisplapyPackages(packages, display);
+
   if (packagesError) {
     return <Alert severity="error">{packagesError.message}</Alert>;
   }
 
   return (
-    <Fragment>
+    <div className={classes.root}>
       {isReadOnly && (
-        <Alert className={classes.messageBanner} severity="info">
+        <Alert severity="info">
           {oneRepositoryFocus && (
             <Fragment>
               This repository is read-only. You will not be able to add or make
@@ -91,16 +136,29 @@ export const PackagesTabContent = ({
       )}
 
       {showPackagesTable && (
-        <PackagesTable
-          title={pluralPackageDescriptor}
-          packages={packages}
-          showRepositoryColumn={!oneRepositoryFocus}
-          showSyncStatusColumn={
-            isConfigSyncEnabled() && !!contentDetails.isDeployment
-          }
-        />
-      )}
+        <Fragment>
+          <Card>
+            <CardContent>
+              <div>
+                {getChip(`Show All ${pluralPackageDescriptor}`, Display.ALL)}
+                {getChip('Published', Display.PUBLISHED)}
+                {getChip('Upgrade Available', Display.UPGRADE)}
+                {getChip('Pending Review', Display.PROPOSED)}
+                {getChip('Draft', Display.DRAFT)}
+              </div>
+            </CardContent>
+          </Card>
 
+          <PackagesTable
+            title={pluralPackageDescriptor}
+            packages={displayPackages}
+            showRepositoryColumn={!oneRepositoryFocus}
+            showSyncStatusColumn={
+              isConfigSyncEnabled() && !!contentDetails.isDeployment
+            }
+          />
+        </Fragment>
+      )}
       {showFunctionsTable && (
         <FunctionsTable
           title={pluralPackageDescriptor}
@@ -108,6 +166,6 @@ export const PackagesTabContent = ({
           showLatestVersionOnly
         />
       )}
-    </Fragment>
+    </div>
   );
 };
