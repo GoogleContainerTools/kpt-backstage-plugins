@@ -14,15 +14,32 @@
  * limitations under the License.
  */
 
-export { Autocomplete } from './Autocomplete';
-export { Badge } from './Badge';
-export { ConfirmationDialog } from './ConfirmationDialog';
-export { Checkbox } from './Checkbox';
-export { Chip } from './Chip';
-export { IconButton } from './IconButton';
-export { MultiSelect } from './MultiSelect';
-export { PackageIcon } from './PackageIcon';
-export { RadioGroup } from './RadioGroup';
-export type { RadioOption } from './RadioGroup';
-export { Select } from './Select';
-export { YamlViewer } from './YamlViewer';
+import { Badge as MaterialBadge, makeStyles } from '@material-ui/core';
+import React, { ReactNode } from 'react';
+
+type BadgeProps = {
+  badgeContent: number;
+  children: ReactNode;
+};
+
+const useStyles = makeStyles({
+  badge: {
+    paddingLeft: '2px',
+    paddingRight: '2px',
+  },
+});
+
+export const Badge = ({ badgeContent, children }: BadgeProps) => {
+  const classes = useStyles();
+
+  return (
+    <MaterialBadge
+      badgeContent={badgeContent}
+      className={classes.badge}
+      color="primary"
+      overlap="rectangular"
+    >
+      {children}
+    </MaterialBadge>
+  );
+};
