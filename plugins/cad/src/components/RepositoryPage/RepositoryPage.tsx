@@ -28,7 +28,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../apis';
-import { addPackageRouteRef } from '../../routes';
+import { addPackageToRepoRouteRef } from '../../routes';
 import { Function } from '../../types/Function';
 import { Repository } from '../../types/Repository';
 import { RepositorySummary } from '../../types/RepositorySummary';
@@ -59,7 +59,7 @@ export const RepositoryPage = () => {
   const { repositoryName } = useParams();
   const api = useApi(configAsDataApiRef);
 
-  const addPackageRef = useRouteRef(addPackageRouteRef);
+  const addPackageRef = useRouteRef(addPackageToRepoRouteRef);
 
   const allRepositories = useRef<Repository[]>([]);
   const [repositorySummary, setRepositorySummary] =

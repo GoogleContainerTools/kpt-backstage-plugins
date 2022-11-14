@@ -15,5 +15,6 @@
  */
 
 export { LandingPageLink } from './LandingPageLink';
-export { RepositoryLink } from './RepositoryLink';
 export { PackageLink } from './PackageLink';
+export { PackagesLink } from './PackagesLink';
+export { RepositoryLink } from './RepositoryLink';

@@ -40,6 +40,12 @@ export const packagesRouteRef = createSubRouteRef({
 
 export const addPackageRouteRef = createSubRouteRef({
   id: 'add-package',
+  path: '/packages/:packageContent/add',
+  parent: rootRouteRef,
+});
+
+export const addPackageToRepoRouteRef = createSubRouteRef({
+  id: 'add-package',
   path: '/repositories/:repositoryName/packages/add',
   parent: rootRouteRef,
 });

@@ -25,11 +25,11 @@ import {
 } from '../types/Repository';
 import { toLowerCase } from './string';
 
-type ContentDetails = {
-  [key: string]: ContentDetail;
+type ContentDetailsLookup = {
+  [key: string]: ContentDetails;
 };
 
-type ContentDetail = {
+export type ContentDetails = {
   repositoryContent: RepositoryContent;
   contentSummary: ContentSummary;
   contentLink: string;
@@ -108,7 +108,7 @@ export const isDeploymentRepository = (repository: Repository): boolean => {
   return isPackageRepository(repository) && !!repository.spec.deployment;
 };
 
-export const RepositoryContentDetails: ContentDetails = {
+export const RepositoryContentDetails: ContentDetailsLookup = {
   [ContentSummary.DEPLOYMENT]: {
     contentSummary: ContentSummary.DEPLOYMENT,
     repositoryContent: RepositoryContent.PACKAGE,
@@ -229,6 +229,20 @@ const isRepositoryContent = (
   );
 };
 
+export const getContentDetailsByLink = (
+  contentLink: string,
+): ContentDetails => {
+  const contentDetails = Object.values(RepositoryContentDetails).find(
+    details => details.contentLink === contentLink,
+  );
+
+  if (!contentDetails) {
+    throw new Error('Unknown package content type');
+  }
+
+  return contentDetails;
+};
+
 const normalizeRepositoryUrl = (repositoryUrl?: string): string => {
   const normalizeHTTPS = (url: string): string =>
     url.replace('https://', '').replace('.git', '');
@@ -329,6 +343,15 @@ export const findRepository = (
   }
 
   throw new Error('No repository find criteria specified');
+};
+
+export const filterRepositories = (
+  allRepositories: Repository[],
+  packageDescriptor: string,
+): Repository[] => {
+  return allRepositories.filter(
+    repository => getPackageDescriptor(repository) === packageDescriptor,
+  );
 };
 
 export const getRepositoryResource = (
