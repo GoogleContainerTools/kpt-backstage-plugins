@@ -16,17 +16,18 @@
 
 import {
   Breadcrumbs,
+  Button,
   ContentHeader,
   Progress,
   Tabs,
 } from '@backstage/core-components';
-import { useApi } from '@backstage/core-plugin-api';
+import { useApi, useRouteRef } from '@backstage/core-plugin-api';
 import { Typography } from '@material-ui/core';
-import { Alert } from '@material-ui/lab';
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../apis';
+import { addPackageRouteRef } from '../../routes';
 import { Repository } from '../../types/Repository';
 import { RootSync } from '../../types/RootSync';
 import { isConfigSyncEnabled } from '../../utils/featureFlags';
@@ -36,8 +37,9 @@ import {
   updatePackageSummariesSyncStatus,
 } from '../../utils/packageSummary';
 import {
+  getContentDetailsByLink,
   getPackageDescriptor,
-  RepositoryContentDetails,
+  isReadOnlyRepository,
 } from '../../utils/repository';
 import { getRepositorySummaries } from '../../utils/repositorySummary';
 import { LandingPageLink } from '../Links';
@@ -47,16 +49,18 @@ export const PackagesPage = () => {
   const { packageContent } = useParams();
   const api = useApi(configAsDataApiRef);
 
+  const addPackageRef = useRouteRef(addPackageRouteRef);
+
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [packageSummaries, setPackageSummaries] = useState<PackageSummary[]>(
     [],
   );
 
-  const contentDetails = Object.values(RepositoryContentDetails).find(
-    thisContentDetails => thisContentDetails.contentLink === packageContent,
-  );
+  const contentDetails = getContentDetailsByLink(packageContent);
   const packageDescriptor = contentDetails?.contentSummary || '';
   const useConfigSync = isConfigSyncEnabled() && !!contentDetails?.isDeployment;
+  const showAddPackage =
+    repositories.length > 0 && !repositories.every(isReadOnlyRepository);
 
   const { loading, error: packagesError } =
     useAsync(async (): Promise<void> => {
@@ -128,10 +132,6 @@ export const PackagesPage = () => {
     return undefined;
   }, [api, packageSummaries, useConfigSync]);
 
-  if (!contentDetails) {
-    return <Alert severity="error">Unknown package content type</Alert>;
-  }
-
   if (loading) {
     return <Progress />;
   }
@@ -145,7 +145,17 @@ export const PackagesPage = () => {
         <Typography>{pluralPackageDescriptor}</Typography>
       </Breadcrumbs>
 
-      <ContentHeader title={pluralPackageDescriptor} />
+      <ContentHeader title={pluralPackageDescriptor}>
+        {showAddPackage && (
+          <Button
+            to={addPackageRef({ packageContent })}
+            color="primary"
+            variant="contained"
+          >
+            Add {packageDescriptor}
+          </Button>
+        )}
+      </ContentHeader>
 
       <Tabs
         tabs={[

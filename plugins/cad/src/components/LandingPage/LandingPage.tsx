@@ -22,6 +22,7 @@ import { Route, Routes } from 'react-router-dom';
 import useAsync from 'react-use/lib/useAsync';
 import { configAsDataApiRef } from '../../apis';
 import {
+  addPackageToRepoRouteRef,
   addPackageRouteRef,
   clonePackageRouteRef,
   editPackageRouteRef,
@@ -87,6 +88,10 @@ export const LandingPage = () => {
         <Route path={repositoryRouteRef.path} element={<RepositoryPage />} />
         <Route
           path={addPackageRouteRef.path}
+          element={<AddPackagePage action={AddPackagePageAction.ADD} />}
+        />
+        <Route
+          path={addPackageToRepoRouteRef.path}
           element={<AddPackagePage action={AddPackagePageAction.ADD} />}
         />
         <Route

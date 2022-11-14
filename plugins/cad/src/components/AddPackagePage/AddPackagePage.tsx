@@ -54,6 +54,8 @@ import {
 } from '../../utils/packageRevisionResources';
 import {
   ContentSummary,
+  filterRepositories,
+  getContentDetailsByLink,
   getPackageDescriptor,
   getRepository,
   isReadOnlyRepository,
@@ -63,7 +65,12 @@ import { sortByLabel } from '../../utils/selectItem';
 import { emptyIfUndefined, toLowerCase } from '../../utils/string';
 import { dumpYaml, loadYaml } from '../../utils/yaml';
 import { Checkbox, Select } from '../Controls';
-import { LandingPageLink, PackageLink, RepositoryLink } from '../Links';
+import {
+  LandingPageLink,
+  PackageLink,
+  PackagesLink,
+  RepositoryLink,
+} from '../Links';
 import {
   applyNamespaceState,
   getNamespaceDefaultState,
@@ -158,7 +165,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
   const classes = useStyles();
   const navigate = useNavigate();
 
-  const { repositoryName, packageName } = useParams();
+  const { repositoryName, packageName, packageContent } = useParams();
 
   const isAddPackageAction = action === AddPackagePageAction.ADD;
   const isCloneNamedPackageAction = !isAddPackageAction;
@@ -230,15 +237,37 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
     allRepositories.current = thisAllRepositories;
     allClonablePackageRevisions.current = allPackages.filter(canCloneRevision);
 
-    const thisRepository = getRepository(thisAllRepositories, repositoryName);
-    const packageDescriptor = getPackageDescriptor(
-      thisRepository,
-    ) as ContentSummary;
+    const thisRepository = repositoryName
+      ? getRepository(thisAllRepositories, repositoryName)
+      : undefined;
+
+    const getAddPackageDescriptor = (): string => {
+      if (thisRepository) {
+        return getPackageDescriptor(thisRepository) as ContentSummary;
+      }
+      if (packageContent) {
+        return getContentDetailsByLink(packageContent).contentSummary;
+      }
+
+      throw new Error('Unable to look up content summary');
+    };
+
+    const packageDescriptor = getAddPackageDescriptor();
 
     const actionSelectItems: AddPackageSelectItem[] = [];
 
     if (isAddPackageAction) {
-      setTargetRepository(thisRepository);
+      const contentRepositories = filterRepositories(
+        thisAllRepositories,
+        packageDescriptor,
+      );
+      const targetRepositoryItems = contentRepositories.map(
+        mapRepositoryToSelectItem,
+      );
+
+      setTargetRepositorySelectItems(targetRepositoryItems);
+      setTargetRepository(thisRepository ?? contentRepositories[0]);
+
       const packageDescriptorLowerCase = toLowerCase(packageDescriptor);
 
       actionSelectItems.push({
@@ -525,10 +554,18 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
         <Fragment>
           <Breadcrumbs>
             <LandingPageLink breadcrumb />
-            <RepositoryLink
-              repository={targetRepository as Repository}
-              breadcrumb
-            />
+            {repositoryName && (
+              <RepositoryLink
+                repository={targetRepository as Repository}
+                breadcrumb
+              />
+            )}
+            {packageContent && (
+              <PackagesLink
+                contentDetails={getContentDetailsByLink(packageContent)}
+                breadcrumb
+              />
+            )}
             <Typography>add</Typography>
           </Breadcrumbs>
 
@@ -571,21 +608,6 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
                   items={targetRepositorySelectItems}
                   helperText={`The repository to create the new ${targetRepositoryPackageDescriptorLowercase} in.`}
                 />
-
-                {!!targetRepository && isReadOnlyRepository(targetRepository) && (
-                  <Alert severity="info" icon={false}>
-                    A new {targetRepositoryPackageDescriptorLowercase} cannot be
-                    created in the {targetRepository.metadata.name} repository
-                    since the repository is read-only. Another destination
-                    repository will need to be selected.
-                  </Alert>
-                )}
-
-                {!!addPackageAction?.message && (
-                  <Alert severity="info" icon={false}>
-                    {addPackageAction.message}
-                  </Alert>
-                )}
               </Fragment>
             )}
 
@@ -641,12 +663,37 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
                   </Fragment>
                 )}
 
-                {!!addPackageAction?.message && (
-                  <Alert severity="info" icon={false}>
-                    {addPackageAction.message}
-                  </Alert>
+                {!repositoryName && (
+                  <Select
+                    label={`Destination ${targetRepositoryPackageDescriptor} Repository`}
+                    onChange={selectedRepositoryName =>
+                      setTargetRepository(
+                        targetRepositorySelectItems.find(
+                          r => r.value === selectedRepositoryName,
+                        )?.repository,
+                      )
+                    }
+                    selected={emptyIfUndefined(targetRepository?.metadata.name)}
+                    items={targetRepositorySelectItems}
+                    helperText={`The repository to create the new ${targetRepositoryPackageDescriptorLowercase} in.`}
+                  />
                 )}
               </Fragment>
+            )}
+
+            {!!targetRepository && isReadOnlyRepository(targetRepository) && (
+              <Alert severity="error" icon={false}>
+                A new {targetRepositoryPackageDescriptorLowercase} cannot be
+                created in the {targetRepository.metadata.name} repository since
+                the repository is read-only. Another destination repository will
+                need to be selected.
+              </Alert>
+            )}
+
+            {!!addPackageAction?.message && (
+              <Alert severity="info" icon={false}>
+                {addPackageAction.message}
+              </Alert>
             )}
           </div>
         </SimpleStepperStep>
