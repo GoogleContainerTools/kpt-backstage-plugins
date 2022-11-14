@@ -16,6 +16,7 @@
 
 import { Table, TableColumn } from '@backstage/core-components';
 import { useRouteRef } from '@backstage/core-plugin-api';
+import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 import React, { Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { packageRouteRef } from '../../routes';
@@ -25,13 +26,12 @@ import {
 } from '../../types/PackageRevision';
 import { getSyncStatus, SyncStatus } from '../../utils/configSync';
 import { formatCreationTimestamp } from '../../utils/formatDate';
-import { PackageSummary } from '../../utils/packageSummary';
-import { IconButton, PackageIcon } from '../Controls';
-import { PackageLink, RepositoryLink } from '../Links';
-import { SyncStatusVisual } from './components/SyncStatusVisual';
-import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
-import { Repository } from '../../types/Repository';
 import { getPackageRevisionRevision } from '../../utils/packageRevision';
+import { PackageSummary } from '../../utils/packageSummary';
+import { getRepositoryTitle } from '../../utils/repository';
+import { IconButton, PackageIcon } from '../Controls';
+import { PackageLink } from '../Links';
+import { SyncStatusVisual } from './components/SyncStatusVisual';
 
 type PackagesTableProps = {
   title: string;
@@ -59,7 +59,7 @@ type PackageRow = {
   created: string;
   upstreamPackageDisplayName?: string;
   upstreamPackageRevision?: PackageRevision;
-  repository: Repository;
+  repositoryName: string;
   navigate: () => void;
   unpublished?: UnpublishedPackageRevision;
   isUpgradeAvailable?: boolean;
@@ -94,10 +94,6 @@ const renderStatusColumn = (row: PackageRow): JSX.Element => {
   );
 };
 
-const renderRepositoryColumn = (row: PackageRow): JSX.Element => {
-  return <RepositoryLink repository={row.repository} stopPropagation />;
-};
-
 const renderBlueprintColumn = (row: PackageRow): JSX.Element => {
   if (row.upstreamPackageRevision) {
     return (
@@ -127,7 +123,7 @@ const getTableColumns = (
     },
     {
       title: 'Repository',
-      render: renderRepositoryColumn,
+      field: 'repositoryName',
       showColumn: includeRepositoryColumn,
     },
     { title: 'Name', field: 'packageName' },
@@ -207,7 +203,7 @@ const mapToPackageSummaryRow = (
       ? `${packageSummary.upstreamPackageName} ${packageSummary.upstreamPackageRevision}`
       : undefined,
     isUpgradeAvailable: packageSummary.isUpgradeAvailable,
-    repository: packageSummary.repository,
+    repositoryName: getRepositoryTitle(packageSummary.repository),
     upstreamPackageRevision: packageSummary.upstreamRevision,
     unpublished: mapToUnpublishedRevision(
       packageSummary,
