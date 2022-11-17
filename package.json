@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": "14 || 16"
+    "node": "16 || 18"
   },
   "scripts": {
     "dev": "NODE_ENV=development concurrently \"yarn start\" \"yarn start-backend\"",
@@ -31,7 +31,7 @@
     ]
   },
   "devDependencies": {
-    "@backstage/cli": "^0.20.0",
+    "@backstage/cli": "^0.21.1",
     "@spotify/prettier-config": "^12.0.0",
     "concurrently": "^6.0.0",
     "lerna": "^4.0.0",
