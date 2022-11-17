@@ -1,14 +1,16 @@
 # Kpt Backstage Plugins
 
-This repository contains the Kpt Backstage Plugins. The plugins can be installed
-into an existing Backstage Application following the READMEs for each plugin.
-For development and testing, the plugins can also be executed with the example
-Backstage Application in this repository.
+Welcome! This repository contains the Kpt Backstage Plugins. The plugins can be
+installed into an existing Backstage Application following the READMEs for each
+plugin. For development and testing, the plugins can also be executed with the
+example Backstage Application in this repository.
 
 [Configuration as Data](plugins/cad) is the primary plugin which powers the
 WYSIWYG Configuration GUI over GitOps using [kpt](https://kpt.dev/) and its new
 Package Orchestrator,
-[porch](https://github.com/GoogleContainerTools/kpt/tree/main/porch).
+[Porch](https://github.com/GoogleContainerTools/kpt/tree/main/porch).
+
+![CaD Landing Page](images/cad-plugin-landing.png)]
 
 _New to kpt?_
 
@@ -34,34 +36,66 @@ To use the Backstage Application in this repository, you will need:
   [Active LTS Release](https://nodejs.org/en/about/releases/) installed
 - [yarn](https://classic.yarnpkg.com/en/docs/install) installed
 - [git](https://github.com/git-guides/install-git) installed
-- [Porch (Package Orchestration Server)](https://github.com/GoogleContainerTools/kpt/tree/main/porch)
-  installed on a
-  [Google Kubernetes Engine (GKE)](https://github.com/GoogleContainerTools/kpt/blob/main/site/guides/porch-installation.md)
-  cluster
-- The latest
-  [Config Management Operator manifest](https://cloud.google.com/anthos-config-management/docs/downloads)
-  applied to the cluster
+- [Porch (Package Orchestration Server)](https://kpt.dev/guides/porch-installation)
+  installed on a Kubernetes cluster
 
 ### Clone Repository
 
+The first step is to check out the code to your local development environment.
+We recommend you
+[create your own fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo),
+but we will keep things simple here.
+
 ```bash
-git clone https://github.com/GoogleContainerTools/kpt-backstage-plugins.git kpt-backstage-plugins
+git clone https://github.com/GoogleContainerTools/kpt-backstage-plugins.git
 cd kpt-backstage-plugins
 ```
 
 ### Install Dependencies
 
+You'll need to install dependencies before you can run the UI locally.
+
 ```bash
 yarn install
 ```
 
-### Running the Backstage Application
+### Running the UI
+
+To run the UI, you'll need to use this command will start Backstage frontend and
+backend instances. The frontend instance is hosted on port 3000 and, the backend
+instance is on port 7007. Once started, you'll be able to access the UI by
+browsing to the URL http://localhost:7007.
 
 ```bash
 yarn dev
 ```
 
+### Executing Tests
+
+Run tests:
+
+```bash
+yarn test
+```
+
+### Executing Linter
+
+Run the linter:
+
+```bash
+yarn lint
+```
+
+### Executing Code Formatting
+
+Run the code formatter:
+
+```bash
+yarn prettier:check # Checks for any code formatting errors
+yarn prettier:write # Formats code
+```
+
 ## Contributing
 
-If you are interested in contributing please start with
+If you are interested in contributing, please start with the
 [contribution guidelines](CONTRIBUTING.md).
