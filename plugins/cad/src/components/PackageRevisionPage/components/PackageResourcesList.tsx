@@ -15,8 +15,9 @@
  */
 
 import { makeStyles } from '@material-ui/core';
-import { uniq } from 'lodash';
+import { cloneDeep, uniq } from 'lodash';
 import React, { Fragment } from 'react';
+import { KubernetesResource } from '../../../types/KubernetesResource';
 import { PackageRevisionResourcesMap } from '../../../types/PackageRevisionResource';
 import {
   addResourceToResourcesMap,
@@ -27,6 +28,7 @@ import {
   ResourceDiffStatus,
   updateResourceInResourcesMap,
 } from '../../../utils/packageRevisionResources';
+import { dumpYaml, loadYaml } from '../../../utils/yaml';
 import { PackageRevisionPageMode } from '../PackageRevisionPage';
 import {
   PackageRevisionResourcesTable,
@@ -175,25 +177,69 @@ export const PackageResourcesList = ({
     originalResource?: PackageResource,
     resource?: PackageResource,
   ): void => {
-    let updatedResourcesMap: PackageRevisionResourcesMap | undefined;
+    let updatedResourcesMap = cloneDeep(resourcesMap);
 
-    if (originalResource && !resource) {
+    if (resource) {
+      const resourceYaml = loadYaml(resource.yaml) as KubernetesResource;
+
+      if (resourceYaml.metadata.annotations) {
+        const PATH_ANNOTATION = 'internal.config.kubernetes.io/path';
+
+        const newFilename =
+          resourceYaml.metadata.annotations?.[PATH_ANNOTATION];
+
+        if (newFilename) {
+          if (!newFilename.endsWith('.yaml')) {
+            throw new Error('Filename must must have the .yaml extension');
+          }
+
+          resource.filename = newFilename;
+
+          delete resourceYaml.metadata.annotations?.[PATH_ANNOTATION];
+          if (Object.keys(resourceYaml.metadata.annotations).length === 0) {
+            delete resourceYaml.metadata.annotations;
+          }
+
+          resource.yaml = dumpYaml(resourceYaml);
+        }
+      }
+    }
+
+    const deleteResource =
+      originalResource &&
+      (!resource || resource.filename !== originalResource.filename);
+    const updateResource =
+      originalResource &&
+      resource &&
+      resource.filename === originalResource.filename;
+    const addResource =
+      resource &&
+      (!originalResource || resource.filename !== originalResource?.filename);
+
+    if (!(deleteResource || updateResource || addResource)) {
+      throw new Error('No action is set to occur on resources map');
+    }
+
+    if (deleteResource) {
       updatedResourcesMap = removeResourceFromResourcesMap(
-        resourcesMap,
+        updatedResourcesMap,
         originalResource,
       );
-    } else if (originalResource && resource) {
+    }
+
+    if (updateResource) {
       updatedResourcesMap = updateResourceInResourcesMap(
-        resourcesMap,
+        updatedResourcesMap,
         originalResource,
         resource.yaml,
       );
-    } else if (!originalResource && resource) {
-      updatedResourcesMap = addResourceToResourcesMap(resourcesMap, resource);
     }
 
-    if (!updatedResourcesMap) {
-      throw new Error('Resources map never updated');
+    if (addResource) {
+      updatedResourcesMap = addResourceToResourcesMap(
+        updatedResourcesMap,
+        resource,
+      );
     }
 
     onUpdatedResourcesMap(updatedResourcesMap);
