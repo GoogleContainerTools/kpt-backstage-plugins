@@ -562,10 +562,10 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
       const targetRevision = cloneDeep(packageRevision);
       targetRevision.spec.lifecycle = PackageRevisionLifecycle.PUBLISHED;
 
-      await api.approvePackageRevision(targetRevision);
+      const approvedRevision = await api.approvePackageRevision(targetRevision);
 
       if (isDeploymentPackage && configSyncEnabled) {
-        await updateRootSyncToLatestPackage(targetRevision);
+        await updateRootSyncToLatestPackage(approvedRevision);
       }
 
       await loadPackageRevision();

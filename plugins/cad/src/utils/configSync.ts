@@ -46,8 +46,16 @@ export const getRootSync = (
   packageRevision: PackageRevision,
   secretName?: string,
 ): RootSync => {
-  const syncName = packageRevision.spec.packageName;
+  const { packageName, revision } = packageRevision.spec;
+
+  const syncName = packageName;
   const gitRepository = repository.spec.git;
+
+  if (!revision) {
+    throw new Error(
+      'RootSyncs can only be generated for packages with a revision',
+    );
+  }
 
   if (!gitRepository) {
     throw new Error('RootSyncs can only be generated for git repositories');
@@ -64,8 +72,8 @@ export const getRootSync = (
       sourceFormat: 'unstructured',
       git: {
         repo: gitRepository.repo,
-        revision: `${packageRevision.spec.packageName}/${packageRevision.spec.revision}`,
-        dir: packageRevision.spec.packageName,
+        revision: `${packageName}/${revision}`,
+        dir: packageName,
         branch: gitRepository.branch,
       },
     },
