@@ -55,7 +55,6 @@ type PackageRow = {
   revision: string;
   packageName: string;
   syncStatus?: SyncStatus | null;
-  lifecycle: PackageRevisionLifecycle;
   created: string;
   upstreamPackageDisplayName?: string;
   upstreamPackageRevision?: PackageRevision;
@@ -128,7 +127,6 @@ const getTableColumns = (
     },
     { title: 'Name', field: 'packageName' },
     { title: 'Revision', field: 'revision' },
-    { title: 'Lifecycle', field: 'lifecycle' },
     { title: 'Blueprint', render: renderBlueprintColumn },
     {
       title: 'Sync Status',
@@ -195,7 +193,6 @@ const mapToPackageSummaryRow = (
     name: onePackage.metadata.name,
     packageName: onePackage.spec.packageName,
     revision: getPackageRevisionRevision(onePackage),
-    lifecycle: onePackage.spec.lifecycle,
     syncStatus: getRootSyncStatus(packageSummary),
     created: formatCreationTimestamp(onePackage.metadata.creationTimestamp),
     navigate: () => navigateToPackageRevision(onePackage),
