@@ -30,7 +30,7 @@ import {
   RepositoryContentDetails,
 } from '../../../utils/repository';
 import { toLowerCase } from '../../../utils/string';
-import { RepositoryLink } from '../../Links';
+import { RegisterRepositoryLink, RepositoryLink } from '../../Links';
 
 type ContentInfoCardProps = {
   contentType: string;
@@ -56,19 +56,23 @@ const getActions = (
   repositories: Repository[],
   className: string,
 ): JSX.Element => {
-  if (repositories.length === 0) {
-    return <Fragment />;
-  }
+  const anyRepositoriesRegistered = repositories.length > 0;
 
   return (
     <div className={className}>
-      <Fragment>Repositories:</Fragment>&nbsp;
-      {repositories.map((r, idx) => (
+      {!anyRepositoriesRegistered && <RegisterRepositoryLink />}
+
+      {anyRepositoriesRegistered && (
         <Fragment>
-          <RepositoryLink repository={r} />
-          {idx !== repositories.length - 1 && <Fragment>, </Fragment>}
+          <Fragment>Repositories:</Fragment>&nbsp;
+          {repositories.map((r, idx) => (
+            <Fragment key={r.metadata.name}>
+              <RepositoryLink repository={r} />
+              {idx !== repositories.length - 1 && <Fragment>, </Fragment>}
+            </Fragment>
+          ))}
         </Fragment>
-      ))}
+      )}
     </div>
   );
 };
