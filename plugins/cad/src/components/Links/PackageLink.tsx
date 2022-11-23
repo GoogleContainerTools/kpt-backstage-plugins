@@ -25,12 +25,14 @@ import { useLinkStyles } from './styles';
 type PackageLinkProps = {
   packageRevision: PackageRevision;
   breadcrumb?: boolean;
+  packageNameOnly?: boolean;
   stopPropagation?: boolean;
 };
 
 export const PackageLink = ({
   packageRevision,
   breadcrumb,
+  packageNameOnly,
   stopPropagation,
 }: PackageLinkProps) => {
   const packageRef = useRouteRef(packageRouteRef);
@@ -51,7 +53,7 @@ export const PackageLink = ({
       }}
       to={packageRef({ repositoryName, packageName })}
     >
-      {getPackageRevisionTitle(packageRevision)}
+      {getPackageRevisionTitle(packageRevision, !!packageNameOnly)}
     </Link>
   );
 };

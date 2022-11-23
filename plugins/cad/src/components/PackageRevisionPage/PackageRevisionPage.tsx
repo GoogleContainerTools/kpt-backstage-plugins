@@ -183,6 +183,56 @@ const getDownstreamUpgradesAvailableMessage = (
   return alertMessage;
 };
 
+const getUpgradeAvailableMessage = (
+  packageRevision: PackageRevision,
+  latestRevision: PackageRevision,
+  upstreamPackageSummary: PackageSummary,
+): AlertMessage => {
+  const upstreamRevision = upstreamPackageSummary.latestRevision;
+  const upstreamDescriptor = toLowerCase(
+    upstreamPackageSummary.packageDescriptor,
+  );
+
+  const onLatestRevision = latestRevision === packageRevision;
+  const isLatestRevisionUpgraded =
+    getUpstreamPackageRevisionDetails(latestRevision)?.revision ===
+    upstreamRevision.spec.revision;
+
+  const upgradeAvailableMessage = (
+    <Fragment>
+      The <PackageLink packageRevision={upstreamRevision} packageNameOnly />{' '}
+      upstream {upstreamDescriptor} has been upgraded.{' '}
+      {onLatestRevision && (
+        <Fragment>
+          Use the 'Upgrade to Latest Blueprint' button to create a revision that
+          pulls in changes from the upgraded {upstreamDescriptor}.
+        </Fragment>
+      )}
+      {!onLatestRevision && isLatestRevisionUpgraded && (
+        <Fragment>
+          The latest <PackageLink packageRevision={latestRevision} /> already
+          includes changes from the upgraded {upstreamDescriptor}.
+        </Fragment>
+      )}
+      {!onLatestRevision && !isLatestRevisionUpgraded && (
+        <Fragment>
+          The latest <PackageLink packageRevision={latestRevision} /> does not
+          include changes from the upgraded {upstreamDescriptor}. The revision
+          must be either published or deleted before changes from the upgraded{' '}
+          {upstreamDescriptor} can be pulled in.
+        </Fragment>
+      )}
+    </Fragment>
+  );
+
+  const upgradeMessage: AlertMessage = {
+    key: 'upgrade-available',
+    message: upgradeAvailableMessage,
+  };
+
+  return upgradeMessage;
+};
+
 export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const { repositoryName, packageName } = useParams();
   const classes = useStyles();
@@ -813,41 +863,6 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
 
   const isViewMode = mode === PackageRevisionPageMode.VIEW;
 
-  const getUpgradeMessage = (): AlertMessage => {
-    const latestRevision = packageRevisions[0];
-
-    const blueprintName = `${latestPublishedUpstream.current?.spec.packageName} blueprint`;
-    const baseUpgradeText = `The ${blueprintName} has been upgraded.`;
-
-    const latestRevisionUpstream =
-      getUpstreamPackageRevisionDetails(latestRevision);
-
-    let message = `${baseUpgradeText} Use the 'Upgrade to Latest Blueprint' button to create a revision that pulls in changes from the upgraded blueprint.`;
-
-    if (latestRevision !== packageRevision) {
-      const isLatestRevisionUpgraded =
-        latestRevisionUpstream?.revision ===
-        latestPublishedUpstream.current?.spec.revision;
-
-      const pendingRevisionName = `${latestRevision.spec.packageName} ${
-        latestRevision.spec.revision
-      } ${toLowerCase(latestRevision.spec.lifecycle)} revision`;
-
-      if (isLatestRevisionUpgraded) {
-        message = `${baseUpgradeText} The ${pendingRevisionName} includes changes from the upgraded ${blueprintName}.`;
-      } else {
-        message = `${baseUpgradeText} The ${pendingRevisionName} does not include changes from the upgraded ${blueprintName}. The revision must be either published or deleted first before changes from the upgraded ${blueprintName} can be pulled in.`;
-      }
-    }
-
-    const upgradeMessage: AlertMessage = {
-      key: 'upgrade-available',
-      message: <Fragment>{message}</Fragment>,
-    };
-
-    return upgradeMessage;
-  };
-
   const alertMessages: AlertMessage[] = [];
 
   if (isReadOnlyRepository(repository)) {
@@ -863,7 +878,17 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   }
 
   if (isUpgradeAvailable) {
-    alertMessages.push(getUpgradeMessage());
+    if (!upstreamPackageSummary) {
+      throw new Error('The upstream package summary is not defined');
+    }
+
+    alertMessages.push(
+      getUpgradeAvailableMessage(
+        packageRevision,
+        packageRevisions[0],
+        upstreamPackageSummary,
+      ),
+    );
   }
 
   if (isLatestPublishedPackageRevision) {
