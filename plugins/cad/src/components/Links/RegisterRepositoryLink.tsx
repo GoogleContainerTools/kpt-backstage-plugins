@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
-export { LandingPageLink } from './LandingPageLink';
-export { PackageLink } from './PackageLink';
-export { PackagesLink } from './PackagesLink';
-export { RegisterRepositoryLink } from './RegisterRepositoryLink';
-export { RepositoryLink } from './RepositoryLink';
+import { Link } from '@backstage/core-components';
+import { useRouteRef } from '@backstage/core-plugin-api';
+import React from 'react';
+import { registerRepositoryRouteRef } from '../../routes';
+
+export const RegisterRepositoryLink = () => {
+  const repositoryRef = useRouteRef(registerRepositoryRouteRef);
+
+  return <Link to={repositoryRef()}>Register Repository</Link>;
+};
