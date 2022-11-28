@@ -10,7 +10,7 @@ WYSIWYG Configuration GUI over GitOps using [kpt](https://kpt.dev/) and its new
 Package Orchestrator,
 [Porch](https://github.com/GoogleContainerTools/kpt/tree/main/porch).
 
-![CaD Landing Page](images/cad-plugin-landing.png)]
+![CaD Landing Page](images/cad-plugin-landing.png)
 
 _New to kpt?_
 
@@ -64,7 +64,7 @@ yarn install
 To run the UI, you'll need to use this command will start Backstage frontend and
 backend instances. The frontend instance is hosted on port 3000 and, the backend
 instance is on port 7007. Once started, you'll be able to access the UI by
-browsing to the URL http://localhost:7007.
+browsing to the URL http://localhost:3000.
 
 ```bash
 yarn dev
