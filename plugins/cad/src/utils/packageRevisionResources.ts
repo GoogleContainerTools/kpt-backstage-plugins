@@ -164,19 +164,44 @@ const getResourcesForFile = (
   return allResources.filter(f => f.filename === filename).map(r => r.yaml);
 };
 
+const getNewResourceFilename = (
+  resourcesMap: PackageRevisionResourcesMap,
+  packageResource: PackageResource,
+): string => {
+  const existingFiles = new Set(Object.keys(resourcesMap));
+  const resourceYaml = loadYaml(packageResource.yaml) as KubernetesResource;
+
+  const getFilenameProposal = (iteration: number): string => {
+    let proposedFilename = `${kebabCase(resourceYaml.kind)}${
+      iteration > 0 ? `.${iteration}` : ''
+    }.yaml`;
+
+    if (packageResource.component) {
+      proposedFilename = `${packageResource.component}/${proposedFilename}`;
+    }
+
+    return proposedFilename;
+  };
+
+  let i = 0;
+  let filename = getFilenameProposal(0);
+  while (existingFiles.has(filename)) {
+    i++;
+    filename = getFilenameProposal(i);
+  }
+
+  return filename;
+};
+
 export const addResourceToResourcesMap = (
   resourcesMap: PackageRevisionResourcesMap,
   packageResource: PackageResource,
 ): PackageRevisionResourcesMap => {
   if (!packageResource.filename) {
-    const resourceYaml = loadYaml(packageResource.yaml) as KubernetesResource;
-    const resourceKind = resourceYaml.kind;
-
-    packageResource.filename = `${kebabCase(resourceKind)}.yaml`;
-
-    if (packageResource.component) {
-      packageResource.filename = `${packageResource.component}/${packageResource.filename}`;
-    }
+    packageResource.filename = getNewResourceFilename(
+      resourcesMap,
+      packageResource,
+    );
   }
 
   const filename = packageResource.filename;
