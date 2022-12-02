@@ -319,7 +319,7 @@ export const getRepository = (
   );
 
   if (!repository) {
-    throw new Error(`Repository ${name} does not exist`);
+    throw new Error(`Repository ${repositoryName} does not exist`);
   }
 
   return repository;
