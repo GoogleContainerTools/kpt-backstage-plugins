@@ -162,7 +162,7 @@ export const getPackageRevision = (
   );
 
   if (!packageRevision) {
-    throw new Error(`Package revision ${name} does not exist`);
+    throw new Error(`Package revision ${fullPackageName} does not exist`);
   }
 
   return packageRevision;
