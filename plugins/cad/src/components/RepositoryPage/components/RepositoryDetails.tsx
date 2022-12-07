@@ -19,9 +19,7 @@ import React from 'react';
 import { Repository } from '../../../types/Repository';
 import { RepositorySummary } from '../../../types/RepositorySummary';
 import {
-  getDeploymentEnvironment,
   getPackageDescriptor,
-  isDeploymentRepository,
   isReadOnlyRepository,
 } from '../../../utils/repository';
 
@@ -90,15 +88,10 @@ const getRepositoryMetadata = (repository: Repository): Metadata => {
     name: repository.metadata.name,
     description: repository.spec.description ?? '',
     content: `${getPackageDescriptor(repository)}s`,
-    deploymentEnvironment: getDeploymentEnvironment(repository),
     repositoryAccess: isReadOnly ? 'read-only access' : 'write access',
     ...getRepositoryStoreMetadata(repository),
     ...getRepositoryStatusConditions(repository),
   };
-
-  if (!isDeploymentRepository(repository)) {
-    delete metadata.deploymentEnvironment;
-  }
 
   return metadata;
 };
