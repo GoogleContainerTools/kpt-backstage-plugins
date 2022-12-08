@@ -14,35 +14,19 @@
  * limitations under the License.
  */
 
+import { UserSettingsPage } from '@backstage/plugin-user-settings';
 import React from 'react';
 import { Navigate, Route } from 'react-router';
-import {
-  CatalogEntityPage,
-  CatalogIndexPage,
-  catalogPlugin,
-} from '@backstage/plugin-catalog';
-import { CatalogImportPage } from '@backstage/plugin-catalog-import';
-import { orgPlugin } from '@backstage/plugin-org';
-import { UserSettingsPage } from '@backstage/plugin-user-settings';
 import { apis } from './apis';
-import { entityPage } from './components/catalog/EntityPage';
 import { Root } from './components/Root';
 
-import { AlertDisplay, OAuthRequestDialog } from '@backstage/core-components';
 import { createApp } from '@backstage/app-defaults';
 import { FlatRoutes } from '@backstage/core-app-api';
-import { CatalogGraphPage } from '@backstage/plugin-catalog-graph';
-import { PermissionedRoute } from '@backstage/plugin-permission-react';
-import { catalogEntityCreatePermission } from '@backstage/plugin-catalog-common/alpha';
+import { AlertDisplay, OAuthRequestDialog } from '@backstage/core-components';
 import { CadPage } from '@kpt/backstage-plugin-cad';
 
 const app = createApp({
   apis,
-  bindRoutes({ bind }) {
-    bind(orgPlugin.externalRoutes, {
-      catalogIndex: catalogPlugin.routes.catalogIndex,
-    });
-  },
 });
 
 const AppProvider = app.getProvider();
@@ -51,20 +35,7 @@ const AppRouter = app.getRouter();
 const routes = (
   <FlatRoutes>
     <Navigate key="/" to="config-as-data" />
-    <Route path="/catalog" element={<CatalogIndexPage />} />
-    <Route
-      path="/catalog/:namespace/:kind/:name"
-      element={<CatalogEntityPage />}
-    >
-      {entityPage}
-    </Route>
-    <PermissionedRoute
-      path="/catalog-import"
-      permission={catalogEntityCreatePermission}
-      element={<CatalogImportPage />}
-    />
     <Route path="/settings" element={<UserSettingsPage />} />
-    <Route path="/catalog-graph" element={<CatalogGraphPage />} />
     <Route path="/config-as-data" element={<CadPage />} />
   </FlatRoutes>
 );
