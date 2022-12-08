@@ -33,7 +33,6 @@ import Router from 'express-promise-router';
 import app from './plugins/app';
 import auth from './plugins/auth';
 import cad from './plugins/cad';
-import catalog from './plugins/catalog';
 import proxy from './plugins/proxy';
 import { PluginEnvironment } from './types';
 
@@ -79,13 +78,11 @@ async function main() {
   const createEnv = makeCreateEnv(config);
 
   const cadEnv = useHotMemoize(module, () => createEnv('cad'));
-  const catalogEnv = useHotMemoize(module, () => createEnv('catalog'));
   const authEnv = useHotMemoize(module, () => createEnv('auth'));
   const proxyEnv = useHotMemoize(module, () => createEnv('proxy'));
   const appEnv = useHotMemoize(module, () => createEnv('app'));
 
   const apiRouter = Router();
-  apiRouter.use('/catalog', await catalog(catalogEnv));
   apiRouter.use('/config-as-data', await cad(cadEnv));
   apiRouter.use('/auth', await auth(authEnv));
   apiRouter.use('/proxy', await proxy(proxyEnv));
