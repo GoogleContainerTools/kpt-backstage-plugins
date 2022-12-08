@@ -1,5 +1,63 @@
 # Changelog
 
+## [0.4.0](https://github.com/GoogleContainerTools/kpt-backstage-plugins/compare/backstage-plugin-cad-v0.3.0...backstage-plugin-cad-v0.4.0) (2022-12-08)
+
+
+### Features
+
+* add add package button to packages page ([#217](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/217)) ([e04c0d8](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/e04c0d895d171d93fadfd37ce02327801db7be65))
+* add current revision indicator to package revisions table ([#197](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/197)) ([8fecac6](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/8fecac6f0491df8dc306b4cee15bc6b1989f76db))
+* add dashboard to landing page ([#211](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/211)) ([610dfcc](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/610dfcc9e665d3ea9b00f945f120b8344b7b9bb1))
+* add deployment environment to register repository page ([#170](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/170)) ([3f9e339](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/3f9e3390da2ab40c927f93d140cabcda420ba9dc))
+* add deployment resource editor ([#176](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/176)) ([1f27c6b](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/1f27c6b780c1f2f566f13d51381dd80c213c7534))
+* add git ssh url support for finding upstream repository ([#171](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/171)) ([42e76b8](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/42e76b8ecfe401cd0603630db8c1dfa8ce6a9f12))
+* add readiness gates to kptfile resoruce editor ([#201](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/201)) ([4570bfe](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/4570bfefbc3c5f8aaf219b828943d9b0a5ef0a2d))
+* add stateful set resource editor ([#178](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/178)) ([ed39f6e](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/ed39f6e073c87e4161bdcb0871332ed7ad155237))
+* add status conditions to repository details table ([#182](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/182)) ([4d2b43c](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/4d2b43cd00a28fbfcd9fbbc2e4797579900ae6b1))
+* add support for google oidc authentication ([#189](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/189)) ([d16a535](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/d16a535e3463befc907a1407048c837ead8ad1c4))
+* add support for okta authentication ([#188](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/188)) ([3fd56ba](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/3fd56ba81e8464c3ef842e141fd528c86a8a4d87))
+* add support for readonly repositories ([#194](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/194)) ([03e56b0](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/03e56b0eb42f33443bf6c7bcc01ad60ec878344b))
+* add validate resources step on add package page ([#164](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/164)) ([66ac511](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/66ac511e635bccc66b3357a50b5fc8e5f11b2d8e))
+* allow branding ([#206](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/206)) ([6f77284](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/6f7728496d72078d24d533330b1f0293386f862e))
+* allow deployment resource to be added ([#177](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/177)) ([06f1b7b](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/06f1b7b728bf66884ec6e9952f64ba709d55d8c0))
+* allow error recovery on add package page ([#195](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/195)) ([c279484](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/c279484fb8c6976e4c0741088c7643862ea1f9a6))
+* allow filtering of packages ([#214](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/214)) ([39c80e9](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/39c80e9d87abd85092cde8744a5beaf433987d0c))
+* allow kptfile information to be updated when cloning a package ([#162](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/162)) ([fe73d0c](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/fe73d0c3b7faa1ff290ace7594f500280f390153))
+* allow namespace customization on add package page ([#169](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/169)) ([22c8061](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/22c8061051a1a8ee7ad9287736b50a67aab4553c))
+* allow resource path to be updated ([#222](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/222)) ([9efdef7](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/9efdef7a6c79239faff1d7e4d9d7ad1ca13f27a8))
+* allow stateful set resource to be added ([#179](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/179)) ([0cad861](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/0cad8610a228f354b787dd1cbba8bfb031b493da))
+* allow viewing of packages by content type ([#213](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/213)) ([025dae1](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/025dae1479d0e757ecf647b5a1d8a047fad29173))
+* assign unique filenames to new resources ([#228](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/228)) ([216ea8a](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/216ea8a1c9f76948f52852155c77d584ab7b5ad4))
+* make git ops delivery tool configurable ([#203](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/203)) ([8058d63](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/8058d63877648d800d93f6f0ee796b986bfe1374))
+* make porch resources namespace configurable ([#196](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/196)) ([f3ff3e4](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/f3ff3e42a0f24cda882d3b8e22f973607869bef5))
+* remove deployment environment from register repository page ([#231](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/231)) ([d776e24](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/d776e24b06dada096f4b16a6b320f0057c54b728))
+* remove lifecycle column from packages table ([#223](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/223)) ([14dbe2d](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/14dbe2db67c27e9819d53246d853ad4da859ca81))
+* remove repository link from packages table ([#218](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/218)) ([3b75eee](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/3b75eee5c19044b1936ad610d4b3e920ae5b267c))
+* rename repositories list page to package management ([#210](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/210)) ([a47be85](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/a47be857e0820dc8f7ebffcdd4ee3e3aedfade9a))
+* show all draft and proposed package revisions ([#208](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/208)) ([e10b3ca](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/e10b3caaa8e93fe5aeea51f3ab2ebe3fa096378c))
+* show message when creating a deployment not from a team blueprint ([#167](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/167)) ([e676afb](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/e676afbbb3ae7d8cda4c86f9e409407993b1f9c8))
+* show package conditions on package revision page ([#202](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/202)) ([565c38f](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/565c38f6107b2bd678d34d458eb0a8fad55f0a17))
+* show register repository link on content card ([#226](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/226)) ([5549ed7](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/5549ed7feea00c07dac4f18f1762e33e024feac6))
+* show render errors on package revision page ([#185](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/185)) ([f0f0551](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/f0f0551db8136a6235c78ee4fbaab960f9e3d623))
+* update base metadata shown on resource viewer ([#174](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/174)) ([b48a7fa](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/b48a7fa17c235d789016373a3f01fadc485d4701))
+* update dashboard to show if repository is not ready ([#212](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/212)) ([7744860](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/774486071fd5b97c7e0eac2881f76cb47348331b))
+* update kptfile resource editor ([#199](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/199)) ([2a0aa08](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/2a0aa08668ff2ec789e2cb0d3ce64ad018917dd3))
+* update package conditions table styles ([#209](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/209)) ([d24c609](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/d24c6093d35f3fad33b2122dbf91199011ade01d))
+* update package revision page to normalize resources prior to diff ([#173](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/173)) ([57c7cbe](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/57c7cbee8f501a9288d23ffe903b02c0db08b889))
+* update package revision page to show related packages ([#215](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/215)) ([c00a94e](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/c00a94eeeebe42f0c87573a199985915f7a1ae67))
+* update package upgrade available message ([#224](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/224)) ([38e0199](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/38e01998d25e269b048717dcd6b3168ef6e2feb3))
+* update pod template resource viewer ([#186](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/186)) ([295332d](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/295332d47387fa6452c16944a7095591f8229e03))
+* update resource viewer to use more screen space ([#166](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/166)) ([6231e59](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/6231e59e3161c995a5d8963cf0e102ed3fdfd04e))
+* use porch workspace name ([#184](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/184)) ([4489481](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/4489481c471db09e8fa9ae5e130ceb257e22c9e9))
+
+
+### Bug Fixes
+
+* automatically update sync when new revision is published ([#225](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/225)) ([7404548](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/74045483bb88ac9cf117bb2e80c619698d5dd80b))
+* fix a few undefined variables in error messages ([#230](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/230)) ([f3df559](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/f3df559615c33eb19676dede6b23f7361c0d9f18))
+* hide sync status on packages table when config sync is not enabled ([#204](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/204)) ([c29c981](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/c29c9815b4d4ea22afa54431460c3731c9f40751))
+* update kptfile editor function selection logic ([#172](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/172)) ([a04c4b0](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/a04c4b0520d5d75b39e688297938fb8f53b77971))
+
 ## [0.3.0](https://github.com/GoogleContainerTools/kpt-backstage-plugins/compare/backstage-plugin-cad-v0.2.0...backstage-plugin-cad-v0.3.0) (2022-09-28)
 
 
