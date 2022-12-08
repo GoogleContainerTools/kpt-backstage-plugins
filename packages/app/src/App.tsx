@@ -23,11 +23,6 @@ import {
 } from '@backstage/plugin-catalog';
 import { CatalogImportPage } from '@backstage/plugin-catalog-import';
 import { orgPlugin } from '@backstage/plugin-org';
-import {
-  TechDocsIndexPage,
-  techdocsPlugin,
-  TechDocsReaderPage,
-} from '@backstage/plugin-techdocs';
 import { UserSettingsPage } from '@backstage/plugin-user-settings';
 import { apis } from './apis';
 import { entityPage } from './components/catalog/EntityPage';
@@ -44,9 +39,6 @@ import { CadPage } from '@kpt/backstage-plugin-cad';
 const app = createApp({
   apis,
   bindRoutes({ bind }) {
-    bind(catalogPlugin.externalRoutes, {
-      viewTechDoc: techdocsPlugin.routes.docRoot,
-    });
     bind(orgPlugin.externalRoutes, {
       catalogIndex: catalogPlugin.routes.catalogIndex,
     });
@@ -66,11 +58,6 @@ const routes = (
     >
       {entityPage}
     </Route>
-    <Route path="/docs" element={<TechDocsIndexPage />} />
-    <Route
-      path="/docs/:namespace/:kind/:name/*"
-      element={<TechDocsReaderPage />}
-    />
     <PermissionedRoute
       path="/catalog-import"
       permission={catalogEntityCreatePermission}

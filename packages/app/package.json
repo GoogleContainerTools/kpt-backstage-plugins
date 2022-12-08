@@ -22,7 +22,6 @@
     "@backstage/plugin-github-actions": "^0.5.11",
     "@backstage/plugin-org": "^0.6.0",
     "@backstage/plugin-permission-react": "^0.4.7",
-    "@backstage/plugin-techdocs": "^1.4.0",
     "@backstage/plugin-user-settings": "^0.5.1",
     "@backstage/theme": "^0.2.16",
     "@kpt/backstage-plugin-cad": "*",
