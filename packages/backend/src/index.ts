@@ -35,7 +35,6 @@ import auth from './plugins/auth';
 import cad from './plugins/cad';
 import catalog from './plugins/catalog';
 import proxy from './plugins/proxy';
-import techdocs from './plugins/techdocs';
 import { PluginEnvironment } from './types';
 
 function makeCreateEnv(config: Config) {
@@ -83,14 +82,12 @@ async function main() {
   const catalogEnv = useHotMemoize(module, () => createEnv('catalog'));
   const authEnv = useHotMemoize(module, () => createEnv('auth'));
   const proxyEnv = useHotMemoize(module, () => createEnv('proxy'));
-  const techdocsEnv = useHotMemoize(module, () => createEnv('techdocs'));
   const appEnv = useHotMemoize(module, () => createEnv('app'));
 
   const apiRouter = Router();
   apiRouter.use('/catalog', await catalog(catalogEnv));
   apiRouter.use('/config-as-data', await cad(cadEnv));
   apiRouter.use('/auth', await auth(authEnv));
-  apiRouter.use('/techdocs', await techdocs(techdocsEnv));
   apiRouter.use('/proxy', await proxy(proxyEnv));
 
   // Add backends ABOVE this line; this 404 handler is the catch-all fallback
