@@ -16,7 +16,7 @@
 
 import {
   Breadcrumbs,
-  Button,
+  LinkButton,
   ContentHeader,
   Progress,
   Tabs,
@@ -147,13 +147,13 @@ export const PackagesPage = () => {
 
       <ContentHeader title={pluralPackageDescriptor}>
         {showAddPackage && (
-          <Button
+          <LinkButton
             to={addPackageRef({ packageContent })}
             color="primary"
             variant="contained"
           >
             Add {packageDescriptor}
-          </Button>
+          </LinkButton>
         )}
       </ContentHeader>
 

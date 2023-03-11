@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import { Button } from '@backstage/core-components';
+import { LinkButton } from '@backstage/core-components';
 import { useRouteRef } from '@backstage/core-plugin-api';
-import { Button as MaterialButton } from '@material-ui/core';
+import { Button } from '@material-ui/core';
 import React, { Fragment } from 'react';
 import {
   clonePackageRouteRef,
@@ -87,46 +87,46 @@ const DraftPackageRevisionOptions = ({
   if (isEditMode) {
     return (
       <Fragment>
-        <Button
+        <LinkButton
           to={packageRef({ repositoryName, packageName })}
           variant="outlined"
           color="primary"
           disabled={disabled}
         >
           Cancel
-        </Button>
+        </LinkButton>
 
-        <MaterialButton
+        <Button
           onClick={() => onClick(RevisionOption.SAVE_REVISION)}
           variant="contained"
           color="primary"
           disabled={disabled}
         >
           Save
-        </MaterialButton>
+        </Button>
       </Fragment>
     );
   }
 
   return (
     <Fragment>
-      <Button
+      <LinkButton
         to={editPackageRef({ repositoryName, packageName })}
         color="primary"
         variant="outlined"
         disabled={disabled}
       >
         Edit
-      </Button>
+      </LinkButton>
 
-      <MaterialButton
+      <Button
         color="primary"
         variant="contained"
         onClick={() => onClick(RevisionOption.PROPOSE_REVISION)}
         disabled={disabled}
       >
         Propose
-      </MaterialButton>
+      </Button>
     </Fragment>
   );
 };
@@ -144,23 +144,23 @@ const ProposedPackageRevisionOptions = ({
 
   return (
     <Fragment>
-      <MaterialButton
+      <Button
         color="primary"
         variant="outlined"
         onClick={() => onClick(RevisionOption.REJECT_PROPOSED_REVISION)}
         disabled={disabled}
       >
         Reject
-      </MaterialButton>
+      </Button>
 
-      <MaterialButton
+      <Button
         color="primary"
         variant="contained"
         onClick={() => onClick(RevisionOption.APPROVE_PROPOSED_REVISION)}
         disabled={disabled}
       >
         Approve
-      </MaterialButton>
+      </Button>
     </Fragment>
   );
 };
@@ -195,17 +195,17 @@ const PublishedPackageRevisionOptions = ({
     return (
       <Fragment>
         {!isReadOnly && (
-          <MaterialButton
+          <Button
             onClick={() => onClick(RevisionOption.RESTORE_REVISION)}
             color="primary"
             variant="outlined"
             disabled={disabled}
           >
             Restore Revision
-          </MaterialButton>
+          </Button>
         )}
 
-        <Button
+        <LinkButton
           to={packageRef({
             repositoryName: latestPublishedRevision.spec.repository,
             packageName: latestPublishedRevision.metadata.name,
@@ -215,7 +215,7 @@ const PublishedPackageRevisionOptions = ({
           disabled={disabled}
         >
           View Latest Published Revision
-        </Button>
+        </LinkButton>
       </Fragment>
     );
   }
@@ -239,29 +239,29 @@ const PublishedPackageRevisionOptions = ({
   return (
     <Fragment>
       {showUpgrade && (
-        <MaterialButton
+        <Button
           variant="outlined"
           color="primary"
           onClick={() => onClick(RevisionOption.CREATE_UPGRADE_REVISION)}
           disabled={disabled}
         >
           Upgrade to Latest Blueprint
-        </MaterialButton>
+        </Button>
       )}
 
       {showCreateNewRevision && (
-        <MaterialButton
+        <Button
           variant="outlined"
           color="primary"
           onClick={() => onClick(RevisionOption.CREATE_NEW_REVISION)}
           disabled={disabled}
         >
           Create New Revision
-        </MaterialButton>
+        </Button>
       )}
 
       {isNewerUnpublishedRevision && (
-        <Button
+        <LinkButton
           to={packageRef({
             repositoryName,
             packageName: latestRevision.metadata.name,
@@ -270,29 +270,29 @@ const PublishedPackageRevisionOptions = ({
           variant="outlined"
         >
           View {latestRevision.spec.lifecycle} Revision
-        </Button>
+        </LinkButton>
       )}
 
       {showCreateSync && (
-        <MaterialButton
+        <Button
           color="primary"
           variant="contained"
           onClick={() => onClick(RevisionOption.CREATE_SYNC)}
           disabled={disabled}
         >
           Create Sync
-        </MaterialButton>
+        </Button>
       )}
 
       {showClone && (
-        <Button
+        <LinkButton
           to={clonePackageRef({ repositoryName, packageName })}
           color="primary"
           variant="contained"
           disabled={disabled}
         >
           Clone
-        </Button>
+        </LinkButton>
       )}
     </Fragment>
   );
