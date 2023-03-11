@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Button } from '@backstage/core-components';
+import { LinkButton } from '@backstage/core-components';
 import { useRouteRef } from '@backstage/core-plugin-api';
 import { makeStyles } from '@material-ui/core';
 import { groupBy } from 'lodash';
@@ -55,13 +55,13 @@ export const RepositoriesTabContent = ({
   return (
     <div className={classes.repositoriesTablesList}>
       <div style={{ textAlign: 'right' }}>
-        <Button
+        <LinkButton
           to={registerRepositoryRef()}
           color="primary"
           variant="contained"
         >
           Register Repository
-        </Button>
+        </LinkButton>
       </div>
 
       {PackageContentSummaryOrder.map(contentType => (

@@ -16,8 +16,8 @@
 
 import {
   Breadcrumbs,
-  Button,
   ContentHeader,
+  LinkButton,
   Progress,
   Tabs,
 } from '@backstage/core-components';
@@ -181,13 +181,13 @@ export const RepositoryPage = () => {
 
       <ContentHeader title={repoTitle}>
         {!isReadOnly && (
-          <Button
+          <LinkButton
             to={addPackageRef({ repositoryName: repositoryName })}
             color="primary"
             variant="contained"
           >
             Add {packageDescriptor}
-          </Button>
+          </LinkButton>
         )}
       </ContentHeader>
 
