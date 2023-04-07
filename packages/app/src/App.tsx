@@ -21,16 +21,13 @@ import { apis } from './apis';
 import { Root } from './components/Root';
 
 import { createApp } from '@backstage/app-defaults';
-import { FlatRoutes } from '@backstage/core-app-api';
+import { AppRouter, FlatRoutes } from '@backstage/core-app-api';
 import { AlertDisplay, OAuthRequestDialog } from '@backstage/core-components';
 import { CadPage } from '@kpt/backstage-plugin-cad';
 
 const app = createApp({
   apis,
 });
-
-const AppProvider = app.getProvider();
-const AppRouter = app.getRouter();
 
 const routes = (
   <FlatRoutes>
@@ -40,14 +37,12 @@ const routes = (
   </FlatRoutes>
 );
 
-const App = () => (
-  <AppProvider>
+export default app.createRoot(
+  <>
     <AlertDisplay />
     <OAuthRequestDialog />
     <AppRouter>
       <Root>{routes}</Root>
     </AppRouter>
-  </AppProvider>
+  </>,
 );
-
-export default App;
