@@ -5,6 +5,5 @@ Plugins.
 
 ## Key Scripts
 
-- [install_porch.sh](install_porch.sh): Installs the latest
-  [Porch](https://github.com/GoogleContainerTools/kpt/tree/main/porch) release
-  on the cluster `kubectl` is currently targetting
+- [install_porch.sh](install_porch.sh): Installs the latest Porch release on the
+  cluster `kubectl` is targetting
