@@ -24,5 +24,5 @@ if ! [ -x "$(command -v kubectl)" ]; then
   exit 1
 fi
 
-echo "Install example repositories"
-kubectl apply -f $SCRIPT_DIR/resources/example-repositories.yaml
+echo "Install example package repositories"
+kubectl apply -f $SCRIPT_DIR/resources/package-repositories.yaml
