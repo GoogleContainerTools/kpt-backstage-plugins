@@ -34,7 +34,8 @@ PORCH_VERSION=`echo "$LATEST_PORCH_RELEASE" | cut -d/ -f 2`
 echo "Download Porch $PORCH_VERSION deployment blueprint"
 TMPDIR=`mktemp -d -t porch-XXXXXX`
 curl -Lso $TMPDIR/deployment-blueprint.tar.gz https://github.com/GoogleContainerTools/kpt/releases/download/$LATEST_PORCH_RELEASE/deployment-blueprint.tar.gz
-tar xzf $TMPDIR/deployment-blueprint.tar.gz --one-top-level=$TMPDIR/porch-install
+mkdir $TMPDIR/porch-install
+tar xzf $TMPDIR/deployment-blueprint.tar.gz -C $TMPDIR/porch-install
 
 CLUSTER_NAME=`kubectl config current-context`
 echo "Apply Porch resources to cluster $CLUSTER_NAME"
