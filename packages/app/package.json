@@ -13,6 +13,7 @@
     "@backstage/core-components": "^0.12.5",
     "@backstage/core-plugin-api": "^1.5.0",
     "@backstage/integration-react": "^1.1.11",
+    "@backstage/plugin-catalog": "^1.9.0",
     "@backstage/plugin-permission-react": "^0.4.11",
     "@backstage/plugin-user-settings": "^0.7.1",
     "@backstage/theme": "^0.2.18",
