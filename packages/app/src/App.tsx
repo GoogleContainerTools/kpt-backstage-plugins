@@ -23,6 +23,7 @@ import { Root } from './components/Root';
 import { createApp } from '@backstage/app-defaults';
 import { AppRouter, FlatRoutes } from '@backstage/core-app-api';
 import { AlertDisplay, OAuthRequestDialog } from '@backstage/core-components';
+import { CatalogEntityPage, CatalogIndexPage } from '@backstage/plugin-catalog';
 import { CadPage } from '@kpt/backstage-plugin-cad';
 
 const app = createApp({
@@ -32,6 +33,11 @@ const app = createApp({
 const routes = (
   <FlatRoutes>
     <Navigate key="/" to="config-as-data" />
+    <Route path="/catalog" element={<CatalogIndexPage />} />
+    <Route
+      path="/catalog/:namespace/:kind/:name"
+      element={<CatalogEntityPage />}
+    />
     <Route path="/settings" element={<UserSettingsPage />} />
     <Route path="/config-as-data" element={<CadPage />} />
   </FlatRoutes>
