@@ -36,8 +36,7 @@ type OnUpdatedYamlFn = (yaml: string) => void;
 type OnNoNamedEditorFn = () => void;
 
 type FirstClassEditorSelectorProps = {
-  apiVersion: string;
-  kind: string;
+  groupVersionKind: string;
   yaml: string;
   onUpdatedYaml: OnUpdatedYamlFn;
   onNoNamedEditor: OnNoNamedEditorFn;
@@ -45,14 +44,12 @@ type FirstClassEditorSelectorProps = {
 };
 
 export const FirstClassEditorSelector = ({
-  apiVersion,
-  kind,
+  groupVersionKind,
   yaml,
   onUpdatedYaml,
   onNoNamedEditor,
   packageResources,
 }: FirstClassEditorSelectorProps) => {
-  const groupVersionKind = `${apiVersion}/${kind}`;
   const isNamedEditor = useRef<boolean>(true);
 
   useEffect(() => {

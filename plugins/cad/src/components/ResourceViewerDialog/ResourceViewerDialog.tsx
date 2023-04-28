@@ -24,6 +24,7 @@ import {
 } from '@material-ui/core';
 import React, { Fragment, useEffect, useState } from 'react';
 import { KubernetesResource } from '../../types/KubernetesResource';
+import { getGroupVersionKind } from '../../utils/kubernetesResource';
 import { loadYaml } from '../../utils/yaml';
 import { YamlViewer } from '../Controls';
 import { FirstClassViewerSelector } from './components/FirstClassViewerSelector';
@@ -74,8 +75,9 @@ export const ResourceViewerDialog = ({
     setShowYamlView(!showYamlView);
   };
 
-  const { kind, apiVersion } = resourceYaml;
+  const kind = resourceYaml.kind;
   const resourceName = resourceYaml.metadata.name;
+  const groupVersionKind = getGroupVersionKind(resourceYaml);
 
   const displayYamlHeight = (thisYaml.split('\n').length + 1) * 18;
 
@@ -98,8 +100,7 @@ export const ResourceViewerDialog = ({
               />
             ) : (
               <FirstClassViewerSelector
-                apiVersion={apiVersion}
-                kind={kind}
+                groupVersionKind={groupVersionKind}
                 yaml={yaml}
                 originalYaml={originalYaml}
                 showDiff={showDiff}

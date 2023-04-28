@@ -36,3 +36,7 @@ export const removeInternalKptAnnotations = (
     }
   }
 };
+
+export const getGroupVersionKind = (resource: KubernetesResource): string => {
+  return `${resource.apiVersion}/${resource.kind}`;
+};

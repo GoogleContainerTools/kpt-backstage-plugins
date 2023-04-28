@@ -24,6 +24,7 @@ import {
 } from '@material-ui/core';
 import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import { KubernetesResource } from '../../types/KubernetesResource';
+import { getGroupVersionKind } from '../../utils/kubernetesResource';
 import { PackageResource } from '../../utils/packageRevisionResources';
 import { loadYaml } from '../../utils/yaml';
 import { YamlViewer } from '../Controls';
@@ -63,9 +64,7 @@ export const ResourceEditorDialog = ({
   const [isNamedEditor, setIsNamedEditor] = useState<boolean>(true);
 
   const resourceYaml = loadYaml(yaml) as KubernetesResource;
-
-  const resourceApiVersion = resourceYaml && resourceYaml.apiVersion;
-  const kind = resourceYaml && resourceYaml.kind;
+  const groupVersionKind = resourceYaml && getGroupVersionKind(resourceYaml);
 
   useEffect(() => {
     if (open) {
@@ -112,8 +111,7 @@ export const ResourceEditorDialog = ({
           >
             {!showYamlView && isNamedEditor ? (
               <FirstClassEditorSelector
-                apiVersion={resourceApiVersion}
-                kind={kind}
+                groupVersionKind={groupVersionKind}
                 yaml={latestYaml}
                 packageResources={packageResources}
                 onNoNamedEditor={handleNoNamedEditor}

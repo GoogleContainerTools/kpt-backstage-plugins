@@ -41,8 +41,7 @@ import {
 } from './FirstClassViewers/StructuredMetadata/StructuredMetadata';
 
 type FirstClassViewerSelectorProps = {
-  apiVersion: string;
-  kind: string;
+  groupVersionKind: string;
   yaml?: string;
   originalYaml?: string;
   showDiff?: boolean;
@@ -117,14 +116,11 @@ const getCustomMetadataFn = (
 };
 
 export const FirstClassViewerSelector = ({
-  apiVersion,
-  kind,
+  groupVersionKind,
   yaml,
   originalYaml,
   showDiff,
 }: FirstClassViewerSelectorProps) => {
-  const groupVersionKind = `${apiVersion}/${kind}`;
-
   const customMetadataFn = getCustomMetadataFn(groupVersionKind);
 
   return (
