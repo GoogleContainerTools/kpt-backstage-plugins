@@ -55,25 +55,26 @@ const setMetadata = (
   }
 };
 
-export const getDefaultStructuredMetadata = (
-  resource: KubernetesResource,
-): Metadata => {
+const populateMetadata = (
+  metadata: Metadata,
+  object: any,
+  depth: number,
+): void => {
   const STANDARD_K8S_FIELDS = ['apiVersion', 'kind', 'metadata'];
 
-  const firstLevelFields = Object.keys(resource).filter(
-    key => !STANDARD_K8S_FIELDS.includes(key),
+  const firstLevelFields = Object.keys(object).filter(
+    key => !STANDARD_K8S_FIELDS.includes(key) || depth !== 1,
   );
-
-  const anyResource = resource as unknown as any;
-
-  const metadata: Metadata = {};
 
   for (const fieldName of firstLevelFields) {
     const newMetadata: Metadata = {};
 
-    const displayName = fieldName === 'spec' ? resource.kind : fieldName;
+    if (fieldName === 'spec' && depth === 1) {
+      populateMetadata(metadata, object.spec, depth + 1);
+      continue;
+    }
 
-    setMetadata(newMetadata, anyResource[fieldName], displayName);
+    setMetadata(newMetadata, object[fieldName], fieldName);
 
     for (const thisKey of Object.keys(newMetadata)) {
       const isPrefix = thisKey.includes('.');
@@ -93,6 +94,16 @@ export const getDefaultStructuredMetadata = (
       );
     }
   }
+};
+
+export const getDefaultStructuredMetadata = (
+  resource: KubernetesResource,
+): Metadata => {
+  const anyResource = resource as unknown as any;
+
+  const metadata: Metadata = {};
+
+  populateMetadata(metadata, anyResource, 1);
 
   return metadata;
 };
