@@ -59,6 +59,9 @@ configAsData:
   # Determines the GitOps delivery tool to use.
   gitOpsDeliveryTool: config-sync
 
+  # Optional. Determines the maximum http request body size.
+  maxRequestSize: 1mb
+
   clusterLocatorMethod:
     # Determines how the client will locate the Kubernetes cluster.
     type: current-context
@@ -76,6 +79,9 @@ configAsData:
 `resourcesNamespace` defines the namespace where Porch managed resources live
 
 `gitOpsDeliveryTool` determines what tool to use for GitOps
+
+`maxRequestSize` determines the maximum http request body size. Default is 1mb.
+HTTP Status Code 413 will be returned for any requests exceeding this size.
 
 Valid values:
 | Values | Description |

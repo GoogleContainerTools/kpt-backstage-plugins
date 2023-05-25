@@ -30,6 +30,11 @@ export interface Config {
     gitOpsDeliveryTool: 'none' | 'config-sync';
 
     /**
+     * Optional. Determines the maximum http request body size.
+     */
+    maxRequestSize?: string;
+
+    /**
      * Determines where to receive the cluster configuration from.
      */
     clusterLocatorMethod: {

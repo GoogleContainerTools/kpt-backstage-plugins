@@ -27,6 +27,7 @@ import {
   getClusterLocatorMethodServiceAccountToken,
   getClusterLocatorMethodType,
   getGitOpsDeliveryTool,
+  getMaxRequestSize,
   getResourcesNamespace,
   OIDCTokenProvider,
 } from './config';
@@ -74,13 +75,11 @@ export async function createRouter({
   config,
   logger,
 }: RouterOptions): Promise<express.Router> {
-  const router = Router();
-  router.use(express.json());
-
   const cadConfig = config.getConfig('configAsData');
 
   const namespace = getResourcesNamespace(cadConfig);
   const gitOpsTool = getGitOpsDeliveryTool(cadConfig);
+  const maxRequestSize = getMaxRequestSize(cadConfig);
 
   const clusterLocatorMethodType = getClusterLocatorMethodType(cadConfig);
   const clusterLocatorMethodAuthProvider =
@@ -183,6 +182,9 @@ export async function createRouter({
       }
     });
   };
+
+  const router = Router();
+  router.use(express.json({ limit: maxRequestSize }));
 
   router.get('/health', healthCheck);
   router.get('/v1/features', getFeatures);
