@@ -39,6 +39,12 @@ export enum OIDCTokenProvider {
   OKTA = 'okta',
 }
 
+export const getMaxRequestSize = (config: Config): string => {
+  const maxRequestSize = config.getOptionalString('maxRequestSize') ?? '1mb';
+
+  return maxRequestSize;
+};
+
 export const getResourcesNamespace = (config: Config): string => {
   const namespace = config.getString('resourcesNamespace');
 
