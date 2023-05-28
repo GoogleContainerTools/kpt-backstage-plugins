@@ -27,6 +27,7 @@ export type Secret = {
   apiVersion: string;
   metadata: SecretMetadata;
   type: string;
+  stringData?: KubernetesKeyValueObject;
   data: KubernetesKeyValueObject;
   immutable?: boolean;
 };
