@@ -14,9 +14,35 @@
  * limitations under the License.
  */
 
-import { KubernetesResource } from '../../../../../../types/KubernetesResource';
+import {
+  KubernetesKeyValueObject,
+  KubernetesResource,
+} from '../../../../../../types/KubernetesResource';
 import { Secret } from '../../../../../../types/Secret';
 import { Metadata } from '../StructuredMetadata';
+
+const getSecrets = (
+  data: KubernetesKeyValueObject | undefined,
+  stringData: KubernetesKeyValueObject | undefined,
+): KubernetesKeyValueObject | undefined => {
+  const secretData: KubernetesKeyValueObject = {};
+
+  if (data) {
+    const keys = Object.keys(data);
+    for (const key of keys) {
+      secretData[key] = Buffer.from(data[key], 'base64').toString();
+    }
+  }
+
+  if (stringData) {
+    const keys = Object.keys(stringData);
+    for (const key of keys) {
+      secretData[key] = stringData[key];
+    }
+  }
+
+  return Object.keys(secretData).length > 0 ? secretData : undefined;
+};
 
 export const getSecretStructuredMetadata = (
   resource: KubernetesResource,
@@ -25,6 +51,6 @@ export const getSecretStructuredMetadata = (
 
   return {
     type: `${secret.type} ${secret.immutable ? '(immutable)' : ''}`,
-    secrets: secret.data ?? 'none',
+    secrets: getSecrets(secret.data, secret.stringData) ?? 'none',
   };
 };
