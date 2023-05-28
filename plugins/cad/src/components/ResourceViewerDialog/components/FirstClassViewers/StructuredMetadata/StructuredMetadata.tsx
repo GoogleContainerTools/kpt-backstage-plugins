@@ -55,7 +55,11 @@ const useStyles = makeStyles({
 
 const normalizeMetadata = (metadata: Metadata): void => {
   Object.keys(metadata).forEach(key => {
-    if (metadata[key] === undefined || metadata[key] === '') {
+    if (
+      metadata[key] === undefined ||
+      metadata[key] === null ||
+      metadata[key] === ''
+    ) {
       delete metadata[key];
     }
 
