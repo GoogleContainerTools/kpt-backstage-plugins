@@ -62,7 +62,7 @@ const populateMetadata = (
 ): void => {
   const STANDARD_K8S_FIELDS = ['apiVersion', 'kind', 'metadata'];
 
-  const firstLevelFields = Object.keys(object).filter(
+  const firstLevelFields = Object.keys(object || {}).filter(
     key => !STANDARD_K8S_FIELDS.includes(key) || depth !== 1,
   );
 
