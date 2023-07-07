@@ -100,12 +100,14 @@ export const getPackageRevisionResources = (
 export const getPackageRevisionResourcesResource = (
   fullPackageName: string,
   resourcesMap: PackageRevisionResourcesMap,
+  resourceVersion: string,
 ): PackageRevisionResources => {
   const packageRevisionResources: PackageRevisionResources = {
     apiVersion: 'porch.kpt.dev/v1alpha1',
     kind: 'PackageRevisionResources',
     metadata: {
       name: fullPackageName,
+      resourceVersion: resourceVersion,
     },
     spec: {
       resources: resourcesMap,

@@ -31,6 +31,7 @@ export type PackageRevisionResources = {
 export type PackageRevisionResourcesMetadata = {
   name: string;
   namespace?: string;
+  resourceVersion?: string;
 };
 
 export type PackageRevisionResourcesSpec = {

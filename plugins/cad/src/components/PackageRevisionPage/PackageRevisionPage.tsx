@@ -261,6 +261,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
   const [revisionSummaries, setRevisionSummaries] = useState<RevisionSummary[]>(
     [],
   );
+  const resourcesMapResourceVersion = useRef<string>('');
   const [resourcesMap, setResourcesMap] = useState<PackageRevisionResourcesMap>(
     {},
   );
@@ -339,6 +340,8 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     setRevisionSummaries(thisRevisionSummaries);
     setPackageRevision(thisPackageRevision);
     setResourcesMap(thisResources.spec.resources);
+    resourcesMapResourceVersion.current =
+      thisResources.metadata.resourceVersion || '';
 
     let upgradeAvailable = false;
     let thisUpstreamRepository: Repository | undefined = undefined;
@@ -665,6 +668,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
         const packageRevisionResources = getPackageRevisionResourcesResource(
           thisPackageName,
           resourcesMap,
+          resourcesMapResourceVersion.current,
         );
 
         await api.replacePackageRevisionResources(packageRevisionResources);
@@ -741,6 +745,7 @@ export const PackageRevisionPage = ({ mode }: PackageRevisionPageProps) => {
     const packageRevisionResources = getPackageRevisionResourcesResource(
       packageName,
       resourcesMap,
+      resourcesMapResourceVersion.current,
     );
 
     const resourcesResponse = await api.replacePackageRevisionResources(
