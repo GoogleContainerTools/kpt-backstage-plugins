@@ -148,14 +148,16 @@ const mapRepositoryToSelectItem = (
 const getPackageResources = async (
   api: ConfigAsDataApi,
   packageName: string,
-): Promise<[PackageResource[], PackageRevisionResourcesMap]> => {
+): Promise<[PackageResource[], PackageRevisionResourcesMap, string]> => {
   const packageResourcesResponse = await api.getPackageRevisionResources(
     packageName,
   );
   const resourcesMap = packageResourcesResponse.spec.resources;
   const resources = getPackageResourcesFromResourcesMap(resourcesMap);
+  const resourceVersion =
+    packageResourcesResponse.metadata.resourceVersion || '';
 
-  return [resources, resourcesMap];
+  return [resources, resourcesMap, resourceVersion];
 };
 
 export const AddPackagePage = ({ action }: AddPackagePageProps) => {
@@ -464,7 +466,10 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
     const allKptFunctions = await api.listCatalogFunctions();
     const kptFunctions = groupFunctionsByName(allKptFunctions);
 
-    const [_, resourcesMap] = await getPackageResources(api, newPackageName);
+    const [_, resourcesMap, resourceVersion] = await getPackageResources(
+      api,
+      newPackageName,
+    );
 
     let updatedResourcesMap = resourcesMap;
 
@@ -484,6 +489,7 @@ export const AddPackagePage = ({ action }: AddPackagePageProps) => {
       const packageRevisionResources = getPackageRevisionResourcesResource(
         newPackageName,
         updatedResourcesMap,
+        resourceVersion,
       );
 
       await api.replacePackageRevisionResources(packageRevisionResources);
