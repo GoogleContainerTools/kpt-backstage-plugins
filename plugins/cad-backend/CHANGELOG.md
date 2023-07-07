@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/GoogleContainerTools/kpt-backstage-plugins/compare/backstage-plugin-cad-backend-v0.1.0...backstage-plugin-cad-backend-v0.2.0) (2023-07-07)
+
+
+### Features
+
+* allow maximum http request size to be configurable ([#268](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/268)) ([088c268](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/088c2683aad003dfaff9ce52ef42b5c055a32f66))
+
 ## [0.1.0](https://github.com/GoogleContainerTools/kpt-backstage-plugins/compare/backstage-plugin-cad-backend-v0.0.0...backstage-plugin-cad-backend-v0.1.0) (2022-12-08)
 
 

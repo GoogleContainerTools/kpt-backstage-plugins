@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0](https://github.com/GoogleContainerTools/kpt-backstage-plugins/compare/backstage-plugin-cad-v0.4.0...backstage-plugin-cad-v0.5.0) (2023-07-07)
+
+
+### Features
+
+* add support for porch optimistic concurrency control ([#271](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/271)) ([a7ac6a5](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/a7ac6a5311224df5eccacd2dfa80077f6d55775a))
+* allow maximum http request size to be configurable ([#268](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/268)) ([088c268](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/088c2683aad003dfaff9ce52ef42b5c055a32f66))
+* update default resource viewer ([#266](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/266)) ([df9ce8f](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/df9ce8fe9a241ae6f9042cc5e7a32e1f6bd923c4))
+* update secret resource viewer ([#270](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/270)) ([c06e5c5](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/c06e5c53e74ebbdf0e53408ee2f9793b12eac33a))
+
+
+### Bug Fixes
+
+* update resource viewer to handle null fields ([#269](https://github.com/GoogleContainerTools/kpt-backstage-plugins/issues/269)) ([a02d941](https://github.com/GoogleContainerTools/kpt-backstage-plugins/commit/a02d94170bf1bd920055ae940d60d0f6b5412188))
+
 ## [0.4.0](https://github.com/GoogleContainerTools/kpt-backstage-plugins/compare/backstage-plugin-cad-v0.3.0...backstage-plugin-cad-v0.4.0) (2022-12-08)
 
 
